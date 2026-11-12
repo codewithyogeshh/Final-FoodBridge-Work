@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/services/ai_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../donations/domain/models/donation.dart';
 import '../../donations/presentation/donation_provider.dart';
+import 'widgets/volunteer_task_detail_sheet.dart';
 
 class VolunteerDashboardScreen extends StatefulWidget {
   const VolunteerDashboardScreen({super.key});
@@ -102,7 +104,30 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+
+            if (!_isOnline)
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.mutedGrey.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.mutedGrey.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.wifi_off, color: AppColors.mutedGrey, size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'You are offline. Switch availability toggle to Online to accept live dispatch tasks.',
+                        style: TextStyle(fontSize: 12, color: AppColors.charcoal),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             // Active Task View (if accepted)
             if (activeTasks.isNotEmpty) ...[
@@ -266,104 +291,101 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
               ...availableTasks.map((task) {
                 final dateFormat = DateFormat('hh:mm a');
                 final hasMaxDispatches = activeTasks.length >= 2;
+                final aiMatch = AIService().calculateMatch(donation: task, distanceKm: task.estimatedDistanceKm);
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.statusAvailableBg,
-                                borderRadius: BorderRadius.circular(6),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => VolunteerTaskDetailSheet.show(context, task: task, isOnline: _isOnline),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.statusAvailableBg,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      task.isFood ? '🍛 FOOD RESCUE' : '👕 CLOTHES DISPATCH',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.statusAvailableText,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.auto_awesome, size: 11, color: AppColors.primaryGreen),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          '${aiMatch.matchScorePercent}% Match',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.deepGreen,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                task.isFood ? '🍛 FOOD RESCUE' : '👕 CLOTHES DISPATCH',
+                              Text(
+                                'Collect by ${dateFormat.format(task.pickupDeadline)}',
                                 style: const TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.statusAvailableText,
+                                  color: AppColors.errorRed,
                                 ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            task.title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.charcoal),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Route: ${task.city} ──► ${task.claimedByNgoName ?? "NGO Shelter"} (${task.estimatedDistanceKm} km)',
+                            style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            task.isFood
+                                ? 'Handling: ${(task.storageCondition ?? "ambient").toUpperCase()} • ${task.isVeg ? "Veg" : "Non-Veg"}'
+                                : 'Handling: ${task.clothingCategory ?? "Clean Clothing"} • ${task.targetSize ?? "All Sizes"}',
+                            style: TextStyle(fontSize: 12, color: AppColors.deepGreen.withValues(alpha: 0.9), fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 14),
+                          FBButton.rider(
+                            label: hasMaxDispatches ? 'MAX 2 DISPATCHES REACHED' : 'REVIEW & ACCEPT TASK',
+                            icon: Icons.checklist_rtl_outlined,
+                            onPressed: () => VolunteerTaskDetailSheet.show(
+                              context,
+                              task: task,
+                              isOnline: _isOnline,
                             ),
-                            Text(
-                              'Collect by ${dateFormat.format(task.pickupDeadline)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.errorRed,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          task.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.charcoal),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Route: ${task.city} ──► ${task.claimedByNgoName ?? "NGO Shelter"} (${task.estimatedDistanceKm} km)',
-                          style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
-                        ),
-                        const SizedBox(height: 16),
-                        FBButton.rider(
-                          label: hasMaxDispatches ? 'MAX 2 DISPATCHES REACHED' : 'ACCEPT DISPATCH TASK',
-                          icon: Icons.flash_on,
-                          onPressed: () async {
-                            if (!_isOnline) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please switch online status to accept delivery tasks.'),
-                                  backgroundColor: AppColors.warningOrange,
-                                ),
-                              );
-                              return;
-                            }
-
-                            if (hasMaxDispatches) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Maximum concurrent limit reached (2 tasks). Complete an active delivery first.'),
-                                  backgroundColor: AppColors.errorRed,
-                                ),
-                              );
-                              return;
-                            }
-
-                            final success = await donationProvider.acceptVolunteerTask(
-                              donationId: task.id,
-                              volunteerId: volunteerId,
-                              volunteerName: currentUser?.fullName ?? 'Rohit Kulkarni',
-                              phone: currentUser?.phone ?? '+91 97654 99887',
-                            );
-                            if (context.mounted) {
-                              if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Task assigned! Opening live mission & navigation...'),
-                                    backgroundColor: AppColors.deepGreen,
-                                  ),
-                                );
-                                context.push('/volunteer/mission/${task.id}');
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(donationProvider.errorMessage ?? 'Failed to accept task.'),
-                                    backgroundColor: AppColors.errorRed,
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

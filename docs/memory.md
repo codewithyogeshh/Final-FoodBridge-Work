@@ -206,9 +206,8 @@ Update the checkboxes as work is completed.
 -   [x] Donor workflows completed (Phase 7: create donation, edit/withdraw listing, dietary filters, my listings)
 -   [x] NGO workflows completed (Phase 7: claims manager, partial & full quantity claim allocation, verification screen)
 -   [x] Volunteer workflows completed (Phase 8: rider GPS map navigation, active task dispatch, OTP pickup & handover confirmation, 2-task limit)
+-   [x] AI features evaluated and integrated where useful (AIService: smart route matching, safe handling advisories with Rule 14 disclaimer, community assistant)
 -   [ ] Admin workflows completed (Phase 9: moderation, verification approvals, platform analytics)
--   [ ] Realtime updates and notifications completed
--   [ ] AI features evaluated and integrated where useful
 -   [ ] Security and accessibility tests completed
 -   [ ] Pilot partners confirmed
 -   [ ] Controlled pilot completed
@@ -277,12 +276,16 @@ Update the checkboxes as work is completed.
                                       privacy-masked approximate location on discovery feeds,
                                       full 12-state lifecycle transitions, and 39 passing tests.
 
-  1.8                                 Phase 8 Volunteer Rider Module completed.
-                                      Implemented VolunteerMissionScreen with live GPS route
-                                      navigation card, Donor pickup OTP & NGO delivery OTP
-                                      handover verification, on-site food safety & temperature
-                                      checklist, 2-task active limit enforcement, emergency
-                                      task release, and lifetime statistics with 35 passing tests.
+  1.8                                 Phase 8 Volunteer Rider Module & AI Services finalized.
+                                      Implemented VolunteerTaskDetailSheet for interactive review &
+                                      task acceptance with authorized pickup unlock. Built AIService
+                                      providing smart route compatibility scoring (proximity & urgency),
+                                      safe handling logistics advisories for hot, chilled, ambient & clothing
+                                      (with mandatory Rule 14 disclaimer that AI never certifies food safety),
+                                      and Community Assistant FAQ resolution. Enhanced VolunteerMissionScreen
+                                      with turn-by-turn route navigation, Donor pickup & NGO delivery dual-OTP
+                                      verification, structured issue reporting & task release, optional proof
+                                      of handover, and offline warning states with 49 passing tests.
   -----------------------------------------------------------------------
 
 **Maintenance rule:** When a decision changes, update the relevant
