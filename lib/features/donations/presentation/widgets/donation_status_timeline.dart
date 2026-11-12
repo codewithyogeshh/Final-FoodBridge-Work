@@ -205,3 +205,4 @@ class _TimelineStep {
     required this.isActive,
   });
 }
+

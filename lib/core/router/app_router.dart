@@ -5,6 +5,7 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/authentication/presentation/login_screen.dart';
 import '../../features/authentication/presentation/register_screen.dart';
 import '../../features/authentication/presentation/forgot_password_screen.dart';
+import '../../features/authentication/presentation/reset_password_screen.dart';
 import '../../features/authentication/presentation/auth_provider.dart';
 import '../../features/donor/presentation/donor_dashboard_screen.dart';
 import '../../features/donor/presentation/create_donation_screen.dart';
@@ -57,6 +58,13 @@ class AppRouter {
         GoRoute(
           path: '/forgot-password',
           builder: (context, state) => const ForgotPasswordScreen(),
+        ),
+        GoRoute(
+          path: '/reset-password',
+          builder: (context, state) {
+            final email = state.uri.queryParameters['email'];
+            return ResetPasswordScreen(initialEmail: email);
+          },
         ),
         GoRoute(
           path: '/donor',

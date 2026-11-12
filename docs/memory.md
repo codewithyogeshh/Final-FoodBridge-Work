@@ -256,10 +256,15 @@ Update the checkboxes as work is completed.
                                       AppTheme, AppColors, FBButton, FBTextField, FBCard,
                                       ResponsiveHelper, AccessibilityHelper.
 
-  1.6                                 Phase 6 Authentication & Role Management completed.
-                                      Implemented AuthProvider, AuthService, RouteGuard,
-                                      SessionStorageService, LoginScreen, RegisterScreen,
-                                      ForgotPasswordScreen, role switching.
+  1.6                                 Phase 6 Authentication & Role Management finalized.
+                                      Implemented full multi-role onboarding forms for Donor,
+                                      NGO (with mandatory 12A/80G/Darpan verification document
+                                      and pending status), and Volunteer (schedule & vehicle mode).
+                                      Secured admin provisioning (public self-registration blocked).
+                                      Added password visibility toggle, min 8 char validation,
+                                      SessionStorageService persistent session restoration,
+                                      and complete password reset flow (ForgotPasswordScreen &
+                                      ResetPasswordScreen) with 31 passing tests.
 
   1.7                                 Phase 7 Donor & NGO Modules completed.
                                       Implemented partial quantity allocation, edit/withdraw

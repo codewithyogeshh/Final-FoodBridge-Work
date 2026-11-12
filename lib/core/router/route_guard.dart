@@ -9,6 +9,7 @@ class RouteGuard {
     '/login',
     '/register',
     '/forgot-password',
+    '/reset-password',
   ];
 
   /// Evaluates target route and returns redirect path if unauthorized, or null if allowed
@@ -17,7 +18,12 @@ class RouteGuard {
     required bool isAuthenticated,
     required UserRole? userRole,
   }) {
-    final isPublic = publicRoutes.any((route) => location == route || location.startsWith('/register'));
+    final isPublic = publicRoutes.any(
+      (route) =>
+          location == route ||
+          location.startsWith('/register') ||
+          location.startsWith('/reset-password'),
+    );
 
     // 1. Unauthenticated user accessing private route
     if (!isAuthenticated && !isPublic) {

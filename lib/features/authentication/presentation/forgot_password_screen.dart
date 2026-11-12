@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
+import 'auth_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -14,7 +16,6 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
   bool _emailSent = false;
 
   @override
@@ -26,19 +27,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _handleResetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 700));
+    final auth = context.read<AuthProvider>();
+    final email = _emailController.text.trim();
+
+    final success = await auth.sendPasswordResetEmail(email);
 
     if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _emailSent = true;
-      });
+      if (success) {
+        setState(() => _emailSent = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset link dispatched!'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(auth.errorMessage ?? 'Unable to send reset instructions.'),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reset Password'),
@@ -46,13 +63,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          child: _emailSent ? _buildSuccessState() : _buildFormState(),
+          child: _emailSent ? _buildSuccessState() : _buildFormState(auth),
         ),
       ),
     );
   }
 
-  Widget _buildFormState() {
+  Widget _buildFormState(AuthProvider auth) {
     return Form(
       key: _formKey,
       child: Column(
@@ -90,7 +107,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 24),
           FBButton(
             label: 'Send Reset Link',
-            isLoading: _isLoading,
+            isLoading: auth.isLoading,
             onPressed: _handleResetPassword,
           ),
           const SizedBox(height: 20),
@@ -109,6 +126,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildSuccessState() {
+    final email = _emailController.text.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -116,7 +134,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.primaryGreen.withOpacity(0.12),
+            color: AppColors.primaryGreen.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.mark_email_read_outlined, size: 56, color: AppColors.primaryGreen),
@@ -132,17 +150,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          'We have sent password recovery instructions to:\n${_emailController.text.trim()}',
+          'We have sent password recovery instructions to:\n$email',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 14, color: AppColors.mutedGrey, height: 1.4),
         ),
         const SizedBox(height: 32),
         FBButton(
-          label: 'Return to Sign In',
-          onPressed: () => context.go('/login'),
+          label: 'Proceed to Set New Password',
+          onPressed: () => context.push('/reset-password?email=$email'),
+        ),
+        const SizedBox(height: 12),
+        Center(
+          child: TextButton(
+            onPressed: () => context.go('/login'),
+            child: const Text(
+              'Return to Sign In',
+              style: TextStyle(color: AppColors.mutedGrey),
+            ),
+          ),
         ),
       ],
     );
   }
 }
-

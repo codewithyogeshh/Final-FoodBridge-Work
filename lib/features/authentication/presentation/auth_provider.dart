@@ -62,7 +62,14 @@ class AuthProvider extends ChangeNotifier {
     String? phone,
     String? organizationName,
     String? darpanId,
+    String? registrationNumber,
+    String? contactPerson,
+    String? verificationDocumentUrl,
     String? address,
+    String? serviceArea,
+    String? donorCategory,
+    String? availability,
+    String? transportType,
   }) async {
     _setLoading(true);
     _clearError();
@@ -75,12 +82,50 @@ class AuthProvider extends ChangeNotifier {
         phone: phone,
         organizationName: organizationName,
         darpanId: darpanId,
+        registrationNumber: registrationNumber,
+        contactPerson: contactPerson,
+        verificationDocumentUrl: verificationDocumentUrl,
         address: address,
+        serviceArea: serviceArea,
+        donorCategory: donorCategory,
+        availability: availability,
+        transportType: transportType,
       );
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<bool> sendPasswordResetEmail(String email) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.sendPasswordResetEmail(email);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.resetPassword(email: email, newPassword: newPassword);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
       _setLoading(false);
       return false;
     }

@@ -75,7 +75,14 @@ class AppUser {
   final NgoVerificationStatus ngoVerificationStatus;
   final String? organizationName;
   final String? darpanId;
+  final String? registrationNumber;
+  final String? contactPerson;
+  final String? verificationDocumentUrl;
   final String? address;
+  final String? serviceArea;
+  final String? donorCategory;
+  final String? availability;
+  final String? transportType;
   final DateTime createdAt;
 
   const AppUser({
@@ -87,7 +94,14 @@ class AppUser {
     this.ngoVerificationStatus = NgoVerificationStatus.unverified,
     this.organizationName,
     this.darpanId,
+    this.registrationNumber,
+    this.contactPerson,
+    this.verificationDocumentUrl,
     this.address,
+    this.serviceArea,
+    this.donorCategory,
+    this.availability,
+    this.transportType,
     required this.createdAt,
   });
 
@@ -110,7 +124,14 @@ class AppUser {
       ),
       organizationName: json['organization_name'] as String?,
       darpanId: json['darpan_id'] as String?,
+      registrationNumber: json['registration_number'] as String?,
+      contactPerson: json['contact_person'] as String?,
+      verificationDocumentUrl: json['verification_document_url'] as String?,
       address: json['address'] as String?,
+      serviceArea: json['service_area'] as String?,
+      donorCategory: json['donor_category'] as String?,
+      availability: json['availability'] as String?,
+      transportType: json['transport_type'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -127,7 +148,14 @@ class AppUser {
       'ngo_verification_status': ngoVerificationStatus.name,
       'organization_name': organizationName,
       'darpan_id': darpanId,
+      'registration_number': registrationNumber,
+      'contact_person': contactPerson,
+      'verification_document_url': verificationDocumentUrl,
       'address': address,
+      'service_area': serviceArea,
+      'donor_category': donorCategory,
+      'availability': availability,
+      'transport_type': transportType,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -141,7 +169,14 @@ class AppUser {
     NgoVerificationStatus? ngoVerificationStatus,
     String? organizationName,
     String? darpanId,
+    String? registrationNumber,
+    String? contactPerson,
+    String? verificationDocumentUrl,
     String? address,
+    String? serviceArea,
+    String? donorCategory,
+    String? availability,
+    String? transportType,
     DateTime? createdAt,
   }) {
     return AppUser(
@@ -153,7 +188,14 @@ class AppUser {
       ngoVerificationStatus: ngoVerificationStatus ?? this.ngoVerificationStatus,
       organizationName: organizationName ?? this.organizationName,
       darpanId: darpanId ?? this.darpanId,
+      registrationNumber: registrationNumber ?? this.registrationNumber,
+      contactPerson: contactPerson ?? this.contactPerson,
+      verificationDocumentUrl: verificationDocumentUrl ?? this.verificationDocumentUrl,
       address: address ?? this.address,
+      serviceArea: serviceArea ?? this.serviceArea,
+      donorCategory: donorCategory ?? this.donorCategory,
+      availability: availability ?? this.availability,
+      transportType: transportType ?? this.transportType,
       createdAt: createdAt ?? this.createdAt,
     );
   }

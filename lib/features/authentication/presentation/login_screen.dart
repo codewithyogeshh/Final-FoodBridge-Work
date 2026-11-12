@@ -15,9 +15,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController(text: 'donor@foodbridge.org');
   final _passwordController = TextEditingController(text: 'Password123!');
   UserRole _selectedRole = UserRole.donor;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -51,19 +53,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final auth = context.read<AuthProvider>();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email and password.'),
-          backgroundColor: AppColors.errorRed,
-        ),
-      );
-      return;
-    }
 
     final success = await auth.login(
       email: email,
@@ -73,6 +67,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (mounted) {
       if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome back, ${auth.user?.fullName}!'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+
         final role = auth.currentRole;
         switch (role) {
           case UserRole.ngo:
@@ -110,93 +111,122 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Welcome Back',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.deepGreen,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Welcome Back',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.deepGreen,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Sign in with your FoodBridge credentials or choose a quick role profile below.',
+                  style: TextStyle(color: AppColors.mutedGrey, fontSize: 14),
+                ),
+                const SizedBox(height: 24),
+
+                // Role selector chip group for demo exploration
+                const Text(
+                  'Quick Select Demo Profile:',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.charcoal),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _roleFilterChip(UserRole.donor, 'Donor'),
+                    _roleFilterChip(UserRole.ngo, 'NGO Shelter'),
+                    _roleFilterChip(UserRole.volunteer, 'Volunteer'),
+                    _roleFilterChip(UserRole.admin, 'Admin'),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                FBTextField(
+                  label: 'Email Address',
+                  hint: 'user@example.com',
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: const Icon(Icons.email_outlined, color: AppColors.mutedGrey),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Email is required';
+                    }
+                    if (!value.contains('@') || !value.contains('.')) {
+                      return 'Enter a valid email address';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                FBTextField(
+                  label: 'Password',
+                  hint: '••••••••••••',
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  prefixIcon: const Icon(Icons.lock_outline, color: AppColors.mutedGrey),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: AppColors.mutedGrey,
                     ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Enter your credentials or choose a quick demo role to explore.',
-                style: TextStyle(color: AppColors.mutedGrey, fontSize: 14),
-              ),
-              const SizedBox(height: 24),
-
-              // Role selector chip group for demo exploration
-              const Text(
-                'Quick Select Role Profile:',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.charcoal),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  _roleFilterChip(UserRole.donor, 'Donor'),
-                  _roleFilterChip(UserRole.ngo, 'NGO Shelter'),
-                  _roleFilterChip(UserRole.volunteer, 'Volunteer'),
-                  _roleFilterChip(UserRole.admin, 'Admin'),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              FBTextField(
-                label: 'Email Address',
-                hint: 'user@example.com',
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: const Icon(Icons.email_outlined, color: AppColors.mutedGrey),
-              ),
-              const SizedBox(height: 16),
-              FBTextField(
-                label: 'Password',
-                hint: '••••••••••••',
-                controller: _passwordController,
-                obscureText: true,
-                prefixIcon: const Icon(Icons.lock_outline, color: AppColors.mutedGrey),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => context.push('/forgot-password'),
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password is required';
+                    }
+                    if (value.length < 8) {
+                      return 'Password must be at least 8 characters long';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push('/forgot-password'),
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              FBButton(
-                label: 'Sign In as ${_selectedRole.displayName}',
-                isLoading: auth.isLoading,
-                onPressed: _handleLogin,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Don't have an account? ",
-                    style: TextStyle(color: AppColors.mutedGrey),
-                  ),
-                  GestureDetector(
-                    onTap: () => context.push('/register'),
-                    child: const Text(
-                      'Register',
-                      style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                FBButton(
+                  label: 'Sign In as ${_selectedRole.displayName}',
+                  isLoading: auth.isLoading,
+                  onPressed: _handleLogin,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: AppColors.mutedGrey),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.push('/register'),
+                      child: const Text(
+                        'Register',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -208,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
-      selectedColor: AppColors.primaryGreen.withOpacity(0.18),
+      selectedColor: AppColors.primaryGreen.withValues(alpha: 0.18),
       labelStyle: TextStyle(
         color: isSelected ? AppColors.deepGreen : AppColors.mutedGrey,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

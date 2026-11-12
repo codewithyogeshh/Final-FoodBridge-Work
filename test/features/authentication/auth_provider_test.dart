@@ -1,13 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foodbridge/features/authentication/data/auth_service.dart';
+import 'package:foodbridge/features/authentication/data/session_storage_service.dart';
 import 'package:foodbridge/features/authentication/domain/models/app_user.dart';
 import 'package:foodbridge/features/authentication/presentation/auth_provider.dart';
 
 void main() {
-  group('AuthProvider Tests', () {
+  group('AuthProvider Tests - SDLC Phase 6 Authentication & Role Management', () {
+    late AuthService authService;
+    late SessionStorageService sessionStorage;
     late AuthProvider authProvider;
 
     setUp(() {
-      authProvider = AuthProvider();
+      sessionStorage = SessionStorageService(useInMemoryOnly: true);
+      authService = AuthService(sessionStorage: sessionStorage);
+      authProvider = AuthProvider(authService: authService);
     });
 
     test('Initial auth state has default mock donor user in demo mode', () {
@@ -31,7 +37,7 @@ void main() {
       expect(authProvider.user?.email, 'admin@foodbridge.org');
     });
 
-    test('Sign in with demo credentials succeeds', () async {
+    test('Sign in with valid demo credentials succeeds', () async {
       final success = await authProvider.login(
         email: 'volunteer@foodbridge.org',
         password: 'Password123!',
@@ -41,28 +47,201 @@ void main() {
       expect(success, isTrue);
       expect(authProvider.currentRole, UserRole.volunteer);
       expect(authProvider.user?.fullName, 'Rohit Kulkarni');
+      expect(authProvider.isAuthenticated, isTrue);
     });
 
-    test('Sign out clears user session', () async {
+    test('Sign in with incorrect password is rejected with helpful error', () async {
+      final success = await authProvider.login(
+        email: 'donor@foodbridge.org',
+        password: 'WrongPassword999!',
+      );
+
+      expect(success, isFalse);
+      expect(authProvider.errorMessage, contains('Incorrect password'));
+    });
+
+    test('Sign in with unknown email is rejected', () async {
+      final success = await authProvider.login(
+        email: 'unregistered_random_user@domain.com',
+        password: 'Password123!',
+      );
+
+      expect(success, isFalse);
+      expect(authProvider.errorMessage, contains('does not exist'));
+    });
+
+    test('Sign out clears user session and persistent storage', () async {
       await authProvider.logout();
       expect(authProvider.isAuthenticated, isFalse);
       expect(authProvider.user, isNull);
+
+      final savedSession = await sessionStorage.getUserSession();
+      expect(savedSession, isNull);
     });
 
-    test('Register creates and signs in a new profile', () async {
+    test('Valid Donor registration creates complete profile', () async {
       final success = await authProvider.register(
-        email: 'test_new_donor@example.com',
-        password: 'Password123!',
+        email: 'new_donor@cafe.com',
+        password: 'SecurePassword123!',
         fullName: 'Anita Patil',
         role: UserRole.donor,
         phone: '+91 91234 56789',
+        organizationName: 'Anita Bakes & Cafe',
+        donorCategory: 'Restaurant / Cafe',
+        address: 'FC Road, Pune',
+        serviceArea: 'Shivajinagar, Pune',
       );
 
       expect(success, isTrue);
       expect(authProvider.isAuthenticated, isTrue);
       expect(authProvider.user?.fullName, 'Anita Patil');
-      expect(authProvider.currentRole, UserRole.donor);
+      expect(authProvider.user?.donorCategory, 'Restaurant / Cafe');
+      expect(authProvider.user?.role, UserRole.donor);
+    });
+
+    test('Valid NGO registration sets verification status to pending', () async {
+      final success = await authProvider.register(
+        email: 'contact@hopecharity.org',
+        password: 'SecurePassword123!',
+        fullName: 'Dr. Alok Verma',
+        role: UserRole.ngo,
+        organizationName: 'Hope Foundation Shelter',
+        darpanId: 'MH/2026/0099881',
+        contactPerson: 'Dr. Alok Verma',
+        phone: '+91 98888 11223',
+        serviceArea: 'Swargate, Pune',
+        verificationDocumentUrl: 'docs/hope_charity_80g.pdf',
+      );
+
+      expect(success, isTrue);
+      expect(authProvider.isAuthenticated, isTrue);
+      expect(authProvider.user?.role, UserRole.ngo);
+      expect(authProvider.user?.ngoVerificationStatus, NgoVerificationStatus.pending);
+      expect(authProvider.user?.organizationName, 'Hope Foundation Shelter');
+      expect(authProvider.isNgoVerified, isFalse); // Unapproved until admin reviews
+    });
+
+    test('Valid Volunteer registration records schedule and transport', () async {
+      final success = await authProvider.register(
+        email: 'rider_samir@foodbridge.org',
+        password: 'SecurePassword123!',
+        fullName: 'Samir Shaikh',
+        role: UserRole.volunteer,
+        phone: '+91 97777 44332',
+        serviceArea: 'Kothrud, Pune',
+        availability: 'Weekends Only',
+        transportType: 'Two-Wheeler / Scooter',
+      );
+
+      expect(success, isTrue);
+      expect(authProvider.isAuthenticated, isTrue);
+      expect(authProvider.user?.role, UserRole.volunteer);
+      expect(authProvider.user?.transportType, 'Two-Wheeler / Scooter');
+      expect(authProvider.user?.availability, 'Weekends Only');
+    });
+
+    test('Admin registration through public channel is strictly prohibited', () async {
+      final success = await authProvider.register(
+        email: 'hacker_admin@domain.com',
+        password: 'SecurePassword123!',
+        fullName: 'Fake Admin',
+        role: UserRole.admin,
+      );
+
+      expect(success, isFalse);
+      expect(authProvider.errorMessage, contains('Administrator accounts cannot be created'));
+    });
+
+    test('Duplicate email registration is rejected', () async {
+      final success = await authProvider.register(
+        email: 'donor@foodbridge.org', // Already registered
+        password: 'Password123!',
+        fullName: 'Imposter Donor',
+        role: UserRole.donor,
+      );
+
+      expect(success, isFalse);
+      expect(authProvider.errorMessage, contains('already exists'));
+    });
+
+    test('Invalid registration with short password (< 8 chars) is rejected', () async {
+      final success = await authProvider.register(
+        email: 'valid_email@test.com',
+        password: '123', // Too short
+        fullName: 'Short Pwd User',
+        role: UserRole.donor,
+      );
+
+      expect(success, isFalse);
+      expect(authProvider.errorMessage, contains('at least 8 characters'));
+    });
+
+    test('Invalid registration with malformed email is rejected', () async {
+      final success = await authProvider.register(
+        email: 'notanemail',
+        password: 'SecurePassword123!',
+        fullName: 'Malformed Email User',
+        role: UserRole.donor,
+      );
+
+      expect(success, isFalse);
+      expect(authProvider.errorMessage, contains('valid email'));
+    });
+
+    test('Password reset request flow and update', () async {
+      // 1. Request reset link for existing user
+      final emailSent = await authProvider.sendPasswordResetEmail('donor@foodbridge.org');
+      expect(emailSent, isTrue);
+
+      // 2. Request reset link for non-existent user fails
+      final emailSentFail = await authProvider.sendPasswordResetEmail('nonexistent@foodbridge.org');
+      expect(emailSentFail, isFalse);
+      expect(authProvider.errorMessage, contains('No account found'));
+
+      // 3. Reset password with short password fails
+      final shortReset = await authProvider.resetPassword(
+        email: 'donor@foodbridge.org',
+        newPassword: 'short',
+      );
+      expect(shortReset, isFalse);
+      expect(authProvider.errorMessage, contains('at least 8 characters'));
+
+      // 4. Reset password with valid password succeeds
+      final validReset = await authProvider.resetPassword(
+        email: 'donor@foodbridge.org',
+        newPassword: 'NewBrandPassword2026!',
+      );
+      expect(validReset, isTrue);
+
+      // 5. Sign in with the new password succeeds
+      final loginWithNewPwd = await authProvider.login(
+        email: 'donor@foodbridge.org',
+        password: 'NewBrandPassword2026!',
+      );
+      expect(loginWithNewPwd, isTrue);
+    });
+
+    test('Session persistence saves and restores active profile across reboots', () async {
+      final testUser = AppUser(
+        id: 'usr-persisted-777',
+        email: 'persisted@test.com',
+        fullName: 'Persisted Tester',
+        role: UserRole.volunteer,
+        createdAt: DateTime.now(),
+      );
+
+      await sessionStorage.saveUserSession(testUser);
+      final restoredUser = await sessionStorage.getUserSession();
+
+      expect(restoredUser, isNotNull);
+      expect(restoredUser?.id, 'usr-persisted-777');
+      expect(restoredUser?.email, 'persisted@test.com');
+      expect(restoredUser?.role, UserRole.volunteer);
+
+      // Clear session
+      await sessionStorage.clearUserSession();
+      final clearedUser = await sessionStorage.getUserSession();
+      expect(clearedUser, isNull);
     });
   });
 }
-

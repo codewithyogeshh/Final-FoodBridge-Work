@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../domain/models/donation.dart';
 
 class DonationProvider extends ChangeNotifier {
@@ -26,7 +27,9 @@ class DonationProvider extends ChangeNotifier {
       if (_selectedTypeFilter != null && d.type != _selectedTypeFilter) {
         return false;
       }
-      if (_selectedVegFilter != null && d.isFood && d.isVeg != _selectedVegFilter) {
+      if (_selectedVegFilter != null &&
+          d.isFood &&
+          d.isVeg != _selectedVegFilter) {
         return false;
       }
       if (_searchQuery.isNotEmpty) {
@@ -42,8 +45,9 @@ class DonationProvider extends ChangeNotifier {
   }
 
   // Active listings for NGOs to claim
-  List<Donation> get availableDonations =>
-      filteredDonations.where((d) => d.status == DonationStatus.listed).toList();
+  List<Donation> get availableDonations => filteredDonations
+      .where((d) => d.status == DonationStatus.listed)
+      .toList();
 
   // NGO's claimed donations
   List<Donation> getDonationsClaimedByNgo(String ngoId) =>
@@ -59,17 +63,21 @@ class DonationProvider extends ChangeNotifier {
 
   // Volunteer's active tasks (assigned or in transit)
   List<Donation> getVolunteerActiveTasks(String volunteerId) => _donations
-      .where((d) =>
-          d.assignedVolunteerId == volunteerId &&
-          (d.status == DonationStatus.assigned ||
-              d.status == DonationStatus.pickedUp))
+      .where(
+        (d) =>
+            d.assignedVolunteerId == volunteerId &&
+            (d.status == DonationStatus.assigned ||
+                d.status == DonationStatus.pickedUp),
+      )
       .toList();
 
   // Volunteer's completed tasks
   List<Donation> getVolunteerCompletedTasks(String volunteerId) => _donations
-      .where((d) =>
-          d.assignedVolunteerId == volunteerId &&
-          d.status == DonationStatus.delivered)
+      .where(
+        (d) =>
+            d.assignedVolunteerId == volunteerId &&
+            d.status == DonationStatus.delivered,
+      )
       .toList();
 
   // Impact metrics
@@ -135,7 +143,8 @@ class DonationProvider extends ChangeNotifier {
     if (index == -1) return false;
 
     if (_donations[index].status != DonationStatus.listed) {
-      _errorMessage = 'Cannot edit donation after it has been claimed by a shelter.';
+      _errorMessage =
+          'Cannot edit donation after it has been claimed by a shelter.';
       notifyListeners();
       return false;
     }
@@ -151,7 +160,8 @@ class DonationProvider extends ChangeNotifier {
     if (index == -1) return false;
 
     if (_donations[index].status != DonationStatus.listed) {
-      _errorMessage = 'Cannot withdraw donation after it has been claimed by a shelter.';
+      _errorMessage =
+          'Cannot withdraw donation after it has been claimed by a shelter.';
       notifyListeners();
       return false;
     }
@@ -305,8 +315,7 @@ class DonationProvider extends ChangeNotifier {
         donorName: 'The Green Leaf Bistro',
         donorPhone: '+91 98200 12345',
         title: '50 Veg Biryani Meal Boxes',
-        description:
-            'Freshly cooked vegetable dum biryani packed with raita. Kept under hot-holding warming station. Safe hygienic packaging.',
+        description: 'Freshly cooked vegetable dum biryani packed with raita. Kept under hot-holding warming station. Safe hygienic packaging.',
         quantity: 50,
         unit: 'meals',
         type: DonationType.food,
@@ -329,8 +338,7 @@ class DonationProvider extends ChangeNotifier {
         donorName: 'Symbiosis Campus Cafeteria',
         donorPhone: '+91 98234 56789',
         title: '35 Poha & Upma Breakfast Packets',
-        description:
-            'Breakfast surplus prepared this morning. Packed in food-grade foil containers with disposable wooden spoons.',
+        description: 'Breakfast surplus prepared this morning. Packed in food-grade foil containers with disposable wooden spoons.',
         quantity: 35,
         unit: 'meals',
         type: DonationType.food,
@@ -353,8 +361,7 @@ class DonationProvider extends ChangeNotifier {
         donorName: 'Rahul & Meera Sharma',
         donorPhone: '+91 94220 88776',
         title: '25 Winter Jackets & Woolen Blankets',
-        description:
-            'Cleaned and sanitized winter warm wear for adults and kids. Excellent condition ready for immediate night shelter distribution.',
+        description: 'Cleaned and sanitized winter warm wear for adults and kids. Excellent condition ready for immediate night shelter distribution.',
         quantity: 25,
         unit: 'pieces',
         type: DonationType.clothing,
@@ -375,8 +382,7 @@ class DonationProvider extends ChangeNotifier {
         donorName: 'The Green Leaf Bistro',
         donorPhone: '+91 98200 12345',
         title: '40 Chapati & Paneer Bhurji Combos',
-        description:
-            'Prepared for corporate lunch event surplus. Kept warm in food warmers.',
+        description: 'Prepared for corporate lunch event surplus. Kept warm in food warmers.',
         quantity: 40,
         unit: 'meals',
         type: DonationType.food,
@@ -400,8 +406,7 @@ class DonationProvider extends ChangeNotifier {
         donorName: 'Grand Hyatt Convention',
         donorPhone: '+91 98811 00223',
         title: '60 Assorted Fruit & Snack Hampers',
-        description:
-            'Fresh apples, bananas, biscuits and juice cartons from evening seminar.',
+        description: 'Fresh apples, bananas, biscuits and juice cartons from evening seminar.',
         quantity: 60,
         unit: 'boxes',
         type: DonationType.food,
@@ -429,8 +434,7 @@ class DonationProvider extends ChangeNotifier {
         donorName: 'Rotary Club Pune Central',
         donorPhone: '+91 99221 44332',
         title: '50 School Uniforms & Shoes (Ages 6-12)',
-        description:
-            'Brand new navy blue uniforms and black school shoes donated during annual drive.',
+        description: 'Brand new navy blue uniforms and black school shoes donated during annual drive.',
         quantity: 50,
         unit: 'sets',
         type: DonationType.clothing,
