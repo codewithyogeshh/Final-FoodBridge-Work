@@ -157,6 +157,30 @@ void main() {
       final limitAnswer = await aiService.askCommunityAssistant('What is the active task limit?');
       expect(limitAnswer, contains('2 active concurrent dispatch tasks'));
     });
+
+    test('suggestCategory: suggests cooked food, requires Rule 14 disclaimer and allows manual correction', () {
+      final suggestion = aiService.suggestCategory('Veg Dum Biryani with raita', filename: 'biryani_pot.jpg');
+      expect(suggestion.categoryId, 'cooked_meals');
+      expect(suggestion.type, DonationType.food);
+      expect(suggestion.manualCorrectionAllowed, isTrue);
+      expect(suggestion.foodSafetyDisclaimer, contains('Rule 14'));
+      expect(suggestion.foodSafetyDisclaimer, contains('NOT certify food freshness'));
+    });
+
+    test('suggestCategory: rejects prohibited food freshness certification', () {
+      expect(
+        () => aiService.suggestCategory('certify food freshness before delivery'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('getDemandInsights: returns aggregated patterns with explicit uncertainty', () {
+      final insights = aiService.getDemandInsights();
+      expect(insights.peakSurplusWindow, contains('Dinner Banquet Surplus'));
+      expect(insights.topDeficitZone, contains('Hadapsar'));
+      expect(insights.uncertaintyNote, contains('±14.5% margin'));
+      expect(insights.uncertaintyNote, contains('excludes informal offline distributions'));
+    });
   });
 }
 

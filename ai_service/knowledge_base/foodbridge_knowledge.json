@@ -1,0 +1,90 @@
+[
+  {
+    "id": "kb-reg-001",
+    "topic": "registration",
+    "title": "How to Register on FoodBridge",
+    "keywords": ["register", "sign up", "create account", "join", "new user", "onboarding"],
+    "summary": "FoodBridge supports 3 public self-registration roles: Donor, NGO, and Volunteer. (Admin accounts must be provisioned securely and cannot be registered publicly).",
+    "details": "To register:\n1. Open the FoodBridge app and tap 'Get Started'.\n2. Select your role (Donor, NGO, or Volunteer).\n3. Complete the role-specific details:\n   - Donors provide name, email, phone, category (Individual/Restaurant/Caterer), and service area.\n   - NGOs provide organization name, registration number, Darpan ID, 12A/80G documents, and contact person.\n   - Volunteers provide service area, vehicle mode (Bike/Car/Van/Foot), and availability schedule.\n4. Set a strong password (minimum 8 characters).",
+    "source_doc": "docs/functional_requirements.md",
+    "section": "FR-AUTH-01 / Role-Based Registration",
+    "suggested_followups": ["What documents do NGOs need?", "How are volunteers verified?"]
+  },
+  {
+    "id": "kb-ngo-002",
+    "topic": "ngo_verification",
+    "title": "NGO Verification & Trust Requirements",
+    "keywords": ["ngo", "verification", "darpan", "80g", "12a", "trust deed", "pending", "unverified"],
+    "summary": "To prevent fraud and maintain safety, NGOs must be verified by platform administrators before they can claim food donations.",
+    "details": "NGO verification requires:\n1. Organization Registration Number.\n2. NGO Darpan ID (NITI Aayog registered).\n3. Upload of valid 12A / 80G tax exemption certificate or Trust Deed.\nUpon registration, the account remains in 'Pending' status. Platform administrators review documentation in the Admin Console before granting claim privileges.",
+    "source_doc": "docs/decisions.md",
+    "section": "ADR-002 / Mandatory NGO Verification",
+    "suggested_followups": ["How long does NGO approval take?", "Can an unverified NGO browse listings?"]
+  },
+  {
+    "id": "kb-don-003",
+    "topic": "donation_creation",
+    "title": "How to Create a Food or Clothing Donation",
+    "keywords": ["create donation", "donate food", "donate clothes", "new listing", "publish donation", "fssai"],
+    "summary": "Donors can publish surplus cooked meals, fresh produce, dry groceries, or wearable clothing.",
+    "details": "For Food Donations:\n- Enter food title, category (cooked, raw, packaged, bakery), and quantity with units.\n- Specify veg/non-veg flag and storage requirement (ambient, chilled, hot).\n- Disclose preparation time and allergens.\n- Set pickup time window and collection deadline.\n- Agree to the FoodBridge FSSAI Hygiene Charter.\n\nFor Clothing Donations:\n- Select category (kids, adult, winter wear, blankets), size, and condition grade (brand new, like new, good).\n- Confirm the cleanliness and hygiene declaration.\n\nTap 'Preview Donation' and then 'Publish Listing'.",
+    "source_doc": "docs/screen_specifications.md",
+    "section": "Screen D2 / D3: Donate Food & Clothes",
+    "suggested_followups": ["What are the food safety guidelines?", "Can I edit a donation after publishing?"]
+  },
+  {
+    "id": "kb-req-004",
+    "topic": "ngo_requests",
+    "title": "How NGOs Discover and Request Donations",
+    "keywords": ["claim", "request", "allocate", "partial claim", "concurrency", "available feed"],
+    "summary": "Verified NGOs can discover available surplus listings and request full or partial quantities.",
+    "details": "To request a donation:\n1. Open the NGO Dashboard and browse the 'Available Donations' feed.\n2. Filter by category, dietary preferences (Pure Veg), or neighborhood.\n3. Open the donation details.\n4. Enter requested quantity (partial claims are supported to prevent waste).\n5. The system performs an atomic database lock to prevent over-allocation or duplicate claims.\n6. Once confirmed, you can arrange self-pickup or request volunteer dispatch.",
+    "source_doc": "docs/system_architecture.md",
+    "section": "Section 3.2 / Atomic Concurrency Claims",
+    "suggested_followups": ["What is partial allocation?", "Can two NGOs claim the same listing?"]
+  },
+  {
+    "id": "kb-vol-005",
+    "topic": "volunteer_tasks",
+    "title": "Volunteer Dispatch & Safe Delivery Operations",
+    "keywords": ["volunteer", "accept task", "rider", "dispatch", "otp", "pickup code", "delivery code", "two task limit"],
+    "summary": "Volunteers connect donors and NGOs through secure, GPS-guided physical delivery with dual-OTP custody verification.",
+    "details": "Volunteer Mission Steps:\n1. Open the Volunteer Dashboard to see nearby available rescue tasks.\n2. Review pickup area, drop-off shelter, quantity, and handling advisory.\n3. Accept the task (volunteers are limited to 2 active concurrent tasks for safety).\n4. Follow turn-by-turn route navigation to the pickup location.\n5. Confirm Pickup with the donor's 4-digit Pickup OTP.\n6. In transit: adhere to food temperature guidelines (hot thermal bag or ice cooler).\n7. Handover at shelter: Confirm delivery with the NGO manager's 4-digit Receipt OTP.\n\nIn case of bike breakdown or emergency, use the Emergency Release button to return the task to the dispatch pool.",
+    "source_doc": "docs/decisions.md",
+    "section": "ADR-003 / Task Claiming & Custody Handover",
+    "suggested_followups": ["What if my vehicle breaks down?", "What is the 2-task limit?"]
+  },
+  {
+    "id": "kb-nav-006",
+    "topic": "navigation",
+    "title": "Navigating the FoodBridge App & Profile Switching",
+    "keywords": ["navigation", "screens", "switch role", "tabs", "settings", "profile", "notifications"],
+    "summary": "FoodBridge uses a role-based bottom navigation bar with easy access to listings, missions, notifications, and profile settings.",
+    "details": "Key Navigation Landmarks:\n- Bottom Bar: Dashboard / Feed, Active Tasks / Listings, Notifications, Profile.\n- Profile Screen: View account credentials, verification status, and app settings.\n- Role Switcher (Demo / Testing): Use the quick role toggle in the profile screen to switch between Donor, NGO, Volunteer, and Admin modes.\n- Notifications: View real-time alerts for claims, pickups, and collection deadline warnings.",
+    "source_doc": "docs/design_system.md",
+    "section": "Section 4 / Navigation & App Layout",
+    "suggested_followups": ["How do I change notification preferences?", "Where is the admin dashboard?"]
+  },
+  {
+    "id": "kb-faq-007",
+    "topic": "privacy_safety",
+    "title": "Privacy & Address Protection Policies",
+    "keywords": ["privacy", "address", "phone number", "security", "two-tier", "masked"],
+    "summary": "To protect donor privacy and safety, exact home addresses are never published on open discovery feeds.",
+    "details": "Two-Tier Privacy Protection:\n1. Public / Discovery View: Displays only the general neighborhood (e.g. 'Swargate, Pune') and approximate distance.\n2. Private / Custody View: The exact building, flat number, and donor phone number remain cryptographically locked in the database via Supabase Row Level Security.\nThese details are disclosed exclusively to the verified NGO whose request is accepted and the volunteer assigned to the physical dispatch mission.",
+    "source_doc": "docs/decisions.md",
+    "section": "ADR-001 / Two-Tier Location Privacy",
+    "suggested_followups": ["Who can see my phone number?", "Is my home address safe?"]
+  },
+  {
+    "id": "kb-faq-008",
+    "topic": "food_safety_rule14",
+    "title": "Food Safety Charter & Rule 14 Disclaimer",
+    "keywords": ["food safety", "freshness", "hygiene", "fssai", "rule 14", "ai disclaimer", "safe to eat"],
+    "summary": "AI assists with logistics and smart matching, but NEVER certifies food freshness, bacterial safety, or edibility.",
+    "details": "Mandatory Safety Rules:\n1. Donors must certify that food was prepared under hygienic conditions and packed in food-grade, leak-proof containers.\n2. Receiving NGOs retain the right and duty of physical inspection upon arrival.\n3. Rule 14 / ADR-004: Computer vision and AI cannot determine microbial safety or chemical contamination. AI suggestions are advisory only and never replace human inspection.",
+    "source_doc": "docs/decisions.md",
+    "section": "ADR-004 / Food Safety Non-Certification",
+    "suggested_followups": ["What containers should I use for hot food?", "What is Rule 14?"]
+  }
+]

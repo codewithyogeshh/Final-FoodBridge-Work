@@ -301,6 +301,23 @@ Update the checkboxes as work is completed.
                                       investigation & resolution notes, tamper-evident Audit Logging,
                                       and dynamic database-backed analytics (zero fabricated metrics).
                                       62 tests passing with zero errors and zero warnings.
+
+  2.0                                 Phase 10 AI Integration for FoodBridge finalized.
+                                      Engineered decoupled Python 3.12 / FastAPI AI microservice (ai_service/)
+                                      adhering to ADR-004. Delivered all 4 core AI features:
+                                      1) Feature 1: Intelligent NGO Matching with explainable multi-factor scoring
+                                         (Service Area, Capacity, Cold-chain Storage, Urgency, Type).
+                                      2) Feature 2: Image Category Classification for broad food/clothing
+                                         taxonomies with manual donor override and strict Rule 14 non-freshness guarantee.
+                                      3) Feature 3: Demand Analytics with temporal peaks (Lunch/Dinner), geographic
+                                         surplus vs deficit mapping, seasonal shifts, and explicit uncertainty intervals
+                                         (±14.5% margin) and data limitations.
+                                      4) Feature 4: AI Chatbot Assistant backed by approved markdown documentation
+                                         knowledge base with automatic PII sanitization.
+                                      Security: API key / Bearer authentication, zero API key exposure in Flutter,
+                                      strict ban on automated NGO approvals or beneficiary welfare scoring, and
+                                      offline heuristic fallback ensuring core donation workflows are unaffected.
+                                      18 Python tests + 65 Flutter tests passing with 0 warnings and 0 errors.
   -----------------------------------------------------------------------
 
 **Maintenance rule:** When a decision changes, update the relevant
