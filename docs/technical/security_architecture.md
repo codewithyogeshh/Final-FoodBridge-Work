@@ -52,3 +52,4 @@ flowchart TD
 ## 4. Audit Log Immutability
 - The `audit_logs` table has no `UPDATE` or `DELETE` policies defined for any user or role.
 - All administrative approvals, status transitions, and emergency task cancellations are cryptographically tied to the authenticated user ID and client IP address.
+

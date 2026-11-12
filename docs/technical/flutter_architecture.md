@@ -82,3 +82,4 @@ All application errors inherit from `AppException`:
 - `AuthException`: Invalid credentials, expired session, unauthorized role access.
 - `ValidationException`: Input formatting, FSSAI declaration missing, deadline invalid.
 - `ServerException`: Supabase RPC failures, database lock contention.
+

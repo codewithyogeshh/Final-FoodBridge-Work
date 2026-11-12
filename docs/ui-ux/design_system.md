@@ -81,3 +81,4 @@ FoodBridge utilizes the `Inter` font family for high legibility across all displ
 2. **Tactile Feedback:** Haptic vibration on status transitions (Claim, Pick Up, Deliver).
 3. **No Ambiguity:** Status changes use distinct action verbs ("CONFIRM PHYSICAL PICKUP", "CONFIRM HANDOVER TO NGO") instead of generic "Next" or "OK".
 4. **Color Independence:** All status pills pair bold icons with high-contrast text to prevent color-only reliance.
+

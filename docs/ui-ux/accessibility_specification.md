@@ -48,3 +48,4 @@ FoodBridge is designed to adhere strictly to the **Web Content Accessibility Gui
 - Managed by `LocaleProvider` in `lib/core/localization/locale_provider.dart`.
 - Seamless in-app switching from the Profile Screen without requiring an application restart.
 - Cultural adaptations: Number formatting respects Indian numbering conventions (`1,00,000` format) via `intl` package.
+

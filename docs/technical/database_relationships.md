@@ -52,3 +52,4 @@ erDiagram
 | `donations` | `assignments` | `donation_id` | `CASCADE` | Cancelling donation cleans up active assignment |
 | `profiles` | `assignments` | `volunteer_id` | `SET NULL` | Removing a volunteer unlinks assignment for re-dispatch |
 | `ngos` | `assignments` | `ngo_id` | `CASCADE` | NGO closure handles active incoming orders |
+

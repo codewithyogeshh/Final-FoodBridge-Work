@@ -176,3 +176,4 @@ CREATE INDEX idx_ngos_verification ON ngos(verification_status);
 CREATE INDEX idx_notifications_recipient ON notifications(recipient_user_id, is_read);
 CREATE INDEX idx_audit_created ON audit_logs(created_at DESC);
 ```
+

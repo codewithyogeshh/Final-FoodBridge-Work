@@ -63,3 +63,4 @@ void subscribeToDonationFeed(Function(Donation) onUpdate) {
       .subscribe();
 }
 ```
+

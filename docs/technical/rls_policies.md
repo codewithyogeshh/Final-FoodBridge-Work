@@ -152,3 +152,4 @@ ON audit_logs FOR SELECT
 TO authenticated
 USING (auth.is_admin());
 ```
+

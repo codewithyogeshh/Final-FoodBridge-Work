@@ -82,3 +82,4 @@ This document defines the layout specifications, UI states, validation rules, an
 
 ### 5.1 Admin Console (`/admin`)
 - **Layout:** Key metrics bar (Pending NGOs, Active Listings, Total Rescued Meals, Clothes Distributed), Pending NGO Verification Queue (with PDF certificate preview, Approve and Reject actions), and Real-time System Audit Stream.
+

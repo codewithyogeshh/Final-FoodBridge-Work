@@ -75,3 +75,4 @@ jobs:
       - name: Run Automated Test Suite
         run: flutter test --coverage
 ```
+

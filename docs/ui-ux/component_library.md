@@ -96,3 +96,4 @@ Full-screen error view with retry action button and connection error diagnostics
 ### 4.2 `RiderDispatchCard`
 - High-contrast card with 2px brand border.
 - Features unlocked donor street address, one-touch phone dial action, and the 56dp "Confirm Physical Pickup" / "Confirm Handover" action.
+

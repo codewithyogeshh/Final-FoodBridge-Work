@@ -56,3 +56,4 @@ sequenceDiagram
   1. The first request commits via PostgreSQL row-level lock (`claim_donation_atomic`).
   2. The second request returns a `DonationAlreadyClaimedException`.
   3. The losing client displays a polite toast: *"This surplus was just claimed by another shelter nearby. Refreshing available listings..."* and refreshes the feed.
+

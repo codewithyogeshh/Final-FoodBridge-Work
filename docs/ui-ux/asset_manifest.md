@@ -45,3 +45,4 @@ flutter:
     - assets/illustrations/
 ```
 All assets are versioned in Git alongside application source code to ensure deterministic offline builds.
+

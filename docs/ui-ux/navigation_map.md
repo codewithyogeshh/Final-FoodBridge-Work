@@ -74,3 +74,4 @@ flowchart TD
 1. **Unauthenticated Redirect:** Any request attempting to access `/donor`, `/ngo`, `/volunteer`, or `/admin` without an active session is redirected to `/login`.
 2. **Role Boundaries:** When a user navigates to a role dashboard not matching their profile, `AppRouter` redirects them to their designated home screen or surfaces an authorized switch prompt.
 3. **Demo Fallback:** In prototype mode, the role switcher in `ProfileScreen` allows switching active simulated roles for testing.
+
