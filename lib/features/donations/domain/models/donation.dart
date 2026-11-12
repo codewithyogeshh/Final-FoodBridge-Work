@@ -96,9 +96,11 @@ class Donation {
   // NGO & Volunteer claim tracking
   final String? claimedByNgoId;
   final String? claimedByNgoName;
+  final DateTime? claimedAt;
   final String? assignedVolunteerId;
   final String? assignedVolunteerName;
   final String? assignedVolunteerPhone;
+  final DateTime? assignedAt;
   final DateTime? pickedUpAt;
   final DateTime? deliveredAt;
   final String? imageUrl;
@@ -134,9 +136,11 @@ class Donation {
     required this.pickupDeadline,
     this.claimedByNgoId,
     this.claimedByNgoName,
+    this.claimedAt,
     this.assignedVolunteerId,
     this.assignedVolunteerName,
     this.assignedVolunteerPhone,
+    this.assignedAt,
     this.pickedUpAt,
     this.deliveredAt,
     this.imageUrl,
@@ -181,9 +185,11 @@ class Donation {
     DateTime? pickupDeadline,
     String? claimedByNgoId,
     String? claimedByNgoName,
+    DateTime? claimedAt,
     String? assignedVolunteerId,
     String? assignedVolunteerName,
     String? assignedVolunteerPhone,
+    DateTime? assignedAt,
     DateTime? pickedUpAt,
     DateTime? deliveredAt,
     String? imageUrl,
@@ -215,9 +221,11 @@ class Donation {
       pickupDeadline: pickupDeadline ?? this.pickupDeadline,
       claimedByNgoId: claimedByNgoId ?? this.claimedByNgoId,
       claimedByNgoName: claimedByNgoName ?? this.claimedByNgoName,
+      claimedAt: claimedAt ?? this.claimedAt,
       assignedVolunteerId: assignedVolunteerId ?? this.assignedVolunteerId,
       assignedVolunteerName: assignedVolunteerName ?? this.assignedVolunteerName,
       assignedVolunteerPhone: assignedVolunteerPhone ?? this.assignedVolunteerPhone,
+      assignedAt: assignedAt ?? this.assignedAt,
       pickedUpAt: pickedUpAt ?? this.pickedUpAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       imageUrl: imageUrl ?? this.imageUrl,
@@ -257,9 +265,15 @@ class Donation {
           : DateTime.now().add(const Duration(hours: 4)),
       claimedByNgoId: json['claimed_by_ngo_id'] as String?,
       claimedByNgoName: json['claimed_by_ngo_name'] as String?,
+      claimedAt: json['claimed_at'] != null
+          ? DateTime.tryParse(json['claimed_at'] as String)
+          : null,
       assignedVolunteerId: json['assigned_volunteer_id'] as String?,
       assignedVolunteerName: json['assigned_volunteer_name'] as String?,
       assignedVolunteerPhone: json['assigned_volunteer_phone'] as String?,
+      assignedAt: json['assigned_at'] != null
+          ? DateTime.tryParse(json['assigned_at'] as String)
+          : null,
       pickedUpAt: json['picked_up_at'] != null
           ? DateTime.tryParse(json['picked_up_at'] as String)
           : null,
@@ -300,9 +314,11 @@ class Donation {
       'pickup_deadline': pickupDeadline.toIso8601String(),
       'claimed_by_ngo_id': claimedByNgoId,
       'claimed_by_ngo_name': claimedByNgoName,
+      'claimed_at': claimedAt?.toIso8601String(),
       'assigned_volunteer_id': assignedVolunteerId,
       'assigned_volunteer_name': assignedVolunteerName,
       'assigned_volunteer_phone': assignedVolunteerPhone,
+      'assigned_at': assignedAt?.toIso8601String(),
       'picked_up_at': pickedUpAt?.toIso8601String(),
       'delivered_at': deliveredAt?.toIso8601String(),
       'image_url': imageUrl,
@@ -317,4 +333,3 @@ class Donation {
     };
   }
 }
-

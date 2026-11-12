@@ -100,6 +100,135 @@ void main() {
       expect(provider.totalMealsRescued, greaterThanOrEqualTo(0));
       expect(provider.totalClothingItemsRedistributed, greaterThanOrEqualTo(0));
     });
+
+    test('Partial quantity claim splits surplus correctly', () async {
+      // Create a donation of 50 meals
+      final original = Donation(
+        id: 'dn-partial-test',
+        donorId: 'test-donor-1',
+        donorName: 'Grand Hyatt',
+        title: '50 Buffet Meals',
+        description: 'Dal Makhani and Rice',
+        quantity: 50,
+        unit: 'meals',
+        type: DonationType.food,
+        pickupAddress: 'Viman Nagar, Pune',
+        createdAt: DateTime.now(),
+        pickupDeadline: DateTime.now().add(const Duration(hours: 4)),
+      );
+      await provider.createDonation(original);
+
+      // NGO claims 20 meals out of 50
+      final success = await provider.claimDonation(
+        donationId: 'dn-partial-test',
+        ngoId: 'ngo-shelter-1',
+        ngoName: 'Asha Shelter',
+        requestedQuantity: 20,
+      );
+
+      expect(success, isTrue);
+
+      // Original listing should now have 30 meals remaining and remain listed
+      final updatedOriginal = provider.getDonationById('dn-partial-test')!;
+      expect(updatedOriginal.quantity, 30.0);
+      expect(updatedOriginal.status, DonationStatus.listed);
+
+      // A new claimed slice of 20 meals should exist
+      final claimedSlice = provider.allDonations.firstWhere(
+        (d) => d.claimedByNgoId == 'ngo-shelter-1' && d.quantity == 20.0,
+      );
+      expect(claimedSlice.status, DonationStatus.claimed);
+      expect(claimedSlice.claimedByNgoName, 'Asha Shelter');
+      expect(claimedSlice.claimedAt, isNotNull);
+    });
+
+    test('Over-allocation claim is rejected with error message', () async {
+      final original = Donation(
+        id: 'dn-overalloc-test',
+        donorId: 'test-donor-1',
+        donorName: 'Bistro',
+        title: '15 Sandwiches',
+        description: 'Veg Sandwiches',
+        quantity: 15,
+        unit: 'meals',
+        type: DonationType.food,
+        pickupAddress: 'KP, Pune',
+        createdAt: DateTime.now(),
+        pickupDeadline: DateTime.now().add(const Duration(hours: 2)),
+      );
+      await provider.createDonation(original);
+
+      // NGO attempts to claim 30 when only 15 available
+      final success = await provider.claimDonation(
+        donationId: 'dn-overalloc-test',
+        ngoId: 'ngo-shelter-1',
+        ngoName: 'Asha Shelter',
+        requestedQuantity: 30,
+      );
+
+      expect(success, isFalse);
+      expect(provider.errorMessage, contains('exceeds available'));
+      // Quantity should be untouched
+      expect(provider.getDonationById('dn-overalloc-test')!.quantity, 15.0);
+    });
+
+    test('Donor can edit listed donation details', () async {
+      final item = provider.availableDonations.first;
+      final updated = item.copyWith(
+        title: 'Updated Gourmet Biryani Boxes',
+        quantity: 45,
+        storageCondition: 'hot',
+      );
+
+      final success = await provider.updateDonation(updated);
+      expect(success, isTrue);
+
+      final retrieved = provider.getDonationById(item.id)!;
+      expect(retrieved.title, 'Updated Gourmet Biryani Boxes');
+      expect(retrieved.quantity, 45.0);
+      expect(retrieved.storageCondition, 'hot');
+    });
+
+    test('Editing already claimed donation is prohibited', () async {
+      // Find or claim a donation
+      final item = provider.availableDonations.first;
+      await provider.claimDonation(
+        donationId: item.id,
+        ngoId: 'ngo-1',
+        ngoName: 'Shelter',
+      );
+
+      final claimedItem = provider.getDonationById(item.id)!;
+      final attemptUpdate = claimedItem.copyWith(title: 'Hacked Title');
+
+      final success = await provider.updateDonation(attemptUpdate);
+      expect(success, isFalse);
+      expect(provider.errorMessage, contains('Cannot edit donation after it has been claimed'));
+    });
+
+    test('Donor can withdraw an active listing', () async {
+      final item = provider.availableDonations.first;
+      final success = await provider.withdrawDonation(item.id);
+
+      expect(success, isTrue);
+      final withdrawn = provider.getDonationById(item.id)!;
+      expect(withdrawn.status, DonationStatus.cancelled);
+      expect(provider.availableDonations.any((d) => d.id == item.id), isFalse);
+    });
+
+    test('Veg and non-veg filtering works properly', () {
+      provider.setVegFilter(true);
+      for (final d in provider.filteredDonations.where((d) => d.isFood)) {
+        expect(d.isVeg, isTrue);
+      }
+
+      provider.setVegFilter(false);
+      for (final d in provider.filteredDonations.where((d) => d.isFood)) {
+        expect(d.isVeg, isFalse);
+      }
+
+      provider.setVegFilter(null);
+    });
   });
 }
 

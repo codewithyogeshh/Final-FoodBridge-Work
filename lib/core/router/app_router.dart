@@ -8,6 +8,7 @@ import '../../features/authentication/presentation/forgot_password_screen.dart';
 import '../../features/authentication/presentation/auth_provider.dart';
 import '../../features/donor/presentation/donor_dashboard_screen.dart';
 import '../../features/donor/presentation/create_donation_screen.dart';
+import '../../features/donor/presentation/edit_donation_screen.dart';
 import '../../features/donor/presentation/my_donations_screen.dart';
 import '../../features/donations/presentation/donation_detail_screen.dart';
 import '../../features/ngo/presentation/ngo_dashboard_screen.dart';
@@ -68,6 +69,13 @@ class AppRouter {
         GoRoute(
           path: '/create-donation',
           builder: (context, state) => const CreateDonationScreen(),
+        ),
+        GoRoute(
+          path: '/edit-donation/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id'] ?? '';
+            return EditDonationScreen(donationId: id);
+          },
         ),
         GoRoute(
           path: '/donation-detail/:id',

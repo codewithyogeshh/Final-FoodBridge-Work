@@ -200,14 +200,13 @@ Update the checkboxes as work is completed.
 -   [x] Requirements approved (Phase 1 completed: requirement_analysis, functional_requirements, non_functional_requirements, user_roles, user_stories, acceptance_criteria, risk_register)
 -   [x] User journeys and wireframes approved (Phase 2 completed: empathy_maps, user_personas, user_journeys, problem_statements_hmw, feature_ideation, wireframes, usability_testing_scenarios)
 -   [x] Architecture approved (Phase 4 completed: system_architecture, database_schema, database_security_rls, erd_diagram, ADR-006)
--   [ ] GitHub repository and team workflow established
--   [ ] Supabase project configured
--   [ ] Database schema and migrations created
--   [ ] Authentication and role permissions completed
--   [ ] Donor workflows completed
--   [ ] NGO workflows completed
--   [ ] Volunteer workflows completed
--   [ ] Admin workflows completed
+-   [x] Flutter Foundation & Design System implemented (Phase 5 completed: theme, components, responsive/a11y helpers, assets)
+-   [x] Supabase schema and migrations created (`20261112000000_create_foodbridge_schema.sql`)
+-   [x] Authentication and role permissions completed (Phase 6 completed: AuthProvider, RouteGuard, SessionStorageService, Login/Register/Forgot)
+-   [x] Donor workflows completed (Phase 7: create donation, edit/withdraw listing, dietary filters, my listings)
+-   [x] NGO workflows completed (Phase 7: claims manager, partial & full quantity claim allocation, verification screen)
+-   [ ] Volunteer workflows completed (Phase 8: rider GPS map navigation, active task dispatch, OTP pickup confirmation)
+-   [ ] Admin workflows completed (Phase 9: moderation, verification approvals, platform analytics)
 -   [ ] Realtime updates and notifications completed
 -   [ ] AI features evaluated and integrated where useful
 -   [ ] Security and accessibility tests completed
@@ -251,6 +250,22 @@ Update the checkboxes as work is completed.
                                       database_security_rls.md (RLS & atomic functions),
                                       erd_diagram.md (Mermaid ERD),
                                       and recorded ADR-006.
+
+  1.5                                 Phase 5 Flutter Foundation & Theme completed.
+                                      Configured pubspec.yaml, analysis_options.yaml,
+                                      AppTheme, AppColors, FBButton, FBTextField, FBCard,
+                                      ResponsiveHelper, AccessibilityHelper.
+
+  1.6                                 Phase 6 Authentication & Role Management completed.
+                                      Implemented AuthProvider, AuthService, RouteGuard,
+                                      SessionStorageService, LoginScreen, RegisterScreen,
+                                      ForgotPasswordScreen, role switching.
+
+  1.7                                 Phase 7 Donor & NGO Modules completed.
+                                      Implemented partial quantity allocation, edit/withdraw
+                                      listings (EditDonationScreen), chain-of-custody timeline
+                                      (DonationStatusTimeline), veg/non-veg search filtering,
+                                      and over-allocation prevention with 21 passing tests.
   -----------------------------------------------------------------------
 
 **Maintenance rule:** When a decision changes, update the relevant

@@ -6,6 +6,7 @@ class DonationProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   DonationType? _selectedTypeFilter;
+  bool? _selectedVegFilter;
   String _searchQuery = '';
 
   DonationProvider() {
@@ -16,12 +17,16 @@ class DonationProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   DonationType? get selectedTypeFilter => _selectedTypeFilter;
+  bool? get selectedVegFilter => _selectedVegFilter;
   String get searchQuery => _searchQuery;
 
   // Filtered donations for feeds
   List<Donation> get filteredDonations {
     return _donations.where((d) {
       if (_selectedTypeFilter != null && d.type != _selectedTypeFilter) {
+        return false;
+      }
+      if (_selectedVegFilter != null && d.isFood && d.isVeg != _selectedVegFilter) {
         return false;
       }
       if (_searchQuery.isNotEmpty) {
@@ -88,6 +93,11 @@ class DonationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setVegFilter(bool? isVeg) {
+    _selectedVegFilter = isVeg;
+    notifyListeners();
+  }
+
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
@@ -106,7 +116,7 @@ class DonationProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 400));
       _donations.insert(0, donation);
       _isLoading = false;
       notifyListeners();
@@ -119,25 +129,95 @@ class DonationProvider extends ChangeNotifier {
     }
   }
 
-  /// NGO claims a donation
+  /// Update an existing donation (only allowed if still listed)
+  Future<bool> updateDonation(Donation updated) async {
+    final index = _donations.indexWhere((d) => d.id == updated.id);
+    if (index == -1) return false;
+
+    if (_donations[index].status != DonationStatus.listed) {
+      _errorMessage = 'Cannot edit donation after it has been claimed by a shelter.';
+      notifyListeners();
+      return false;
+    }
+
+    _donations[index] = updated;
+    notifyListeners();
+    return true;
+  }
+
+  /// Withdraw / cancel listing
+  Future<bool> withdrawDonation(String donationId) async {
+    final index = _donations.indexWhere((d) => d.id == donationId);
+    if (index == -1) return false;
+
+    if (_donations[index].status != DonationStatus.listed) {
+      _errorMessage = 'Cannot withdraw donation after it has been claimed by a shelter.';
+      notifyListeners();
+      return false;
+    }
+
+    _donations[index] = _donations[index].copyWith(
+      status: DonationStatus.cancelled,
+    );
+    notifyListeners();
+    return true;
+  }
+
+  /// NGO claims a donation (supports atomic full or partial quantity allocation)
   Future<bool> claimDonation({
     required String donationId,
     required String ngoId,
     required String ngoName,
+    double? requestedQuantity,
   }) async {
     final index = _donations.indexWhere((d) => d.id == donationId);
     if (index == -1) return false;
 
+    final current = _donations[index];
+
+    // Prevent over-allocation
+    if (requestedQuantity != null && requestedQuantity > current.quantity) {
+      _errorMessage = 'Requested quantity exceeds available donation quantity.';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     notifyListeners();
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      final current = _donations[index];
-      _donations[index] = current.copyWith(
-        status: DonationStatus.claimed,
-        claimedByNgoId: ngoId,
-        claimedByNgoName: ngoName,
-      );
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      final now = DateTime.now();
+
+      // Partial claim allocation
+      if (requestedQuantity != null &&
+          requestedQuantity > 0 &&
+          requestedQuantity < current.quantity) {
+        final remainingQuantity = current.quantity - requestedQuantity;
+
+        // 1. Update original listing with reduced quantity
+        _donations[index] = current.copyWith(quantity: remainingQuantity);
+
+        // 2. Create claimed slice for the NGO
+        final claimedSlice = current.copyWith(
+          id: '${current.id}-claim-${now.millisecondsSinceEpoch}',
+          quantity: requestedQuantity,
+          status: DonationStatus.claimed,
+          claimedByNgoId: ngoId,
+          claimedByNgoName: ngoName,
+          claimedAt: now,
+        );
+        _donations.insert(index + 1, claimedSlice);
+      } else {
+        // Full claim
+        _donations[index] = current.copyWith(
+          status: DonationStatus.claimed,
+          claimedByNgoId: ngoId,
+          claimedByNgoName: ngoName,
+          claimedAt: now,
+        );
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -162,13 +242,14 @@ class DonationProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300));
       final current = _donations[index];
       _donations[index] = current.copyWith(
         status: DonationStatus.assigned,
         assignedVolunteerId: volunteerId,
         assignedVolunteerName: volunteerName,
         assignedVolunteerPhone: phone,
+        assignedAt: DateTime.now(),
       );
       _isLoading = false;
       notifyListeners();
@@ -211,14 +292,7 @@ class DonationProvider extends ChangeNotifier {
 
   /// Cancel a donation
   Future<bool> cancelDonation(String donationId) async {
-    final index = _donations.indexWhere((d) => d.id == donationId);
-    if (index == -1) return false;
-
-    _donations[index] = _donations[index].copyWith(
-      status: DonationStatus.cancelled,
-    );
-    notifyListeners();
-    return true;
+    return withdrawDonation(donationId);
   }
 
   void _seedInitialData() {
@@ -315,6 +389,7 @@ class DonationProvider extends ChangeNotifier {
         pickupDeadline: now.add(const Duration(hours: 2, minutes: 30)),
         claimedByNgoId: 'usr-ngo-202',
         claimedByNgoName: 'Asha Children Foundation',
+        claimedAt: now.subtract(const Duration(hours: 1)),
         isVeg: true,
         storageCondition: 'hot',
         safetyCharterAgreed: true,
@@ -339,9 +414,11 @@ class DonationProvider extends ChangeNotifier {
         pickupDeadline: now.add(const Duration(hours: 5)),
         claimedByNgoId: 'usr-ngo-202',
         claimedByNgoName: 'Asha Children Foundation',
+        claimedAt: now.subtract(const Duration(hours: 2)),
         assignedVolunteerId: 'usr-vol-303',
         assignedVolunteerName: 'Rohit Kulkarni',
         assignedVolunteerPhone: '+91 97654 99887',
+        assignedAt: now.subtract(const Duration(hours: 1, minutes: 15)),
         isVeg: true,
         storageCondition: 'ambient',
         safetyCharterAgreed: true,
@@ -366,8 +443,10 @@ class DonationProvider extends ChangeNotifier {
         pickupDeadline: now.subtract(const Duration(days: 1)),
         claimedByNgoId: 'usr-ngo-202',
         claimedByNgoName: 'Asha Children Foundation',
+        claimedAt: now.subtract(const Duration(days: 1, hours: 6)),
         assignedVolunteerId: 'usr-vol-303',
         assignedVolunteerName: 'Rohit Kulkarni',
+        assignedAt: now.subtract(const Duration(days: 1, hours: 5)),
         pickedUpAt: now.subtract(const Duration(days: 1, hours: 4)),
         deliveredAt: now.subtract(const Duration(days: 1, hours: 2)),
         clothingCategory: 'kids',
@@ -377,4 +456,3 @@ class DonationProvider extends ChangeNotifier {
     ]);
   }
 }
-

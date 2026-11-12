@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -8,6 +9,7 @@ import '../../authentication/domain/models/app_user.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../domain/models/donation.dart';
 import '../presentation/donation_provider.dart';
+import 'widgets/donation_status_timeline.dart';
 
 class DonationDetailScreen extends StatelessWidget {
   final String donationId;
@@ -241,6 +243,10 @@ class DonationDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
+              // Chain of Custody Timeline
+              DonationStatusTimeline(donation: donation),
+              const SizedBox(height: 16),
+
               // Participants Card (Donor, NGO, Volunteer)
               Container(
                 padding: const EdgeInsets.all(16),
@@ -307,49 +313,101 @@ class DonationDetailScreen extends StatelessWidget {
     AppUser? currentUser,
     DonationProvider donationProvider,
   ) {
-    // 1. NGO Claiming Flow
+    // 1. NGO Claiming Flow (Supports Full or Partial Allocation)
     if (currentUser?.role == UserRole.ngo && donation.isAvailable) {
       return FBButton(
         label: 'Claim Donation for Shelter',
         icon: Icons.check_circle_outline,
         onPressed: () async {
-          final confirm = await showDialog<bool>(
+          final requestedQty = await showDialog<double>(
             context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Confirm Donation Claim'),
-              content: Text(
-                'Are you sure you want to claim "${donation.title}"? Your shelter commits to picking it up before ${DateFormat('hh:mm a').format(donation.pickupDeadline)}.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Confirm Claim'),
-                ),
-              ],
-            ),
+            builder: (ctx) {
+              final qtyController = TextEditingController(
+                text: donation.quantity.toStringAsFixed(0),
+              );
+              String? errorText;
+
+              return StatefulBuilder(
+                builder: (context, setModalState) {
+                  return AlertDialog(
+                    title: const Text('Claim Donation for Shelter'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your shelter commits to collecting this surplus before ${DateFormat('hh:mm a').format(donation.pickupDeadline)}.',
+                          style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: qtyController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(
+                            labelText: 'Quantity to Claim (${donation.unit})',
+                            errorText: errorText,
+                            helperText: 'Available: ${donation.quantity.toStringAsFixed(0)} ${donation.unit}',
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, null),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          final parsed = double.tryParse(qtyController.text.trim());
+                          if (parsed == null || parsed <= 0) {
+                            setModalState(() => errorText = 'Enter a valid positive number');
+                            return;
+                          }
+                          if (parsed > donation.quantity) {
+                            setModalState(() => errorText = 'Exceeds available amount (${donation.quantity.toStringAsFixed(0)})');
+                            return;
+                          }
+                          Navigator.pop(ctx, parsed);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Confirm Claim'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           );
 
-          if (confirm == true && context.mounted) {
-            await donationProvider.claimDonation(
+          if (requestedQty != null && context.mounted) {
+            final success = await donationProvider.claimDonation(
               donationId: donation.id,
               ngoId: currentUser!.id,
               ngoName: currentUser.organizationName ?? currentUser.fullName,
+              requestedQuantity: requestedQty,
             );
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Donation claimed! Available for volunteer pickup.'),
-                  backgroundColor: AppColors.primaryGreen,
-                ),
-              );
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Successfully claimed ${requestedQty.toStringAsFixed(0)} ${donation.unit}! Ready for volunteer dispatch.',
+                    ),
+                    backgroundColor: AppColors.primaryGreen,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(donationProvider.errorMessage ?? 'Claim failed.'),
+                    backgroundColor: AppColors.errorRed,
+                  ),
+                );
+              }
             }
           }
         },
@@ -418,22 +476,60 @@ class DonationDetailScreen extends StatelessWidget {
       }
     }
 
-    // 4. Donor cancellation
+    // 4. Donor Management (Edit & Withdraw Listing)
     if (currentUser?.role == UserRole.donor &&
         donation.donorId == currentUser?.id &&
         donation.isAvailable) {
-      return FBButton(
-        label: 'Cancel Listing',
-        variant: FBButtonVariant.danger,
-        icon: Icons.close_rounded,
-        onPressed: () async {
-          await donationProvider.cancelDonation(donation.id);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Donation listing cancelled.')),
-            );
-          }
-        },
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FBButton(
+            label: 'Edit Listing Details',
+            variant: FBButtonVariant.secondary,
+            icon: Icons.edit_outlined,
+            onPressed: () => context.push('/edit-donation/${donation.id}'),
+          ),
+          const SizedBox(height: 12),
+          FBButton(
+            label: 'Withdraw Listing',
+            variant: FBButtonVariant.danger,
+            icon: Icons.close_rounded,
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Withdraw Listing?'),
+                  content: const Text(
+                    'Are you sure you want to withdraw this listing from FoodBridge? It will no longer be visible to shelters.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Keep Active'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.errorRed,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Withdraw'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true && context.mounted) {
+                await donationProvider.withdrawDonation(donation.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Donation listing withdrawn.')),
+                  );
+                }
+              }
+            },
+          ),
+        ],
       );
     }
 
