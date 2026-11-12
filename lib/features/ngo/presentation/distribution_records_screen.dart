@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_card.dart';
@@ -15,7 +16,8 @@ class DistributionRecordsScreen extends StatefulWidget {
   const DistributionRecordsScreen({super.key});
 
   @override
-  State<DistributionRecordsScreen> createState() => _DistributionRecordsScreenState();
+  State<DistributionRecordsScreen> createState() =>
+      _DistributionRecordsScreenState();
 }
 
 class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
@@ -28,7 +30,8 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
 
     // Find delivered or completed donations for this NGO
     final eligibleDonations = donationProvider.allDonations.where((d) {
-      return (d.claimedByNgoId == ngoId || d.dropoffAddress.contains(ngoName)) &&
+      return (d.claimedByNgoId == ngoId ||
+              d.dropoffAddress.contains(ngoName)) &&
           (d.status == DonationStatus.delivered ||
               d.status == DonationStatus.deliveredToNgo ||
               d.status == DonationStatus.completed ||
@@ -38,14 +41,22 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
     // Fallback: If no specifically claimed delivered items yet, allow selecting from any delivered donation or recent claim
     final displayDonations = eligibleDonations.isNotEmpty
         ? eligibleDonations
-        : donationProvider.allDonations.where((d) => d.status == DonationStatus.delivered || d.status == DonationStatus.deliveredToNgo).toList();
+        : donationProvider.allDonations
+              .where(
+                (d) =>
+                    d.status == DonationStatus.delivered ||
+                    d.status == DonationStatus.deliveredToNgo,
+              )
+              .toList();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (modalCtx) => _LogDistributionForm(
-        eligibleDonations: displayDonations.isNotEmpty ? displayDonations : donationProvider.allDonations.take(5).toList(),
+        eligibleDonations: displayDonations.isNotEmpty
+            ? displayDonations
+            : donationProvider.allDonations.take(5).toList(),
         ngoId: ngoId,
         ngoName: ngoName,
       ),
@@ -60,10 +71,18 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
     final ngoId = user?.id ?? 'usr-ngo-201';
 
     final records = donationProvider.getNgoDistributionRecords(ngoId);
-    final allRecords = records.isNotEmpty ? records : donationProvider.distributionRecords;
+    final allRecords = records.isNotEmpty
+        ? records
+        : donationProvider.distributionRecords;
 
-    final totalServed = allRecords.fold<int>(0, (sum, r) => sum + r.headcountServed);
-    final totalQty = allRecords.fold<double>(0.0, (sum, r) => sum + r.quantityDistributed);
+    final totalServed = allRecords.fold<int>(
+      0,
+      (sum, r) => sum + r.headcountServed,
+    );
+    final totalQty = allRecords.fold<double>(
+      0.0,
+      (sum, r) => sum + r.quantityDistributed,
+    );
 
     final dateFormat = DateFormat('EEE, d MMM yyyy - hh:mm a');
 
@@ -95,11 +114,17 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
               decoration: BoxDecoration(
                 color: AppColors.primaryGreen.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppColors.primaryGreen.withOpacity(0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.privacy_tip_outlined, color: AppColors.primaryGreen, size: 24),
+                  const Icon(
+                    Icons.privacy_tip_outlined,
+                    color: AppColors.primaryGreen,
+                    size: 24,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -107,7 +132,8 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
                       children: [
                         Text(
                           'Beneficiary Privacy Guard',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.deepGreen,
                               ),
@@ -115,7 +141,8 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
                         const SizedBox(height: 2),
                         Text(
                           'Aggregate metrics and community names only. No individual recipient personal information or identity documents are recorded.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: AppColors.charcoal.withOpacity(0.85),
                               ),
                         ),
@@ -138,25 +165,32 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.people_alt, color: AppColors.primaryGreen, size: 20),
+                            const Icon(
+                              Icons.people_alt,
+                              color: AppColors.primaryGreen,
+                              size: 20,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'People Reached',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.mutedGrey),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: AppColors.mutedGrey),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '$totalServed',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryGreen,
                               ),
                         ),
                         Text(
                           'Total Headcount Served',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontSize: 11),
                         ),
                       ],
                     ),
@@ -171,25 +205,32 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.volunteer_activism, color: AppColors.orange, size: 20),
+                            const Icon(
+                              Icons.volunteer_activism,
+                              color: AppColors.orange,
+                              size: 20,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Units Handed Over',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.mutedGrey),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: AppColors.mutedGrey),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '${totalQty.toStringAsFixed(0)}',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.orange,
                               ),
                         ),
                         Text(
                           'Meals & Clothing Items',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontSize: 11),
                         ),
                       ],
                     ),
@@ -205,11 +246,13 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
               children: [
                 Text(
                   'Distribution Log History',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${allRecords.length} records',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.mutedGrey),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: AppColors.mutedGrey),
                 ),
               ],
             ),
@@ -222,114 +265,130 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
                 child: FBEmptyState(
                   icon: Icons.checklist_rtl_rounded,
                   title: 'No Distributions Logged Yet',
-                  description:
-                      'When donations arrive at your shelter or distribution center, tap "Log Distribution" to record headcount and impact metrics.',
+                  description: 'When donations arrive at your shelter or distribution center, tap "Log Distribution" to record headcount and impact metrics.',
                   actionLabel: 'Log First Distribution',
                   onAction: () => _openLogDistributionModal(context),
                 ),
               )
             else
-              ...allRecords.map((r) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: FBCard(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryGreen.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.handshake_outlined, color: AppColors.primaryGreen),
+              ...allRecords.map(
+                (r) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: FBCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      r.beneficiaryGroup,
-                                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.charcoal,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'From: ${r.donationTitle}',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: AppColors.mutedGrey,
-                                          ),
-                                    ),
-                                  ],
-                                ),
+                              child: const Icon(
+                                Icons.handshake_outlined,
+                                color: AppColors.primaryGreen,
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryGreen.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${r.headcountServed} People',
-                                  style: const TextStyle(
-                                    color: AppColors.primaryGreen,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.scale, size: 16, color: AppColors.mutedGrey),
-                                  const SizedBox(width: 4),
                                   Text(
-                                    '${r.quantityDistributed.toStringAsFixed(0)} ${r.unit}',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w600,
+                                    r.beneficiaryGroup,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.charcoal,
                                         ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'From: ${r.donationTitle}',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: AppColors.mutedGrey),
                                   ),
                                 ],
                               ),
-                              Row(
-                                children: [
-                                  const Icon(Icons.access_time, size: 16, color: AppColors.mutedGrey),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    dateFormat.format(r.distributionDate),
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: AppColors.mutedGrey,
-                                        ),
-                                  ),
-                                ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
                               ),
-                            ],
-                          ),
-                          if (r.notes != null && r.notes!.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              r.notes!,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    fontStyle: FontStyle.italic,
-                                    color: AppColors.charcoal.withOpacity(0.8),
-                                  ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGreen.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${r.headcountServed} People',
+                                style: const TextStyle(
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ],
+                        ),
+                        const Divider(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.scale,
+                                  size: 16,
+                                  color: AppColors.mutedGrey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${r.quantityDistributed.toStringAsFixed(0)} ${r.unit}',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.access_time,
+                                  size: 16,
+                                  color: AppColors.mutedGrey,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  dateFormat.format(r.distributionDate),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: AppColors.mutedGrey),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        if (r.notes != null && r.notes!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            r.notes!,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.charcoal.withOpacity(0.8),
+                                ),
+                          ),
                         ],
-                      ),
+                      ],
                     ),
-                  )),
+                  ),
+                ),
+              ),
             const SizedBox(height: 60),
           ],
         ),
@@ -402,10 +461,14 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
       ngoName: widget.ngoName,
       beneficiaryGroup: _beneficiaryController.text.trim(),
       headcountServed: int.tryParse(_headcountController.text.trim()) ?? 1,
-      quantityDistributed: double.tryParse(_quantityController.text.trim()) ?? _selectedDonation!.quantity,
+      quantityDistributed:
+          double.tryParse(_quantityController.text.trim()) ??
+          _selectedDonation!.quantity,
       unit: _selectedDonation!.unit,
       distributionDate: _distributionDate,
-      notes: _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+      notes: _notesController.text.trim().isNotEmpty
+          ? _notesController.text.trim()
+          : null,
       createdAt: DateTime.now(),
     );
 
@@ -424,7 +487,9 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(provider.errorMessage ?? 'Failed to log distribution record.'),
+          content: Text(
+            provider.errorMessage ?? 'Failed to log distribution record.',
+          ),
           backgroundColor: AppColors.errorRed,
         ),
       );
@@ -457,9 +522,9 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                   Text(
                     'Log Beneficiary Distribution',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.charcoal,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.charcoal,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -473,15 +538,21 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
               // Select Delivered Donation
               Text(
                 'Source Donation Received *',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               DropdownButtonFormField<Donation>(
                 value: _selectedDonation,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
                 items: widget.eligibleDonations.map((d) {
                   return DropdownMenuItem<Donation>(
@@ -496,7 +567,9 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                   setState(() {
                     _selectedDonation = val;
                     if (val != null) {
-                      _quantityController.text = val.quantity.toStringAsFixed(0);
+                      _quantityController.text = val.quantity.toStringAsFixed(
+                        0,
+                      );
                     }
                   });
                 },
@@ -509,7 +582,9 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                 controller: _beneficiaryController,
                 hint: 'e.g. Swargate Night Shelter Residents',
                 prefixIcon: const Icon(Icons.domain),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Enter beneficiary group name' : null,
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Enter beneficiary group name'
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -525,7 +600,8 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.people),
                       validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Enter headcount';
+                        if (val == null || val.trim().isEmpty)
+                          return 'Enter headcount';
                         final n = int.tryParse(val.trim());
                         if (n == null || n <= 0) return 'Must be > 0';
                         return null;
@@ -541,7 +617,8 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.scale),
                       validator: (val) {
-                        if (val == null || val.trim().isEmpty) return 'Enter quantity';
+                        if (val == null || val.trim().isEmpty)
+                          return 'Enter quantity';
                         final n = double.tryParse(val.trim());
                         if (n == null || n <= 0) return 'Must be > 0';
                         return null;

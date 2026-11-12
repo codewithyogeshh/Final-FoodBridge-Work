@@ -19,3 +19,4 @@ def generate_demand_insights(
     _token: str = Depends(verify_api_key),
 ) -> DemandAnalyticsResponse:
     return DemandAnalyticsService.generate_insights(request)
+

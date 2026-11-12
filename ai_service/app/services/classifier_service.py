@@ -99,3 +99,4 @@ class CategoryClassifierService:
                 "Manual donor hygiene declaration and NGO physical check are mandatory (Rule 14 / ADR-004)."
             ),
         )
+

@@ -76,3 +76,4 @@ def guard_prohibited_ai_actions(intent: str, details: str = "") -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ethical AI Violation: Automated welfare eligibility scoring is barred. Distribution decisions belong strictly to partner NGOs."
         )
+

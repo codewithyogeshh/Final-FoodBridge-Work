@@ -22,3 +22,4 @@ def suggest_category(
     _token: str = Depends(verify_api_key),
 ) -> ImageClassificationResponse:
     return CategoryClassifierService.classify_image(request)
+

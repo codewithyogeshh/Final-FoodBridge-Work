@@ -19,3 +19,4 @@ def query_assistant(
     _token: str = Depends(verify_api_key),
 ) -> ChatbotResponse:
     return FoodBridgeChatbotService.answer_query(request)
+

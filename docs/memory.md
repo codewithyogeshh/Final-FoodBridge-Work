@@ -208,7 +208,7 @@ Update the checkboxes as work is completed.
 -   [x] Volunteer workflows completed (Phase 8: rider GPS map navigation, active task dispatch, OTP pickup & handover confirmation, 2-task limit)
 -   [x] AI features evaluated and integrated where useful (AIService: smart route matching, safe handling advisories with Rule 14 disclaimer, community assistant)
 -   [x] Admin workflows completed (Phase 9: moderation, verification approvals, platform analytics, realtime notification deduplication, audit logs)
--   [ ] Security and accessibility tests completed
+-   [x] Security, accessibility, and QA tests completed (Phase 11: 119 tests passing, 100% pass rate, comprehensive testing reports in docs/testing/)
 -   [ ] Pilot partners confirmed
 -   [ ] Controlled pilot completed
 -   [ ] Deployment and documentation completed
@@ -318,6 +318,19 @@ Update the checkboxes as work is completed.
                                       strict ban on automated NGO approvals or beneficiary welfare scoring, and
                                       offline heuristic fallback ensuring core donation workflows are unaffected.
                                       18 Python tests + 65 Flutter tests passing with 0 warnings and 0 errors.
+
+  2.1                                 Phase 11 Quality Assurance & Testing finalized.
+                                      Conducted comprehensive multi-layer testing across Unit, Integration,
+                                      Security/RBAC, UI, Accessibility (WCAG 2.1 AA/AAA), Network Resilience,
+                                      Business Workflow, and Food Safety Lifecycles.
+                                      Total 119 automated tests executed (101 Flutter + 18 Python) with 100% pass rate.
+                                      Resolved high-priority accessibility defect on LoginScreen (Wrap responsive
+                                      layout under 2.0x font scaling with 0 RenderFlex overflows).
+                                      Verified Two-Tier Location Privacy, Row Level Security, and volunteer 2-task limits.
+                                      Generated complete documentation in docs/testing/ (test_strategy.md,
+                                      test_cases.md, security_test_report.md, accessibility_report.md,
+                                      performance_report.md, bug_report.md, final_qa_report.md).
+                                      Platform formally signed off and approved for controlled pilot.
   -----------------------------------------------------------------------
 
 **Maintenance rule:** When a decision changes, update the relevant

@@ -185,3 +185,4 @@ class DemandAnalyticsService:
                 )
             )
         return sample_records
+

@@ -126,3 +126,4 @@ class FoodBridgeChatbotService:
             suggested_quick_replies=followups,
             support_escalation_available=True,
         )
+

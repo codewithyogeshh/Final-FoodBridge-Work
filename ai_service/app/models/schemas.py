@@ -184,3 +184,4 @@ class ChatbotResponse(BaseModel):
     sources: List[KnowledgeSource]
     suggested_quick_replies: List[str]
     support_escalation_available: bool = True
+

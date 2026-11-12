@@ -24,3 +24,4 @@ def recommend_ngos(
         candidates=payload.candidates,
         min_threshold=min_score,
     )
+

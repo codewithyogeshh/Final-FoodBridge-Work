@@ -123,3 +123,4 @@ Knowledge-backed assistant assisting users across:
 - [x] **No Welfare Scoring:** Barred from scoring or evaluating individual beneficiary welfare eligibility.
 - [x] **PII Sanitization:** Automated masking of contact numbers and emails before semantic processing.
 - [x] **Manual Fallback Guarantees:** Flutter client gracefully defaults to local heuristics if service is offline.
+

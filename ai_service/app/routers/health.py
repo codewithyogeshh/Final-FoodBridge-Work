@@ -21,3 +21,4 @@ def health_check():
             "ai_chatbot": "enabled",
         },
     }
+
