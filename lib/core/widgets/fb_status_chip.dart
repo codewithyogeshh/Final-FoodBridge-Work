@@ -151,3 +151,4 @@ class _StatusConfig {
     required this.icon,
   });
 }
+

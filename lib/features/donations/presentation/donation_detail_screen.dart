@@ -505,3 +505,4 @@ class DonationDetailScreen extends StatelessWidget {
     );
   }
 }
+

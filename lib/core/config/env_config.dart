@@ -22,3 +22,4 @@ class EnvConfig {
   // Environment mode
   static const bool isProduction = bool.fromEnvironment('dart.vm.product');
 }
+

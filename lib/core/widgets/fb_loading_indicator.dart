@@ -57,3 +57,4 @@ class FBSkeletonTile extends StatelessWidget {
     );
   }
 }
+

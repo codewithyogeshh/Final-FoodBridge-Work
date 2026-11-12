@@ -111,7 +111,7 @@ class AuthService {
         );
         final user = response.user;
         if (user == null) {
-          throw const AuthException('Invalid login response from server.');
+          throw AuthException('Invalid login response from server.');
         }
 
         _currentUser = AppUser(
@@ -192,7 +192,7 @@ class AuthService {
 
         final user = response.user;
         if (user == null) {
-          throw const AuthException('Registration failed. Please try again.');
+          throw AuthException('Registration failed. Please try again.');
         }
 
         _currentUser = AppUser(

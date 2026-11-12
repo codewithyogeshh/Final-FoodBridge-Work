@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:foodbridge/main.dart';
 import 'package:foodbridge/core/theme/theme_provider.dart';
 import 'package:foodbridge/core/localization/locale_provider.dart';
-import 'package:foodbridge/features/authentication/presentation/auth_provider.dart';
-import 'package:foodbridge/features/donations/presentation/donation_provider.dart';
 
 void main() {
   testWidgets('FoodBridgeApp smoke test - splash screen and onboarding load', (WidgetTester tester) async {
@@ -13,8 +11,6 @@ void main() {
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
           ChangeNotifierProvider(create: (_) => LocaleProvider()),
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
-          ChangeNotifierProvider(create: (_) => DonationProvider()),
         ],
         child: const FoodBridgeApp(),
       ),

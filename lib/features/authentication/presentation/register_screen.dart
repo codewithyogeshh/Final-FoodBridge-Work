@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
-import '../domain/models/app_user.dart';
-import 'auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String? initialRole;
@@ -21,16 +18,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _orgController = TextEditingController();
-  final _darpanController = TextEditingController();
-
-  late UserRole _selectedRole;
+  late String _selectedRole;
   bool _agreedToTerms = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedRole = UserRole.fromString(widget.initialRole);
+    _selectedRole = widget.initialRole ?? 'donor';
   }
 
   @override
@@ -39,12 +34,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
-    _orgController.dispose();
-    _darpanController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleRegister() async {
+  void _handleRegister() {
     if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -55,69 +48,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill all required fields.'),
-          backgroundColor: AppColors.errorRed,
-        ),
-      );
-      return;
-    }
-
-    final auth = context.read<AuthProvider>();
-    final success = await auth.register(
-      email: email,
-      password: password,
-      fullName: name,
-      role: _selectedRole,
-      phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-      organizationName: _orgController.text.trim().isNotEmpty ? _orgController.text.trim() : null,
-      darpanId: _darpanController.text.trim().isNotEmpty ? _darpanController.text.trim() : null,
-    );
-
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome to FoodBridge, ${auth.user?.fullName}!'),
-            backgroundColor: AppColors.primaryGreen,
-          ),
-        );
-
+    setState(() => _isLoading = true);
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if (mounted) {
+        setState(() => _isLoading = false);
         switch (_selectedRole) {
-          case UserRole.ngo:
+          case 'ngo':
             context.go('/ngo');
             break;
-          case UserRole.volunteer:
+          case 'volunteer':
             context.go('/volunteer');
             break;
-          case UserRole.admin:
-            context.go('/admin');
-            break;
-          case UserRole.donor:
+          case 'donor':
+          default:
             context.go('/donor');
             break;
         }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(auth.errorMessage ?? 'Registration failed.'),
-            backgroundColor: AppColors.errorRed,
-          ),
-        );
       }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Account'),
@@ -148,17 +100,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: _roleOption(UserRole.donor, 'Donor', Icons.restaurant)),
+                  Expanded(child: _roleOption('donor', 'Donor', Icons.restaurant)),
                   const SizedBox(width: 8),
-                  Expanded(child: _roleOption(UserRole.ngo, 'NGO Shelter', Icons.volunteer_activism)),
+                  Expanded(child: _roleOption('ngo', 'NGO Shelter', Icons.volunteer_activism)),
                   const SizedBox(width: 8),
-                  Expanded(child: _roleOption(UserRole.volunteer, 'Volunteer', Icons.two_wheeler)),
+                  Expanded(child: _roleOption('volunteer', 'Volunteer', Icons.two_wheeler)),
                 ],
               ),
               const SizedBox(height: 20),
               FBTextField(
-                label: _selectedRole == UserRole.ngo ? 'Trust / Shelter Legal Name' : 'Full Name / Entity Name',
-                hint: _selectedRole == UserRole.ngo ? 'Asha Welfare Foundation' : 'Ramesh Sharma',
+                label: _selectedRole == 'ngo' ? 'Organization Legal Name' : 'Full Name / Entity Name',
+                hint: _selectedRole == 'ngo' ? 'Annapoorna Welfare Trust' : 'Ramesh Sharma',
                 controller: _nameController,
                 prefixIcon: const Icon(Icons.person_outline, color: AppColors.mutedGrey),
               ),
@@ -172,22 +124,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 16),
               FBTextField(
-                label: 'Mobile Number (For dispatch alerts)',
+                label: 'Mobile Number (For pickup coordination)',
                 hint: '+91 98765 43210',
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.mutedGrey),
               ),
               const SizedBox(height: 16),
-              if (_selectedRole == UserRole.ngo) ...[
-                FBTextField(
-                  label: 'NGO Darpan ID (NITI Aayog)',
-                  hint: 'MH/2023/0192842',
-                  controller: _darpanController,
-                  prefixIcon: const Icon(Icons.verified_user_outlined, color: AppColors.mutedGrey),
-                ),
-                const SizedBox(height: 16),
-              ],
               FBTextField(
                 label: 'Password (min 8 characters)',
                 hint: '••••••••••••',
@@ -218,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 24),
               FBButton(
                 label: 'Create Account',
-                isLoading: auth.isLoading,
+                isLoading: _isLoading,
                 onPressed: _handleRegister,
               ),
               const SizedBox(height: 24),
@@ -249,10 +192,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _roleOption(UserRole role, String label, IconData icon) {
-    final isSelected = _selectedRole == role;
+  Widget _roleOption(String roleKey, String label, IconData icon) {
+    final isSelected = _selectedRole == roleKey;
     return InkWell(
-      onTap: () => setState(() => _selectedRole = role),
+      onTap: () => setState(() => _selectedRole = roleKey),
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -283,3 +226,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+
