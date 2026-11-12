@@ -11,6 +11,83 @@ import '../../donations/presentation/donation_provider.dart';
 class DonorDashboardScreen extends StatelessWidget {
   const DonorDashboardScreen({super.key});
 
+  void _showDonationTypeSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'What would you like to donate?',
+                style: Theme.of(sheetCtx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Choose category to proceed with specific safety and handling guidelines.',
+                style: Theme.of(sheetCtx).textTheme.bodySmall?.copyWith(color: AppColors.mutedGrey),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: AppColors.primaryGreen.withOpacity(0.4)),
+                ),
+                tileColor: AppColors.primaryGreen.withOpacity(0.06),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.soup_kitchen, color: Colors.white),
+                ),
+                title: const Text('Donate Surplus Food', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Cooked meals, bakery, dairy, groceries (FSSAI safety pledge)'),
+                trailing: const Icon(Icons.chevron_right, color: AppColors.primaryGreen),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  context.push('/donate-food');
+                },
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: AppColors.orange.withOpacity(0.4)),
+                ),
+                tileColor: AppColors.orange.withOpacity(0.06),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.checkroom, color: Colors.white),
+                ),
+                title: const Text('Donate Clean Clothing', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Winter wear, blankets, children & adult garments'),
+                trailing: const Icon(Icons.chevron_right, color: AppColors.orange),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  context.push('/donate-clothes');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -41,7 +118,7 @@ class DonorDashboardScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('New Donation'),
-        onPressed: () => context.push('/create-donation'),
+        onPressed: () => _showDonationTypeSheet(context),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -104,7 +181,7 @@ class DonorDashboardScreen extends StatelessWidget {
                     subtitle: 'Cooked, groceries, bakery',
                     icon: Icons.soup_kitchen_outlined,
                     color: AppColors.primaryGreen,
-                    onTap: () => context.push('/create-donation'),
+                    onTap: () => context.push('/donate-food'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -114,7 +191,7 @@ class DonorDashboardScreen extends StatelessWidget {
                     subtitle: 'Wearable, clean garments',
                     icon: Icons.checkroom_outlined,
                     color: AppColors.orange,
-                    onTap: () => context.push('/create-donation'),
+                    onTap: () => context.push('/donate-clothes'),
                   ),
                 ),
               ],

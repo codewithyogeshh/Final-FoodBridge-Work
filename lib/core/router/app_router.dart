@@ -9,12 +9,17 @@ import '../../features/authentication/presentation/reset_password_screen.dart';
 import '../../features/authentication/presentation/auth_provider.dart';
 import '../../features/donor/presentation/donor_dashboard_screen.dart';
 import '../../features/donor/presentation/create_donation_screen.dart';
+import '../../features/donor/presentation/donate_food_screen.dart';
+import '../../features/donor/presentation/donate_clothes_screen.dart';
+import '../../features/donor/presentation/donation_preview_screen.dart';
 import '../../features/donor/presentation/edit_donation_screen.dart';
 import '../../features/donor/presentation/my_donations_screen.dart';
+import '../../features/donations/domain/models/donation.dart';
 import '../../features/donations/presentation/donation_detail_screen.dart';
 import '../../features/ngo/presentation/ngo_dashboard_screen.dart';
 import '../../features/ngo/presentation/ngo_claims_screen.dart';
 import '../../features/ngo/presentation/ngo_verification_screen.dart';
+import '../../features/ngo/presentation/distribution_records_screen.dart';
 import '../../features/volunteer/presentation/volunteer_dashboard_screen.dart';
 import '../../features/volunteer/presentation/volunteer_history_screen.dart';
 import '../../features/volunteer/presentation/volunteer_mission_screen.dart';
@@ -72,12 +77,31 @@ class AppRouter {
           builder: (context, state) => const DonorDashboardScreen(),
         ),
         GoRoute(
+          path: '/donor/dashboard',
+          builder: (context, state) => const DonorDashboardScreen(),
+        ),
+        GoRoute(
           path: '/donor/my-donations',
           builder: (context, state) => const MyDonationsScreen(),
         ),
         GoRoute(
           path: '/create-donation',
           builder: (context, state) => const CreateDonationScreen(),
+        ),
+        GoRoute(
+          path: '/donate-food',
+          builder: (context, state) => const DonateFoodScreen(),
+        ),
+        GoRoute(
+          path: '/donate-clothes',
+          builder: (context, state) => const DonateClothesScreen(),
+        ),
+        GoRoute(
+          path: '/donation-preview',
+          builder: (context, state) {
+            final donation = state.extra as Donation;
+            return DonationPreviewScreen(donation: donation);
+          },
         ),
         GoRoute(
           path: '/edit-donation/:id',
@@ -98,8 +122,16 @@ class AppRouter {
           builder: (context, state) => const NgoDashboardScreen(),
         ),
         GoRoute(
+          path: '/ngo/dashboard',
+          builder: (context, state) => const NgoDashboardScreen(),
+        ),
+        GoRoute(
           path: '/ngo/my-claims',
           builder: (context, state) => const NgoClaimsScreen(),
+        ),
+        GoRoute(
+          path: '/ngo/distribution-records',
+          builder: (context, state) => const DistributionRecordsScreen(),
         ),
         GoRoute(
           path: '/ngo/verification',

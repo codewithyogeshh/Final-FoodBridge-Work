@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_empty_state.dart';
+import '../../../core/widgets/fb_text_field.dart';
+import '../../authentication/domain/models/app_user.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../donations/domain/models/donation.dart';
 import '../../donations/presentation/donation_provider.dart';
@@ -113,6 +115,42 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Quick Portal Actions
+            Row(
+              children: [
+                Expanded(
+                  child: _PortalQuickCard(
+                    icon: Icons.assignment_outlined,
+                    label: 'Claims',
+                    badge: '${claimedByMe.length}',
+                    color: AppColors.primaryGreen,
+                    onTap: () => context.push('/ngo/my-claims'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _PortalQuickCard(
+                    icon: Icons.handshake_outlined,
+                    label: 'Distributions',
+                    badge: '${donationProvider.getNgoDistributionRecords(currentUser?.id ?? "usr-ngo-202").length}',
+                    color: AppColors.orange,
+                    onTap: () => context.push('/ngo/distribution-records'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _PortalQuickCard(
+                    icon: Icons.verified_user_outlined,
+                    label: 'Verification',
+                    badge: currentUser?.ngoVerificationStatus == NgoVerificationStatus.verified ? 'Active' : 'Pending',
+                    color: AppColors.deepGreen,
+                    onTap: () => context.push('/ngo/verification'),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
 
             // Filter Chips
@@ -166,7 +204,7 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                   title: d.title,
                   category: d.isFood ? 'Cooked Food' : 'Clothing',
                   donor: d.donorName,
-                  location: d.pickupAddress,
+                  location: '${d.city} (Locality masked) • ~${d.estimatedDistanceKm.toStringAsFixed(1)} km',
                   quantityText: '${d.quantity.toStringAsFixed(0)} ${d.unit}',
                   expiryText:
                       'Deadline: ${dateFormat.format(d.pickupDeadline)}',
@@ -177,8 +215,7 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                     context,
                     d,
                     donationProvider,
-                    currentUser?.id ?? 'usr-ngo-202',
-                    currentUser?.organizationName ?? 'Asha Children Foundation',
+                    currentUser,
                   ),
                 );
               }),
@@ -268,17 +305,67 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
     BuildContext context,
     Donation donation,
     DonationProvider donationProvider,
-    String ngoId,
-    String ngoName,
+    AppUser? currentUser,
   ) {
+    final ngoId = currentUser?.id ?? 'usr-ngo-202';
+    final ngoName = currentUser?.organizationName ?? 'Asha Children Foundation';
+    final isVerified = currentUser == null ||
+        currentUser.ngoVerificationStatus == NgoVerificationStatus.verified ||
+        currentUser.role != UserRole.ngo;
+
+    if (!isVerified) {
+      showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.verified_user_outlined, color: AppColors.orange, size: 26),
+              SizedBox(width: 8),
+              Text('Verification Required'),
+            ],
+          ),
+          content: const Text(
+            'Your NGO registration is currently pending administrative verification. Only verified NGOs with active 80G and Darpan credentials can claim donations to ensure food safety and community integrity.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(dialogCtx);
+                context.push('/ngo/verification');
+              },
+              child: const Text('View Verification'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final qtyController = TextEditingController(text: donation.quantity.toStringAsFixed(0));
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (bottomSheetContext) {
         return Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.only(
+            left: 24.0,
+            right: 24.0,
+            top: 24.0,
+            bottom: MediaQuery.of(bottomSheetContext).viewInsets.bottom + 24.0,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -293,31 +380,50 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Quantity: ${donation.quantity.toStringAsFixed(0)} ${donation.unit} • Must collect before ${DateFormat('hh:mm a').format(donation.pickupDeadline)}',
+                'Total Available: ${donation.quantity.toStringAsFixed(0)} ${donation.unit} • Must collect before ${DateFormat('hh:mm a').format(donation.pickupDeadline)}',
                 style: const TextStyle(
                   color: AppColors.mutedGrey,
                   fontSize: 13,
                 ),
               ),
+              const SizedBox(height: 16),
+              FBTextField(
+                label: 'Quantity to Claim (${donation.unit})',
+                controller: qtyController,
+                hint: 'e.g. ${donation.quantity.toStringAsFixed(0)}',
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 20),
               FBButton(
                 label: 'Confirm Claim (Broadcast for Volunteer)',
                 onPressed: () async {
+                  final requestedQty = double.tryParse(qtyController.text.trim()) ?? donation.quantity;
                   Navigator.pop(bottomSheetContext);
-                  await donationProvider.claimDonation(
+                  final success = await donationProvider.claimDonation(
                     donationId: donation.id,
                     ngoId: ngoId,
                     ngoName: ngoName,
+                    requestedQuantity: requestedQty,
+                    isVerifiedNgo: isVerified,
                   );
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Donation claimed! Broadcasted to volunteers for pickup.',
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Donation claimed! Broadcasted to volunteers for pickup.',
+                          ),
+                          backgroundColor: AppColors.primaryGreen,
                         ),
-                        backgroundColor: AppColors.primaryGreen,
-                      ),
-                    );
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(donationProvider.errorMessage ?? 'Claim failed.'),
+                          backgroundColor: AppColors.errorRed,
+                        ),
+                      );
+                    }
                   }
                 },
               ),
@@ -463,6 +569,62 @@ class _DonationFeedCard extends StatelessWidget {
               FBButton(label: 'Claim Donation', height: 44, onPressed: onClaim),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PortalQuickCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String badge;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _PortalQuickCard({
+    required this.icon,
+    required this.label,
+    required this.badge,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.25)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              badge,
+              style: TextStyle(
+                fontSize: 11,
+                color: color.withOpacity(0.85),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

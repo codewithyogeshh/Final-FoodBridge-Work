@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 
 import '../domain/models/donation.dart';
+import '../domain/models/distribution_record.dart';
 
 class DonationProvider extends ChangeNotifier {
   final List<Donation> _donations = [];
+  final List<DistributionRecord> _distributionRecords = [];
   bool _isLoading = false;
   String? _errorMessage;
   DonationType? _selectedTypeFilter;
@@ -15,11 +17,16 @@ class DonationProvider extends ChangeNotifier {
   }
 
   List<Donation> get allDonations => List.unmodifiable(_donations);
+  List<DistributionRecord> get distributionRecords =>
+      List.unmodifiable(_distributionRecords);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   DonationType? get selectedTypeFilter => _selectedTypeFilter;
   bool? get selectedVegFilter => _selectedVegFilter;
   String get searchQuery => _searchQuery;
+
+  List<DistributionRecord> getNgoDistributionRecords(String ngoId) =>
+      _distributionRecords.where((r) => r.ngoId == ngoId).toList();
 
   // Filtered donations for feeds
   List<Donation> get filteredDonations {
@@ -179,15 +186,34 @@ class DonationProvider extends ChangeNotifier {
     required String ngoId,
     required String ngoName,
     double? requestedQuantity,
+    bool isVerifiedNgo = true,
   }) async {
     final index = _donations.indexWhere((d) => d.id == donationId);
     if (index == -1) return false;
 
+    // 1. Only verified NGOs can claim donations
+    if (!isVerifiedNgo) {
+      _errorMessage =
+          'Verification Required: Only verified NGOs with active 80G/Darpan approval can claim donations.';
+      notifyListeners();
+      return false;
+    }
+
     final current = _donations[index];
 
-    // Prevent over-allocation
-    if (requestedQuantity != null && requestedQuantity > current.quantity) {
-      _errorMessage = 'Requested quantity exceeds available donation quantity.';
+    // 2. Lifecycle state transition validation
+    if (!current.status.canTransitionTo(DonationStatus.accepted)) {
+      _errorMessage =
+          'Cannot claim this donation. Current status is ${current.status.displayName}.';
+      notifyListeners();
+      return false;
+    }
+
+    // 3. Prevent over-allocation and negative requests
+    if (requestedQuantity != null &&
+        (requestedQuantity <= 0 || requestedQuantity > current.quantity)) {
+      _errorMessage =
+          'Requested quantity must be positive and cannot exceed available amount (${current.quantity.toStringAsFixed(0)}). Requested quantity exceeds available stock.';
       notifyListeners();
       return false;
     }
@@ -361,6 +387,35 @@ class DonationProvider extends ChangeNotifier {
   /// Volunteer marks task as delivered to NGO shelter (legacy or direct)
   Future<bool> markDelivered(String donationId) async {
     return confirmDeliveryWithOtp(donationId: donationId, enteredOtp: '0000');
+  }
+
+  /// Record physical food/clothing distribution to community beneficiaries
+  Future<bool> recordDistribution(DistributionRecord record) async {
+    final index = _donations.indexWhere((d) => d.id == record.donationId);
+    if (index == -1) return false;
+
+    final current = _donations[index];
+
+    // Status transition: delivered -> distributed -> completed
+    _donations[index] = current.copyWith(
+      status: DonationStatus.completed,
+    );
+
+    _distributionRecords.insert(0, record);
+    notifyListeners();
+    return true;
+  }
+
+  /// Publish a draft donation to the community
+  Future<bool> publishDraft(String donationId) async {
+    final index = _donations.indexWhere((d) => d.id == donationId);
+    if (index == -1) return false;
+
+    _donations[index] = _donations[index].copyWith(
+      status: DonationStatus.available,
+    );
+    notifyListeners();
+    return true;
   }
 
   /// Cancel a donation

@@ -266,11 +266,16 @@ Update the checkboxes as work is completed.
                                       and complete password reset flow (ForgotPasswordScreen &
                                       ResetPasswordScreen) with 31 passing tests.
 
-  1.7                                 Phase 7 Donor & NGO Modules completed.
-                                      Implemented partial quantity allocation, edit/withdraw
-                                      listings (EditDonationScreen), chain-of-custody timeline
-                                      (DonationStatusTimeline), veg/non-veg search filtering,
-                                      and over-allocation prevention with 21 passing tests.
+  1.7                                 Phase 7 Donor & NGO Modules finalized.
+                                      Implemented dedicated multi-step DonateFoodScreen (FSSAI
+                                      pledge, temperature storage, allergens) and DonateClothesScreen
+                                      (condition grade, size group, cleanliness declaration).
+                                      Created DonationPreviewScreen with publish/draft actions.
+                                      Built DistributionRecordsScreen for privacy-preserving
+                                      aggregate beneficiary logging (headcount & community, zero PII).
+                                      Enforced mandatory 80G/Darpan verification check on NGO claims,
+                                      privacy-masked approximate location on discovery feeds,
+                                      full 12-state lifecycle transitions, and 39 passing tests.
 
   1.8                                 Phase 8 Volunteer Rider Module completed.
                                       Implemented VolunteerMissionScreen with live GPS route

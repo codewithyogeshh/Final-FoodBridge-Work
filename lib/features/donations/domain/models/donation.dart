@@ -24,53 +24,125 @@ enum DonationType {
 }
 
 enum DonationStatus {
-  listed,
-  claimed,
-  assigned,
+  draft,
+  available,
+  requested,
+  accepted,
+  assignedForPickup,
   pickedUp,
-  delivered,
+  deliveredToNgo,
+  distributed,
+  completed,
   cancelled,
-  expired;
+  expired,
+  rejected;
+
+  // Backward compatibility getters
+  static DonationStatus get listed => available;
+  static DonationStatus get claimed => accepted;
+  static DonationStatus get assigned => assignedForPickup;
+  static DonationStatus get delivered => deliveredToNgo;
 
   String get displayName {
     switch (this) {
-      case DonationStatus.listed:
+      case DonationStatus.draft:
+        return 'Draft';
+      case DonationStatus.available:
         return 'Available';
-      case DonationStatus.claimed:
-        return 'Claimed by NGO';
-      case DonationStatus.assigned:
+      case DonationStatus.requested:
+        return 'Requested';
+      case DonationStatus.accepted:
+        return 'Accepted / Claimed';
+      case DonationStatus.assignedForPickup:
         return 'Volunteer Assigned';
       case DonationStatus.pickedUp:
         return 'In Transit';
-      case DonationStatus.delivered:
-        return 'Delivered';
+      case DonationStatus.deliveredToNgo:
+        return 'Delivered to Shelter';
+      case DonationStatus.distributed:
+        return 'Distributed to People';
+      case DonationStatus.completed:
+        return 'Completed';
       case DonationStatus.cancelled:
         return 'Cancelled';
       case DonationStatus.expired:
         return 'Expired';
+      case DonationStatus.rejected:
+        return 'Rejected';
     }
   }
 
   static DonationStatus fromString(String? status) {
     switch (status?.toLowerCase().trim()) {
+      case 'draft':
+        return DonationStatus.draft;
+      case 'requested':
+        return DonationStatus.requested;
+      case 'accepted':
       case 'claimed':
-        return DonationStatus.claimed;
+        return DonationStatus.accepted;
+      case 'assigned_for_pickup':
       case 'assigned':
-        return DonationStatus.assigned;
+        return DonationStatus.assignedForPickup;
       case 'pickedup':
       case 'picked_up':
       case 'intransit':
       case 'in_transit':
         return DonationStatus.pickedUp;
+      case 'delivered_to_ngo':
       case 'delivered':
-        return DonationStatus.delivered;
+        return DonationStatus.deliveredToNgo;
+      case 'distributed':
+        return DonationStatus.distributed;
+      case 'completed':
+        return DonationStatus.completed;
       case 'cancelled':
         return DonationStatus.cancelled;
       case 'expired':
         return DonationStatus.expired;
+      case 'rejected':
+        return DonationStatus.rejected;
+      case 'available':
       case 'listed':
       default:
-        return DonationStatus.listed;
+        return DonationStatus.available;
+    }
+  }
+
+  bool canTransitionTo(DonationStatus next) {
+    switch (this) {
+      case DonationStatus.draft:
+        return next == DonationStatus.available || next == DonationStatus.cancelled;
+      case DonationStatus.available:
+        return next == DonationStatus.requested ||
+            next == DonationStatus.accepted ||
+            next == DonationStatus.cancelled ||
+            next == DonationStatus.expired;
+      case DonationStatus.requested:
+        return next == DonationStatus.accepted ||
+            next == DonationStatus.rejected ||
+            next == DonationStatus.available ||
+            next == DonationStatus.cancelled;
+      case DonationStatus.accepted:
+        return next == DonationStatus.assignedForPickup ||
+            next == DonationStatus.pickedUp ||
+            next == DonationStatus.available ||
+            next == DonationStatus.cancelled;
+      case DonationStatus.assignedForPickup:
+        return next == DonationStatus.pickedUp ||
+            next == DonationStatus.accepted ||
+            next == DonationStatus.cancelled;
+      case DonationStatus.pickedUp:
+        return next == DonationStatus.deliveredToNgo || next == DonationStatus.cancelled;
+      case DonationStatus.deliveredToNgo:
+        return next == DonationStatus.distributed || next == DonationStatus.completed;
+      case DonationStatus.distributed:
+        return next == DonationStatus.completed;
+      case DonationStatus.completed:
+      case DonationStatus.cancelled:
+      case DonationStatus.expired:
+      case DonationStatus.rejected:
+        return false;
     }
   }
 }
@@ -119,6 +191,7 @@ class Donation {
 
   // Clothing specific attributes
   final String? clothingCategory; // 'kids', 'adults', 'winter', 'blankets'
+  final String? targetSize;
   final String? conditionGrade; // 'brand_new', 'like_new', 'good'
   final bool isWashedAndClean;
 
@@ -132,7 +205,7 @@ class Donation {
     required this.quantity,
     required this.unit,
     required this.type,
-    this.status = DonationStatus.listed,
+    this.status = DonationStatus.available,
     required this.pickupAddress,
     this.city = 'Pune',
     this.latitude = 18.5204,
@@ -160,17 +233,25 @@ class Donation {
     this.allergenNotes,
     this.safetyCharterAgreed = true,
     this.clothingCategory,
+    this.targetSize,
     this.conditionGrade,
     this.isWashedAndClean = true,
   });
 
   bool get isFood => type == DonationType.food;
   bool get isClothing => type == DonationType.clothing;
-  bool get isAvailable => status == DonationStatus.listed;
-  bool get isClaimed => status == DonationStatus.claimed;
-  bool get isAssigned => status == DonationStatus.assigned;
+  bool get isDraft => status == DonationStatus.draft;
+  bool get isAvailable => status == DonationStatus.available;
+  bool get isRequested => status == DonationStatus.requested;
+  bool get isClaimed => status == DonationStatus.accepted;
+  bool get isAssigned => status == DonationStatus.assignedForPickup;
   bool get isInTransit => status == DonationStatus.pickedUp;
-  bool get isDelivered => status == DonationStatus.delivered;
+  bool get isDelivered => status == DonationStatus.deliveredToNgo;
+  bool get isDistributed => status == DonationStatus.distributed;
+  bool get isCompleted => status == DonationStatus.completed;
+  bool get isCancelled => status == DonationStatus.cancelled;
+  bool get isExpired => status == DonationStatus.expired;
+  bool get isRejected => status == DonationStatus.rejected;
 
   // Safe time remaining
   Duration get timeRemaining => pickupDeadline.difference(DateTime.now());
@@ -214,6 +295,7 @@ class Donation {
     String? allergenNotes,
     bool? safetyCharterAgreed,
     String? clothingCategory,
+    String? targetSize,
     String? conditionGrade,
     bool? isWashedAndClean,
     bool clearVolunteerAssignment = false,
@@ -263,6 +345,7 @@ class Donation {
       allergenNotes: allergenNotes ?? this.allergenNotes,
       safetyCharterAgreed: safetyCharterAgreed ?? this.safetyCharterAgreed,
       clothingCategory: clothingCategory ?? this.clothingCategory,
+      targetSize: targetSize ?? this.targetSize,
       conditionGrade: conditionGrade ?? this.conditionGrade,
       isWashedAndClean: isWashedAndClean ?? this.isWashedAndClean,
     );
@@ -324,6 +407,7 @@ class Donation {
       allergenNotes: json['allergen_notes'] as String?,
       safetyCharterAgreed: json['safety_charter_agreed'] as bool? ?? true,
       clothingCategory: json['clothing_category'] as String?,
+      targetSize: json['target_size'] as String?,
       conditionGrade: json['condition_grade'] as String?,
       isWashedAndClean: json['is_washed_and_clean'] as bool? ?? true,
     );
@@ -368,6 +452,7 @@ class Donation {
       'allergen_notes': allergenNotes,
       'safety_charter_agreed': safetyCharterAgreed,
       'clothing_category': clothingCategory,
+      'target_size': targetSize,
       'condition_grade': conditionGrade,
       'is_washed_and_clean': isWashedAndClean,
     };

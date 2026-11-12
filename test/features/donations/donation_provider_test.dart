@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foodbridge/features/donations/domain/models/donation.dart';
+import 'package:foodbridge/features/donations/domain/models/distribution_record.dart';
 import 'package:foodbridge/features/donations/presentation/donation_provider.dart';
 
 void main() {
@@ -377,6 +378,134 @@ void main() {
 
       // Task is now back in available tasks for other volunteers
       expect(provider.volunteerAvailableTasks.any((d) => d.id == item.id), isTrue);
+    });
+
+    test('SDLC Phase 7: Publish draft donation moves item to available feed', () async {
+      final draftDonation = Donation(
+        id: 'draft-test-101',
+        donorId: 'donor-1',
+        donorName: 'Bakery Bliss',
+        title: '30 Fresh Bread Loaves & Muffins',
+        description: 'Packed from evening unsold stock',
+        quantity: 30,
+        unit: 'loaves',
+        type: DonationType.food,
+        status: DonationStatus.draft,
+        pickupAddress: 'FC Road, Deccan, Pune',
+        createdAt: DateTime.now(),
+        pickupDeadline: DateTime.now().add(const Duration(hours: 6)),
+      );
+
+      await provider.createDonation(draftDonation);
+      expect(provider.getDonationById('draft-test-101')!.status, DonationStatus.draft);
+      // Drafts should not appear in available public feed
+      expect(provider.availableDonations.any((d) => d.id == 'draft-test-101'), isFalse);
+
+      // Publish draft
+      final publishSuccess = await provider.publishDraft('draft-test-101');
+      expect(publishSuccess, isTrue);
+
+      final published = provider.getDonationById('draft-test-101')!;
+      expect(published.status, DonationStatus.available);
+      expect(provider.availableDonations.any((d) => d.id == 'draft-test-101'), isTrue);
+    });
+
+    test('SDLC Phase 7: Unverified NGO cannot claim donation', () async {
+      final item = provider.availableDonations.first;
+
+      final success = await provider.claimDonation(
+        donationId: item.id,
+        ngoId: 'unverified-ngo-99',
+        ngoName: 'Unverified Shelter Group',
+        isVerifiedNgo: false,
+      );
+
+      expect(success, isFalse);
+      expect(provider.errorMessage, contains('Verification Required'));
+      // Item must remain available
+      expect(provider.getDonationById(item.id)!.status, DonationStatus.available);
+    });
+
+    test('SDLC Phase 7: Recording NGO distribution tracks headcount without beneficiary PII', () async {
+      final item = provider.availableDonations.first;
+      // Simulate claim and delivery
+      await provider.claimDonation(
+        donationId: item.id,
+        ngoId: 'ngo-shelter-7',
+        ngoName: 'Asha Children Foundation',
+      );
+      await provider.acceptVolunteerTask(
+        donationId: item.id,
+        volunteerId: 'vol-1',
+        volunteerName: 'Samir Rider',
+      );
+      await provider.markPickedUp(item.id);
+      await provider.markDelivered(item.id);
+
+      final record = DistributionRecord(
+        id: 'dist-rec-1',
+        donationId: item.id,
+        donationTitle: item.title,
+        ngoId: 'ngo-shelter-7',
+        ngoName: 'Asha Children Foundation',
+        beneficiaryGroup: 'Swargate Night Shelter Residents',
+        headcountServed: 45,
+        quantityDistributed: item.quantity,
+        unit: item.unit,
+        distributionDate: DateTime.now(),
+        notes: 'Evenly distributed during evening service',
+        createdAt: DateTime.now(),
+      );
+
+      final success = await provider.recordDistribution(record);
+      expect(success, isTrue);
+
+      // Status should transition to completed
+      final completed = provider.getDonationById(item.id)!;
+      expect(completed.status, DonationStatus.completed);
+
+      // Distribution records list should include the record
+      final ngoRecords = provider.getNgoDistributionRecords('ngo-shelter-7');
+      expect(ngoRecords.length, 1);
+      expect(ngoRecords.first.headcountServed, 45);
+      expect(ngoRecords.first.beneficiaryGroup, 'Swargate Night Shelter Residents');
+    });
+
+    test('SDLC Phase 7: Clothing donation preserves category, size, condition, and hygiene declaration', () async {
+      final clothDonation = Donation(
+        id: 'cloth-test-202',
+        donorId: 'donor-2',
+        donorName: 'Priya Sharma',
+        title: '25 Clean Winter Shawls & Sweaters',
+        description: 'Washed and folded in boxes',
+        quantity: 25,
+        unit: 'pieces',
+        type: DonationType.clothing,
+        status: DonationStatus.available,
+        pickupAddress: 'Kothrud, Pune',
+        createdAt: DateTime.now(),
+        pickupDeadline: DateTime.now().add(const Duration(days: 3)),
+        clothingCategory: 'Winter Wear',
+        targetSize: 'Adults S/M',
+        conditionGrade: 'Like New',
+        isWashedAndClean: true,
+      );
+
+      await provider.createDonation(clothDonation);
+      final saved = provider.getDonationById('cloth-test-202')!;
+
+      expect(saved.isClothing, isTrue);
+      expect(saved.clothingCategory, 'Winter Wear');
+      expect(saved.targetSize, 'Adults S/M');
+      expect(saved.conditionGrade, 'Like New');
+      expect(saved.isWashedAndClean, isTrue);
+
+      final json = saved.toJson();
+      final fromJson = Donation.fromJson(json);
+      expect(fromJson.clothingCategory, 'Winter Wear');
+      expect(fromJson.targetSize, 'Adults S/M');
+      expect(fromJson.conditionGrade, 'Like New');
+      expect(fromJson.isWashedAndClean, isTrue);
     });
   });
 }
