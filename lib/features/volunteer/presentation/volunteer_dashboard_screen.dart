@@ -34,6 +34,11 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
       appBar: AppBar(
         title: const Text('Volunteer Dispatch'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history_outlined),
+            tooltip: 'Delivery History',
+            onPressed: () => context.push('/volunteer/history'),
+          ),
           Row(
             children: [
               Text(
@@ -66,7 +71,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: _isOnline ? AppColors.warmCream : AppColors.borderLight.withOpacity(0.5),
+                color: _isOnline ? AppColors.warmCream : AppColors.borderLight.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: _isOnline ? AppColors.primaryGreen : AppColors.mutedGrey),
               ),
@@ -78,7 +83,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                       Icon(Icons.two_wheeler, color: _isOnline ? AppColors.primaryGreen : AppColors.mutedGrey),
                       const SizedBox(width: 8),
                       Text(
-                        'Motorcycle Dispatcher',
+                        currentUser?.transportType ?? 'Motorcycle Dispatcher',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: _isOnline ? AppColors.charcoal : AppColors.mutedGrey,
@@ -131,7 +136,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: task.status == DonationStatus.assigned
-                                    ? AppColors.warningOrange.withOpacity(0.15)
+                                    ? AppColors.warningOrange.withValues(alpha: 0.15)
                                     : AppColors.statusInTransitBg,
                                 borderRadius: BorderRadius.circular(6),
                               ),
@@ -216,40 +221,12 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                         ],
                         const SizedBox(height: 16),
 
-                        // Rider Mode Big Action Buttons
-                        if (task.status == DonationStatus.assigned) ...[
-                          FBButton.rider(
-                            label: 'CONFIRM PHYSICAL PICKUP',
-                            icon: Icons.check_circle_outline,
-                            onPressed: () async {
-                              await donationProvider.markPickedUp(task.id);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Pickup recorded! Proceed safely to NGO shelter.'),
-                                    backgroundColor: AppColors.primaryGreen,
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ] else ...[
-                          FBButton.rider(
-                            label: 'CONFIRM HANDOVER TO NGO',
-                            icon: Icons.done_all,
-                            onPressed: () async {
-                              await donationProvider.markDelivered(task.id);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Delivery completed! Thank you for your service.'),
-                                    backgroundColor: AppColors.deepGreen,
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ],
+                        // Open Live Mission & Navigation
+                        FBButton.rider(
+                          label: 'OPEN LIVE MISSION & GPS',
+                          icon: Icons.navigation_outlined,
+                          onPressed: () => context.push('/volunteer/mission/${task.id}'),
+                        ),
                         const SizedBox(height: 8),
                         Center(
                           child: TextButton(
@@ -288,6 +265,8 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
             else
               ...availableTasks.map((task) {
                 final dateFormat = DateFormat('hh:mm a');
+                final hasMaxDispatches = activeTasks.length >= 2;
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Padding(
@@ -330,27 +309,57 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Route: ${task.city} ──► ${task.claimedByNgoName ?? "NGO Shelter"}',
+                          'Route: ${task.city} ──► ${task.claimedByNgoName ?? "NGO Shelter"} (${task.estimatedDistanceKm} km)',
                           style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
                         ),
                         const SizedBox(height: 16),
                         FBButton.rider(
-                          label: 'ACCEPT DISPATCH TASK',
+                          label: hasMaxDispatches ? 'MAX 2 DISPATCHES REACHED' : 'ACCEPT DISPATCH TASK',
                           icon: Icons.flash_on,
                           onPressed: () async {
-                            await donationProvider.acceptVolunteerTask(
+                            if (!_isOnline) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please switch online status to accept delivery tasks.'),
+                                  backgroundColor: AppColors.warningOrange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            if (hasMaxDispatches) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Maximum concurrent limit reached (2 tasks). Complete an active delivery first.'),
+                                  backgroundColor: AppColors.errorRed,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final success = await donationProvider.acceptVolunteerTask(
                               donationId: task.id,
                               volunteerId: volunteerId,
                               volunteerName: currentUser?.fullName ?? 'Rohit Kulkarni',
                               phone: currentUser?.phone ?? '+91 97654 99887',
                             );
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Task locked to you! Ride safely.'),
-                                  backgroundColor: AppColors.deepGreen,
-                                ),
-                              );
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Task assigned! Opening live mission & navigation...'),
+                                    backgroundColor: AppColors.deepGreen,
+                                  ),
+                                );
+                                context.push('/volunteer/mission/${task.id}');
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(donationProvider.errorMessage ?? 'Failed to accept task.'),
+                                    backgroundColor: AppColors.errorRed,
+                                  ),
+                                );
+                              }
                             }
                           },
                         ),
@@ -362,41 +371,38 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
 
             const SizedBox(height: 24),
 
-            // Completed Dispatches Impact
-            if (completedTasks.isNotEmpty) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Lifetime Stats Bar
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Text(
-                    'Your Completed Deliveries (${completedTasks.length})',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push('/volunteer/history'),
-                    child: const Text('View Full History'),
-                  ),
+                  _statItem('Completed', '${completedTasks.length} missions', Icons.task_alt),
+                  _statItem('Meals Rescued', '${completedTasks.fold<int>(0, (s, d) => s + d.quantity.toInt())}', Icons.restaurant),
+                  _statItem('Rating', '5.0 ★', Icons.star),
                 ],
               ),
-              const SizedBox(height: 10),
-              ...completedTasks.map((t) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: AppColors.statusAvailableBg,
-                        child: Icon(Icons.done_all, color: AppColors.statusAvailableText, size: 20),
-                      ),
-                      title: Text(t.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                      subtitle: Text('Delivered to ${t.claimedByNgoName}', style: const TextStyle(fontSize: 11)),
-                      trailing: const Text('Delivered', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
-                  )),
-            ],
-            const SizedBox(height: 40),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _statItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.primaryGreen, size: 20),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.charcoal)),
+        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedGrey)),
+      ],
     );
   }
 }

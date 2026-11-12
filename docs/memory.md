@@ -205,7 +205,7 @@ Update the checkboxes as work is completed.
 -   [x] Authentication and role permissions completed (Phase 6 completed: AuthProvider, RouteGuard, SessionStorageService, Login/Register/Forgot)
 -   [x] Donor workflows completed (Phase 7: create donation, edit/withdraw listing, dietary filters, my listings)
 -   [x] NGO workflows completed (Phase 7: claims manager, partial & full quantity claim allocation, verification screen)
--   [ ] Volunteer workflows completed (Phase 8: rider GPS map navigation, active task dispatch, OTP pickup confirmation)
+-   [x] Volunteer workflows completed (Phase 8: rider GPS map navigation, active task dispatch, OTP pickup & handover confirmation, 2-task limit)
 -   [ ] Admin workflows completed (Phase 9: moderation, verification approvals, platform analytics)
 -   [ ] Realtime updates and notifications completed
 -   [ ] AI features evaluated and integrated where useful
@@ -271,6 +271,13 @@ Update the checkboxes as work is completed.
                                       listings (EditDonationScreen), chain-of-custody timeline
                                       (DonationStatusTimeline), veg/non-veg search filtering,
                                       and over-allocation prevention with 21 passing tests.
+
+  1.8                                 Phase 8 Volunteer Rider Module completed.
+                                      Implemented VolunteerMissionScreen with live GPS route
+                                      navigation card, Donor pickup OTP & NGO delivery OTP
+                                      handover verification, on-site food safety & temperature
+                                      checklist, 2-task active limit enforcement, emergency
+                                      task release, and lifetime statistics with 35 passing tests.
   -----------------------------------------------------------------------
 
 **Maintenance rule:** When a decision changes, update the relevant

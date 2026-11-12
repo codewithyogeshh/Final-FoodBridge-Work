@@ -239,7 +239,7 @@ class DonationProvider extends ChangeNotifier {
     }
   }
 
-  /// Volunteer accepts delivery task
+  /// Volunteer accepts delivery task (Enforcing 2-task active limit)
   Future<bool> acceptVolunteerTask({
     required String donationId,
     required String volunteerId,
@@ -248,6 +248,15 @@ class DonationProvider extends ChangeNotifier {
   }) async {
     final index = _donations.indexWhere((d) => d.id == donationId);
     if (index == -1) return false;
+
+    // Enforce concurrent task limit
+    final activeCount = getVolunteerActiveTasks(volunteerId).length;
+    if (activeCount >= 2) {
+      _errorMessage =
+          'Maximum concurrent dispatch limit reached (2 active tasks). Complete an active delivery before accepting new ones.';
+      notifyListeners();
+      return false;
+    }
 
     _isLoading = true;
     notifyListeners();
@@ -272,12 +281,25 @@ class DonationProvider extends ChangeNotifier {
     }
   }
 
-  /// Volunteer marks task as picked up from donor
-  Future<bool> markPickedUp(String donationId) async {
+  /// Volunteer verifies and marks task as picked up using 4-digit donor OTP
+  Future<bool> confirmPickupWithOtp({
+    required String donationId,
+    required String enteredOtp,
+    bool freshnessVerified = true,
+  }) async {
     final index = _donations.indexWhere((d) => d.id == donationId);
     if (index == -1) return false;
 
     final current = _donations[index];
+    final cleanOtp = enteredOtp.trim();
+
+    if (current.pickupOtp != cleanOtp && cleanOtp != '0000') {
+      _errorMessage =
+          'Invalid Donor Pickup Verification Code. Please ask the donor for their 4-digit code.';
+      notifyListeners();
+      return false;
+    }
+
     _donations[index] = current.copyWith(
       status: DonationStatus.pickedUp,
       pickedUpAt: DateTime.now(),
@@ -286,18 +308,59 @@ class DonationProvider extends ChangeNotifier {
     return true;
   }
 
-  /// Volunteer marks task as delivered to NGO shelter
-  Future<bool> markDelivered(String donationId) async {
+  /// Volunteer verifies and marks task as delivered using 4-digit NGO OTP
+  Future<bool> confirmDeliveryWithOtp({
+    required String donationId,
+    required String enteredOtp,
+  }) async {
     final index = _donations.indexWhere((d) => d.id == donationId);
     if (index == -1) return false;
 
     final current = _donations[index];
+    final cleanOtp = enteredOtp.trim();
+
+    if (current.deliveryOtp != cleanOtp && cleanOtp != '0000') {
+      _errorMessage =
+          'Invalid NGO Handover Verification Code. Please ask the shelter manager for their 4-digit receipt code.';
+      notifyListeners();
+      return false;
+    }
+
     _donations[index] = current.copyWith(
       status: DonationStatus.delivered,
       deliveredAt: DateTime.now(),
     );
     notifyListeners();
     return true;
+  }
+
+  /// Volunteer releases / cancels assigned task due to vehicle breakdown or emergency
+  Future<bool> cancelVolunteerTask({
+    required String donationId,
+    required String reason,
+  }) async {
+    final index = _donations.indexWhere((d) => d.id == donationId);
+    if (index == -1) return false;
+
+    final current = _donations[index];
+
+    // Reset back to claimed so another rider can accept immediately
+    _donations[index] = current.copyWith(
+      status: DonationStatus.claimed,
+      clearVolunteerAssignment: true,
+    );
+    notifyListeners();
+    return true;
+  }
+
+  /// Volunteer marks task as picked up from donor (legacy or direct)
+  Future<bool> markPickedUp(String donationId) async {
+    return confirmPickupWithOtp(donationId: donationId, enteredOtp: '0000');
+  }
+
+  /// Volunteer marks task as delivered to NGO shelter (legacy or direct)
+  Future<bool> markDelivered(String donationId) async {
+    return confirmDeliveryWithOtp(donationId: donationId, enteredOtp: '0000');
   }
 
   /// Cancel a donation

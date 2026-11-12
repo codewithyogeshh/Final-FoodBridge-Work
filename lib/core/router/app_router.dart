@@ -17,6 +17,7 @@ import '../../features/ngo/presentation/ngo_claims_screen.dart';
 import '../../features/ngo/presentation/ngo_verification_screen.dart';
 import '../../features/volunteer/presentation/volunteer_dashboard_screen.dart';
 import '../../features/volunteer/presentation/volunteer_history_screen.dart';
+import '../../features/volunteer/presentation/volunteer_mission_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
@@ -111,6 +112,13 @@ class AppRouter {
         GoRoute(
           path: '/volunteer/history',
           builder: (context, state) => const VolunteerHistoryScreen(),
+        ),
+        GoRoute(
+          path: '/volunteer/mission/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id'] ?? '';
+            return VolunteerMissionScreen(donationId: id);
+          },
         ),
         GoRoute(
           path: '/admin',

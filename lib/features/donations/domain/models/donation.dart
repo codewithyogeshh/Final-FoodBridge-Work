@@ -104,6 +104,11 @@ class Donation {
   final DateTime? pickedUpAt;
   final DateTime? deliveredAt;
   final String? imageUrl;
+  final String pickupOtp;
+  final String deliveryOtp;
+  final String dropoffAddress;
+  final double estimatedDistanceKm;
+  final int estimatedMinutes;
 
   // Food specific attributes
   final bool isVeg;
@@ -144,6 +149,11 @@ class Donation {
     this.pickedUpAt,
     this.deliveredAt,
     this.imageUrl,
+    this.pickupOtp = '4829',
+    this.deliveryOtp = '9152',
+    this.dropoffAddress = 'Asha Children Shelter, Plot 12 Swargate, Pune',
+    this.estimatedDistanceKm = 3.8,
+    this.estimatedMinutes = 14,
     this.isVeg = true,
     this.prepTime,
     this.storageCondition = 'ambient',
@@ -193,6 +203,11 @@ class Donation {
     DateTime? pickedUpAt,
     DateTime? deliveredAt,
     String? imageUrl,
+    String? pickupOtp,
+    String? deliveryOtp,
+    String? dropoffAddress,
+    double? estimatedDistanceKm,
+    int? estimatedMinutes,
     bool? isVeg,
     DateTime? prepTime,
     String? storageCondition,
@@ -201,6 +216,7 @@ class Donation {
     String? clothingCategory,
     String? conditionGrade,
     bool? isWashedAndClean,
+    bool clearVolunteerAssignment = false,
   }) {
     return Donation(
       id: id ?? this.id,
@@ -222,13 +238,25 @@ class Donation {
       claimedByNgoId: claimedByNgoId ?? this.claimedByNgoId,
       claimedByNgoName: claimedByNgoName ?? this.claimedByNgoName,
       claimedAt: claimedAt ?? this.claimedAt,
-      assignedVolunteerId: assignedVolunteerId ?? this.assignedVolunteerId,
-      assignedVolunteerName: assignedVolunteerName ?? this.assignedVolunteerName,
-      assignedVolunteerPhone: assignedVolunteerPhone ?? this.assignedVolunteerPhone,
-      assignedAt: assignedAt ?? this.assignedAt,
+      assignedVolunteerId: clearVolunteerAssignment
+          ? null
+          : (assignedVolunteerId ?? this.assignedVolunteerId),
+      assignedVolunteerName: clearVolunteerAssignment
+          ? null
+          : (assignedVolunteerName ?? this.assignedVolunteerName),
+      assignedVolunteerPhone: clearVolunteerAssignment
+          ? null
+          : (assignedVolunteerPhone ?? this.assignedVolunteerPhone),
+      assignedAt:
+          clearVolunteerAssignment ? null : (assignedAt ?? this.assignedAt),
       pickedUpAt: pickedUpAt ?? this.pickedUpAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       imageUrl: imageUrl ?? this.imageUrl,
+      pickupOtp: pickupOtp ?? this.pickupOtp,
+      deliveryOtp: deliveryOtp ?? this.deliveryOtp,
+      dropoffAddress: dropoffAddress ?? this.dropoffAddress,
+      estimatedDistanceKm: estimatedDistanceKm ?? this.estimatedDistanceKm,
+      estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       isVeg: isVeg ?? this.isVeg,
       prepTime: prepTime ?? this.prepTime,
       storageCondition: storageCondition ?? this.storageCondition,
@@ -281,6 +309,13 @@ class Donation {
           ? DateTime.tryParse(json['delivered_at'] as String)
           : null,
       imageUrl: json['image_url'] as String?,
+      pickupOtp: json['pickup_otp'] as String? ?? '4829',
+      deliveryOtp: json['delivery_otp'] as String? ?? '9152',
+      dropoffAddress: json['dropoff_address'] as String? ??
+          'Asha Children Shelter, Plot 12 Swargate, Pune',
+      estimatedDistanceKm:
+          (json['estimated_distance_km'] as num?)?.toDouble() ?? 3.8,
+      estimatedMinutes: json['estimated_minutes'] as int? ?? 14,
       isVeg: json['is_veg'] as bool? ?? true,
       prepTime: json['prep_time'] != null
           ? DateTime.tryParse(json['prep_time'] as String)
@@ -322,6 +357,11 @@ class Donation {
       'picked_up_at': pickedUpAt?.toIso8601String(),
       'delivered_at': deliveredAt?.toIso8601String(),
       'image_url': imageUrl,
+      'pickup_otp': pickupOtp,
+      'delivery_otp': deliveryOtp,
+      'dropoff_address': dropoffAddress,
+      'estimated_distance_km': estimatedDistanceKm,
+      'estimated_minutes': estimatedMinutes,
       'is_veg': isVeg,
       'prep_time': prepTime?.toIso8601String(),
       'storage_condition': storageCondition,
