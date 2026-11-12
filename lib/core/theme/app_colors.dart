@@ -10,11 +10,13 @@ class AppColors {
   static const Color charcoal = Color(0xFF263238);
   static const Color mutedGrey = Color(0xFF667085);
   static const Color orange = Color(0xFFE69A36);
+  static const Color warningOrange = orange;
   static const Color errorRed = Color(0xFFC83D3D);
   static const Color white = Color(0xFFFFFFFF);
 
   // Surface & Borders (Light)
   static const Color borderLight = Color(0xFFE4E7EC);
+  static const Color borderGrey = borderLight;
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color backgroundLight = Color(0xFFFFF8ED);
 

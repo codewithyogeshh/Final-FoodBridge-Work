@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
+import '../../../core/widgets/fb_empty_state.dart';
+import '../../authentication/presentation/auth_provider.dart';
+import '../../donations/domain/models/donation.dart';
+import '../../donations/presentation/donation_provider.dart';
 
 class VolunteerDashboardScreen extends StatefulWidget {
   const VolunteerDashboardScreen({super.key});
@@ -12,11 +18,18 @@ class VolunteerDashboardScreen extends StatefulWidget {
 
 class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   bool _isOnline = true;
-  bool _hasActiveTask = false;
-  String _taskState = 'assigned'; // 'assigned' -> 'picked_up' -> 'completed'
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final donationProvider = context.watch<DonationProvider>();
+    final currentUser = auth.user;
+
+    final volunteerId = currentUser?.id ?? 'usr-vol-303';
+    final activeTasks = donationProvider.getVolunteerActiveTasks(volunteerId);
+    final availableTasks = donationProvider.volunteerAvailableTasks;
+    final completedTasks = donationProvider.getVolunteerCompletedTasks(volunteerId);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Volunteer Dispatch'),
@@ -65,7 +78,7 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                       Icon(Icons.two_wheeler, color: _isOnline ? AppColors.primaryGreen : AppColors.mutedGrey),
                       const SizedBox(width: 8),
                       Text(
-                        'Motorcycle (125cc)',
+                        'Motorcycle Dispatcher',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: _isOnline ? AppColors.charcoal : AppColors.mutedGrey,
@@ -74,11 +87,11 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                     ],
                   ),
                   Text(
-                    'Active: ${_hasActiveTask ? "1" : "0"} / Max 2',
+                    'Active: ${activeTasks.length} / Max 2',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: _hasActiveTask ? AppColors.orange : AppColors.mutedGrey,
+                      color: activeTasks.isNotEmpty ? AppColors.orange : AppColors.mutedGrey,
                     ),
                   ),
                 ],
@@ -87,9 +100,9 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
             const SizedBox(height: 20),
 
             // Active Task View (if accepted)
-            if (_hasActiveTask) ...[
+            if (activeTasks.isNotEmpty) ...[
               Text(
-                'YOUR ACTIVE DISPATCH',
+                'YOUR ACTIVE DISPATCH (${activeTasks.length})',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.deepGreen,
@@ -97,258 +110,281 @@ class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
                     ),
               ),
               const SizedBox(height: 10),
-              Card(
-                color: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  side: const BorderSide(color: AppColors.primaryGreen, width: 2),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(18.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.statusInTransitBg,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              _taskState == 'assigned' ? 'PROCEED TO PICKUP' : 'IN TRANSIT TO SHELTER',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.statusInTransitText,
+              ...activeTasks.map((task) {
+                final dateFormat = DateFormat('hh:mm a');
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  color: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: const BorderSide(color: AppColors.primaryGreen, width: 2),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(18.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: task.status == DonationStatus.assigned
+                                    ? AppColors.warningOrange.withOpacity(0.15)
+                                    : AppColors.statusInTransitBg,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                task.status == DonationStatus.assigned
+                                    ? 'PROCEED TO PICKUP'
+                                    : 'IN TRANSIT TO SHELTER',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: task.status == DonationStatus.assigned
+                                      ? AppColors.warningOrange
+                                      : AppColors.statusInTransitText,
+                                ),
                               ),
                             ),
-                          ),
-                          const Row(
+                            Row(
+                              children: [
+                                const Icon(Icons.timer_outlined, size: 14, color: AppColors.errorRed),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Collect by ${dateFormat.format(task.pickupDeadline)}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.errorRed,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          task.title,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.charcoal),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${task.quantity.toStringAsFixed(0)} ${task.unit} • Destination: ${task.claimedByNgoName ?? "Shelter"}',
+                          style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
+                        ),
+                        const SizedBox(height: 12),
+                        const Divider(),
+                        const SizedBox(height: 8),
+
+                        // Private Donor Address Unlocked
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.location_on, color: AppColors.primaryGreen, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    task.pickupAddress,
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
+                                  const Text(
+                                    'Pickup Address (Unlocked for this dispatch)',
+                                    style: TextStyle(fontSize: 11, color: AppColors.primaryGreen),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (task.donorPhone != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
                             children: [
-                              Icon(Icons.timer_outlined, size: 14, color: AppColors.errorRed),
-                              SizedBox(width: 4),
+                              const Icon(Icons.phone, color: AppColors.primaryGreen, size: 18),
+                              const SizedBox(width: 8),
                               Text(
-                                '32m left',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.errorRed),
+                                'Donor: ${task.donorName} (${task.donorPhone})',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 14),
-                      const Text(
-                        '35 kg Cooked Banquet Meals (3 Insulated Crates)',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.charcoal),
-                      ),
-                      const SizedBox(height: 12),
-                      const Divider(),
-                      const SizedBox(height: 8),
+                        const SizedBox(height: 16),
 
-                      // Unlocked Private Address & Phone
-                      const Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.location_on, color: AppColors.primaryGreen, size: 20),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Service Gate 3, Royal Feast Banquet', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                Text('Link Road, Andheri West (Unlocked for you)', style: TextStyle(fontSize: 12, color: AppColors.mutedGrey)),
-                              ],
-                            ),
+                        // Rider Mode Big Action Buttons
+                        if (task.status == DonationStatus.assigned) ...[
+                          FBButton.rider(
+                            label: 'CONFIRM PHYSICAL PICKUP',
+                            icon: Icons.check_circle_outline,
+                            onPressed: () async {
+                              await donationProvider.markPickedUp(task.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Pickup recorded! Proceed safely to NGO shelter.'),
+                                    backgroundColor: AppColors.primaryGreen,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ] else ...[
+                          FBButton.rider(
+                            label: 'CONFIRM HANDOVER TO NGO',
+                            icon: Icons.done_all,
+                            onPressed: () async {
+                              await donationProvider.markDelivered(task.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Delivery completed! Thank you for your service.'),
+                                    backgroundColor: AppColors.deepGreen,
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Row(
-                        children: [
-                          Icon(Icons.phone, color: AppColors.primaryGreen, size: 18),
-                          SizedBox(width: 8),
-                          Text('Donor: Ramesh Sharma (+91 98765 43210)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Rider Mode Big Action Buttons
-                      if (_taskState == 'assigned') ...[
-                        FBButton.rider(
-                          label: 'CONFIRM PHYSICAL PICKUP',
-                          icon: Icons.check_circle_outline,
-                          onPressed: () {
-                            setState(() => _taskState = 'picked_up');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Pickup verified! In-transit timer active.'),
-                                backgroundColor: AppColors.primaryGreen,
-                              ),
-                            );
-                          },
-                        ),
-                      ] else ...[
-                        FBButton.rider(
-                          label: 'CONFIRM HANDOVER TO NGO',
-                          icon: Icons.done_all,
-                          onPressed: () {
-                            setState(() {
-                              _hasActiveTask = false;
-                              _taskState = 'assigned';
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Dispatch completed! Thank you for your service.'),
-                                backgroundColor: AppColors.deepGreen,
-                              ),
-                            );
-                          },
+                        const SizedBox(height: 8),
+                        Center(
+                          child: TextButton(
+                            onPressed: () => context.push('/donation-detail/${task.id}'),
+                            child: const Text('View Full Donation Specs', style: TextStyle(fontSize: 12)),
+                          ),
                         ),
                       ],
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _hasActiveTask = false;
-                            _taskState = 'assigned';
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Task surrendered for immediate re-dispatch.'),
-                              backgroundColor: AppColors.orange,
-                            ),
-                          );
-                        },
-                        child: const Text('Emergency Surrender (Vehicle Breakdown)', style: TextStyle(color: AppColors.errorRed, fontSize: 12)),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                );
+              }),
+              const SizedBox(height: 20),
             ],
 
             // Open Task Feed
-            Text(
-              'Available Dispatches Near You',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 12),
-
-            // Open Task 1
-            _OpenTaskCard(
-              title: '35 kg Hot Meals (Banquet to Annapoorna)',
-              route: 'Andheri West ──► Thane (4.2 km total)',
-              vehicleTag: '🛵 TWO-WHEELER COMPATIBLE (12 kg)',
-              deadlineText: '35 mins remaining',
-              isTwoWheelerFriendly: true,
-              onAccept: () {
-                setState(() {
-                  _hasActiveTask = true;
-                  _taskState = 'assigned';
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Task locked exclusively to you! Safe riding.'),
-                    backgroundColor: AppColors.deepGreen,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // Open Task 2
-            _OpenTaskCard(
-              title: '4 Large Crates of Apples & Bread (80 kg)',
-              route: 'Dadar Market ──► Sion Shelter (6.1 km)',
-              vehicleTag: '🚗 FOUR-WHEELER / VAN REQUIRED',
-              deadlineText: '2.5 hrs remaining',
-              isTwoWheelerFriendly: false,
-              onAccept: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('This cargo requires a 4-wheeler or van.'),
-                    backgroundColor: AppColors.orange,
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OpenTaskCard extends StatelessWidget {
-  final String title;
-  final String route;
-  final String vehicleTag;
-  final String deadlineText;
-  final bool isTwoWheelerFriendly;
-  final VoidCallback onAccept;
-
-  const _OpenTaskCard({
-    required this.title,
-    required this.route,
-    required this.vehicleTag,
-    required this.deadlineText,
-    required this.isTwoWheelerFriendly,
-    required this.onAccept,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isTwoWheelerFriendly ? AppColors.statusAvailableBg : AppColors.statusInTransitBg,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    vehicleTag,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: isTwoWheelerFriendly ? AppColors.statusAvailableText : AppColors.statusInTransitText,
-                    ),
-                  ),
-                ),
                 Text(
-                  deadlineText,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.errorRed),
+                  'Available Dispatches (${availableTasks.length})',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.charcoal),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              route,
-              style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
-            ),
-            const SizedBox(height: 16),
-            FBButton.rider(
-              label: isTwoWheelerFriendly ? 'ACCEPT DISPATCH TASK' : 'VIEW 4-WHEELER TASK',
-              icon: Icons.flash_on,
-              onPressed: onAccept,
-            ),
+
+            if (availableTasks.isEmpty)
+              const FBEmptyState(
+                title: 'No Pending Pickups',
+                description: 'All current NGO claims have active couriers or there are no new claims.',
+                icon: Icons.two_wheeler_outlined,
+              )
+            else
+              ...availableTasks.map((task) {
+                final dateFormat = DateFormat('hh:mm a');
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.statusAvailableBg,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                task.isFood ? '🍛 FOOD RESCUE' : '👕 CLOTHES DISPATCH',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.statusAvailableText,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'Collect by ${dateFormat.format(task.pickupDeadline)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.errorRed,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          task.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.charcoal),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Route: ${task.city} ──► ${task.claimedByNgoName ?? "NGO Shelter"}',
+                          style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
+                        ),
+                        const SizedBox(height: 16),
+                        FBButton.rider(
+                          label: 'ACCEPT DISPATCH TASK',
+                          icon: Icons.flash_on,
+                          onPressed: () async {
+                            await donationProvider.acceptVolunteerTask(
+                              donationId: task.id,
+                              volunteerId: volunteerId,
+                              volunteerName: currentUser?.fullName ?? 'Rohit Kulkarni',
+                              phone: currentUser?.phone ?? '+91 97654 99887',
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Task locked to you! Ride safely.'),
+                                  backgroundColor: AppColors.deepGreen,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+
+            const SizedBox(height: 24),
+
+            // Completed Dispatches Impact
+            if (completedTasks.isNotEmpty) ...[
+              Text(
+                'Your Completed Deliveries (${completedTasks.length})',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 10),
+              ...completedTasks.map((t) => Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: AppColors.statusAvailableBg,
+                        child: Icon(Icons.done_all, color: AppColors.statusAvailableText, size: 20),
+                      ),
+                      title: Text(t.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      subtitle: Text('Delivered to ${t.claimedByNgoName}', style: const TextStyle(fontSize: 11)),
+                      trailing: const Text('Delivered', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  )),
+            ],
+            const SizedBox(height: 40),
           ],
         ),
       ),

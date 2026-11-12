@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/localization/locale_provider.dart';
 import '../../../core/widgets/fb_button.dart';
+import '../../authentication/domain/models/app_user.dart';
+import '../../authentication/presentation/auth_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -13,6 +15,8 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final localeProvider = Provider.of<LocaleProvider>(context);
+    final auth = context.watch<AuthProvider>();
+    final user = auth.user;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,23 +41,23 @@ class ProfileScreen extends StatelessWidget {
                   child: const Icon(Icons.person, color: AppColors.primaryGreen, size: 32),
                 ),
                 const SizedBox(width: 16),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ramesh Sharma',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.charcoal),
+                        user?.fullName ?? 'FoodBridge Member',
+                        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.charcoal),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Donor • Royal Feast Banquet',
-                        style: TextStyle(fontSize: 13, color: AppColors.mutedGrey),
+                        '${user?.role.displayName ?? "Donor"} ${user?.organizationName != null ? "• ${user!.organizationName}" : ""}',
+                        style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        '+91 98765 43210',
-                        style: TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                        user?.phone ?? user?.email ?? 'contact@foodbridge.org',
+                        style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
                       ),
                     ],
                   ),
@@ -72,13 +76,41 @@ class ProfileScreen extends StatelessWidget {
           Card(
             child: Column(
               children: [
-                _menuTile(Icons.restaurant, 'Donor Dashboard', () => context.go('/donor')),
+                _menuTile(
+                  Icons.restaurant,
+                  'Donor Dashboard',
+                  () {
+                    auth.switchRole(UserRole.donor);
+                    context.go('/donor');
+                  },
+                ),
                 const Divider(),
-                _menuTile(Icons.volunteer_activism, 'NGO Shelter Dashboard', () => context.go('/ngo')),
+                _menuTile(
+                  Icons.volunteer_activism,
+                  'NGO Shelter Dashboard',
+                  () {
+                    auth.switchRole(UserRole.ngo);
+                    context.go('/ngo');
+                  },
+                ),
                 const Divider(),
-                _menuTile(Icons.two_wheeler, 'Volunteer "Rider Mode"', () => context.go('/volunteer')),
+                _menuTile(
+                  Icons.two_wheeler,
+                  'Volunteer "Rider Mode"',
+                  () {
+                    auth.switchRole(UserRole.volunteer);
+                    context.go('/volunteer');
+                  },
+                ),
                 const Divider(),
-                _menuTile(Icons.admin_panel_settings, 'Admin Console', () => context.go('/admin')),
+                _menuTile(
+                  Icons.admin_panel_settings,
+                  'Admin Console',
+                  () {
+                    auth.switchRole(UserRole.admin);
+                    context.go('/admin');
+                  },
+                ),
               ],
             ),
           ),
@@ -127,7 +159,12 @@ class ProfileScreen extends StatelessWidget {
             label: 'Sign Out',
             variant: FBButtonVariant.danger,
             icon: Icons.logout,
-            onPressed: () => context.go('/login'),
+            onPressed: () async {
+              await auth.logout();
+              if (context.mounted) {
+                context.go('/login');
+              }
+            },
           ),
         ],
       ),
