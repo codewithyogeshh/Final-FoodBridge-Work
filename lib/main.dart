@@ -6,6 +6,10 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/router/app_router.dart';
+import 'features/admin/presentation/admin_provider.dart';
+import 'features/authentication/presentation/auth_provider.dart';
+import 'features/donations/presentation/donation_provider.dart';
+import 'features/notifications/presentation/notification_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +18,10 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => DonationProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: const FoodBridgeApp(),
     ),
