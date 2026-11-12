@@ -59,3 +59,4 @@ pie title Test Distribution by Layer (119 Automated Tests)
 - Two-Tier Location Privacy verified: Zero donor phone numbers or exact street addresses leaked on public discovery feeds.
 - All interactive touch targets $\ge 48\times 48$ dp.
 - Layouts survive 2.0x dynamic font scaling with zero `RenderFlex` overflows.
+

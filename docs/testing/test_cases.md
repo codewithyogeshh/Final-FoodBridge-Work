@@ -90,3 +90,4 @@
 | **TC-NET-02** | Duplicate Submissions | Rapid duplicate tap on "Claim Donation" | First request locks item; second request rejected cleanly | **PASS** |
 | **TC-NET-03** | Latency Injection | 400ms network round-trip simulation | Loading indicators display; state updates without race conditions | **PASS** |
 | **TC-NET-04** | Idempotent Publish | Calling `publishDraft()` on active item | State remains `available` without duplicating row | **PASS** |
+

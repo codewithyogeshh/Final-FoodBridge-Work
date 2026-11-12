@@ -46,3 +46,4 @@
 2. **Payload Compression:**
    - FastAPI microservice employs Gzip middleware for analytics and matching responses exceeding $1$ KB.
    - Two-tier address masking reduces public feed payload by omitting private building, floor, flat, and full contact strings.
+

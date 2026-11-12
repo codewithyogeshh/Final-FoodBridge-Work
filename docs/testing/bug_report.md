@@ -86,3 +86,4 @@ pie title Defects by Severity (All Resolved)
 - **Root Cause:** Primary Green is utilized exclusively on large, bold CTA buttons (where WCAG 2.1 AA threshold is $\ge 3.0:1$), while Deep Green ($7.28:1$) is utilized for normal body text (where WCAG 2.1 AAA threshold is $\ge 7.0:1$).
 - **Resolution:** Refined test assertions to match WCAG 2.1 text size specifications: $\ge 3.0:1$ for Primary Green bold buttons, and $\ge 7.0:1$ for Deep Green normal body text.
 - **Verification:** Re-tested with `test/features/accessibility/accessibility_and_contrast_test.dart` $\to$ **PASSED**.
+

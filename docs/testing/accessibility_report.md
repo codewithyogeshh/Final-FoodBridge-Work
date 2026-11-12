@@ -60,3 +60,4 @@ $$\text{Contrast Ratio} = \frac{L_1 + 0.05}{L_2 + 0.05}$$
 
 - **Semantics Announcements:** Integrated via [accessibility_helper.dart](file:///d:/ys/lib/core/utils/accessibility_helper.dart) to announce lifecycle status changes (e.g. *"Pickup code verified. Mission in transit"*).
 - **Keyboard Traversal:** Form fields across authentication and donation creation support linear Tab / Next focus traversal without focus traps.
+

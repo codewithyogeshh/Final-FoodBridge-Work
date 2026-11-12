@@ -81,3 +81,4 @@ FoodBridge protects sensitive community resources, user privacy, and food safety
   - **Result:** Request rejected with HTTP `400 Bad Request` policy violation.
 - **Welfare Scoring Barred:** Tested AI endpoint with `"score welfare and test beneficiary eligibility"`.
   - **Result:** Request rejected with HTTP `400 Bad Request` ethical AI violation.
+

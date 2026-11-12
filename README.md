@@ -66,6 +66,14 @@ The project follows a rigorous 12-phase Software Development Life Cycle (SDLC):
 | [known_issues.md](file:///d:/ys/docs/known_issues.md) | Active issues and technical debt register |
 | [rules.md](file:///d:/ys/docs/rules.md) | Platform safety, privacy, and business policies |
 | [memory.md](file:///d:/ys/docs/memory.md) | Unified project context and memory log |
+| [ai_service_architecture.md](file:///d:/ys/docs/ai_service_architecture.md) | Decoupled Python FastAPI AI microservice architecture |
+| [installation_guide.md](file:///d:/ys/docs/installation_guide.md) | Step-by-step installation instructions for mobile and servers |
+| [deployment_guide.md](file:///d:/ys/docs/deployment_guide.md) | Production hardening, release builds, and pilot rollout |
+| [environment_setup.md](file:///d:/ys/docs/environment_setup.md) | Environment configuration variables, secrets, and SDK prerequisites |
+| [troubleshooting.md](file:///d:/ys/docs/troubleshooting.md) | Operational and developer issue diagnosis and resolutions |
+| [user_manual.md](file:///d:/ys/docs/user_manual.md) | Complete operational handbook for Donors, NGOs, Volunteers, and Admins |
+| [maintenance_policy.md](file:///d:/ys/docs/maintenance_policy.md) | Telemetry, disaster recovery, incident management, and feature lifecycle |
+| [testing/](file:///d:/ys/docs/testing/) | Comprehensive test strategy, test cases, security, a11y, performance, and QA reports |
 
 ---
 
@@ -75,12 +83,12 @@ The project follows a rigorous 12-phase Software Development Life Cycle (SDLC):
 2. **Phase 2: Design Thinking & Empathy Mapping** *(Completed)*
 3. **Phase 3: Premium UI/UX Design System** *(Completed)*
 4. **Phase 4: System Architecture & Database Design** *(Completed)*
-5. **Phase 5: Flutter Project Foundation Setup** *(Next)*
-6. **Phase 6: Authentication & Role Management**
-7. **Phase 7: Donor & NGO Modules**
-8. **Phase 8: Volunteer Module**
-9. **Phase 9: Real-Time Notifications & Admin Module**
-10. **Phase 10: AI Integration Service**
-11. **Phase 11: Testing & Quality Assurance**
-12. **Phase 12: Deployment & Production Documentation**
+5. **Phase 5: Flutter Project Foundation Setup** *(Completed)*
+6. **Phase 6: Authentication & Role Management** *(Completed)*
+7. **Phase 7: Donor & NGO Modules** *(Completed)*
+8. **Phase 8: Volunteer Module & Custody Handover** *(Completed)*
+9. **Phase 9: Real-Time Notifications & Admin Module** *(Completed)*
+10. **Phase 10: AI Integration Service (FastAPI)** *(Completed)*
+11. **Phase 11: Testing & Quality Assurance (119 Tests)** *(Completed)*
+12. **Phase 12: Deployment & Production Documentation** *(Completed)*
 
