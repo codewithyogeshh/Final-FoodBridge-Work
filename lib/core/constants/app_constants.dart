@@ -32,3 +32,4 @@ class AppConstants {
   static const String iconsPath = 'assets/icons/';
   static const String illustrationsPath = 'assets/illustrations/';
 }
+

@@ -34,3 +34,4 @@ class AccessibilityHelper {
     return MediaQuery.textScalerOf(context).scale(14) > 18.0;
   }
 }
+
