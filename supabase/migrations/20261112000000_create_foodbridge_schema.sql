@@ -283,3 +283,4 @@ BEGIN
     RETURN jsonb_build_object('success', TRUE, 'donation_id', p_donation_id, 'status', 'claimed');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+

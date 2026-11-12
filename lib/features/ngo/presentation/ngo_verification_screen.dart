@@ -249,3 +249,4 @@ class _NgoVerificationScreenState extends State<NgoVerificationScreen> {
     );
   }
 }
+

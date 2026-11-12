@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_empty_state.dart';
@@ -76,7 +77,11 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                         color: AppColors.white.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.verified, color: AppColors.white, size: 28),
+                      child: const Icon(
+                        Icons.verified,
+                        color: AppColors.white,
+                        size: 28,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -84,7 +89,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currentUser?.organizationName ?? 'Asha Children Foundation',
+                            currentUser?.organizationName ??
+                                'Asha Children Foundation',
                             style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 17,
@@ -94,7 +100,10 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                           const SizedBox(height: 2),
                           Text(
                             'Darpan: ${currentUser?.darpanId ?? "MH/2019/0219482"} • Tap to view verification',
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -129,13 +138,15 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
               children: [
                 Text(
                   'Available Near You',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   '${filteredAvailable.length} listings',
-                  style: const TextStyle(color: AppColors.mutedGrey, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppColors.mutedGrey,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -157,11 +168,18 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                   donor: d.donorName,
                   location: d.pickupAddress,
                   quantityText: '${d.quantity.toStringAsFixed(0)} ${d.unit}',
-                  expiryText: 'Deadline: ${dateFormat.format(d.pickupDeadline)}',
+                  expiryText:
+                      'Deadline: ${dateFormat.format(d.pickupDeadline)}',
                   isUrgent: d.isUrgent,
                   icon: d.isFood ? Icons.soup_kitchen : Icons.checkroom,
                   onTap: () => context.push('/donation-detail/${d.id}'),
-                  onClaim: () => _handleClaim(context, d, donationProvider, currentUser?.id ?? 'usr-ngo-202', currentUser?.organizationName ?? 'Asha Children Foundation'),
+                  onClaim: () => _handleClaim(
+                    context,
+                    d,
+                    donationProvider,
+                    currentUser?.id ?? 'usr-ngo-202',
+                    currentUser?.organizationName ?? 'Asha Children Foundation',
+                  ),
                 );
               }),
 
@@ -174,9 +192,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                 children: [
                   Text(
                     'Our Active Claims (${claimedByMe.length})',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () => context.push('/ngo/my-claims'),
@@ -199,15 +216,25 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                     ),
                     title: Text(
                       d.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     subtitle: Text(
                       d.assignedVolunteerName != null
                           ? 'Volunteer: ${d.assignedVolunteerName} (${d.status.displayName})'
                           : 'Status: Awaiting Volunteer Pickup',
-                      style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.mutedGrey,
+                      ),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.mutedGrey),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 14,
+                      color: AppColors.mutedGrey,
+                    ),
                     onTap: () => context.push('/donation-detail/${d.id}'),
                   ),
                 );
@@ -258,12 +285,19 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
             children: [
               Text(
                 'Claim ${donation.title}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.deepGreen),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.deepGreen,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Quantity: ${donation.quantity.toStringAsFixed(0)} ${donation.unit} • Must collect before ${DateFormat('hh:mm a').format(donation.pickupDeadline)}',
-                style: const TextStyle(color: AppColors.mutedGrey, fontSize: 13),
+                style: const TextStyle(
+                  color: AppColors.mutedGrey,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 20),
               FBButton(
@@ -278,7 +312,9 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Donation claimed! Broadcasted to volunteers for pickup.'),
+                        content: Text(
+                          'Donation claimed! Broadcasted to volunteers for pickup.',
+                        ),
                         backgroundColor: AppColors.primaryGreen,
                       ),
                     );
@@ -356,12 +392,19 @@ class _DonationFeedCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.charcoal),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: AppColors.charcoal,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '$donor • $location',
-                          style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.mutedGrey,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -372,7 +415,10 @@ class _DonationFeedCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.warmCream,
                   borderRadius: BorderRadius.circular(8),
@@ -380,17 +426,32 @@ class _DonationFeedCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(quantityText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.deepGreen)),
+                    Text(
+                      quantityText,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.deepGreen,
+                      ),
+                    ),
                     Row(
                       children: [
-                        Icon(Icons.timer_outlined, size: 14, color: isUrgent ? AppColors.errorRed : AppColors.orange),
+                        Icon(
+                          Icons.timer_outlined,
+                          size: 14,
+                          color: isUrgent
+                              ? AppColors.errorRed
+                              : AppColors.orange,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           expiryText,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isUrgent ? AppColors.errorRed : AppColors.orange,
+                            color: isUrgent
+                                ? AppColors.errorRed
+                                : AppColors.orange,
                           ),
                         ),
                       ],
@@ -399,11 +460,7 @@ class _DonationFeedCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              FBButton(
-                label: 'Claim Donation',
-                height: 44,
-                onPressed: onClaim,
-              ),
+              FBButton(label: 'Claim Donation', height: 44, onPressed: onClaim),
             ],
           ),
         ),
