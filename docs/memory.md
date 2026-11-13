@@ -341,6 +341,20 @@ Update the checkboxes as work is completed.
                                       Authored comprehensive operational guides: installation_guide.md, deployment_guide.md,
                                       environment_setup.md, troubleshooting.md, user_manual.md, and maintenance_policy.md.
                                       FoodBridge fully ready for real-world pilot release.
+
+  2.3                                 Multilingual Localization, 3-Mode Appearance, and First-Time T&C Modal.
+                                      1) Added comprehensive 3-language localization across English (en),
+                                         Hindi (hi), and Marathi (mr) with dynamic runtime switching via
+                                         AppBar translate icon and Profile screen settings.
+                                      2) Added 3-way appearance controller (Light, Dark, and System Default)
+                                         accessible via AppBar theme palette button and Profile segment pill control.
+                                      3) Implemented first-time login Terms & Conditions modal requiring explicit
+                                         acceptance of FSSAI Food Safety Charter, Clothing Cleanliness Declaration,
+                                         and Beneficiary Dignity Pledge before accessing dashboards.
+                                      4) Polished UI/UX across all 4 role dashboards adhering to taste-skill and
+                                         ui-ux-pro-max guidelines (touch targets >= 48dp, contrast WCAG AA/AAA,
+                                         font-scaling resilience).
+                                      All 101 tests passing and 0 flutter analyze issues verified.
   -----------------------------------------------------------------------
 
 **Maintenance rule:** When a decision changes, update the relevant
