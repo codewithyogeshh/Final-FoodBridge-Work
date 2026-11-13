@@ -23,6 +23,7 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   bool get isNgoVerified => _user?.isNgoVerified ?? false;
+  bool get hasAcceptedTerms => _user?.hasAcceptedTerms ?? false;
 
   void _init() {
     _user = _authService.currentUser;
@@ -128,6 +129,15 @@ class AuthProvider extends ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
       _setLoading(false);
       return false;
+    }
+  }
+
+  Future<void> acceptTerms() async {
+    if (_user != null) {
+      final updated = _user!.copyWith(hasAcceptedTerms: true);
+      await _authService.updateUser(updated);
+      _user = updated;
+      notifyListeners();
     }
   }
 

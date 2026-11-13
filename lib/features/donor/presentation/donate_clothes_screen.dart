@@ -431,7 +431,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _sampleImages.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (context, index) => const SizedBox(width: 12),
                   itemBuilder: (context, idx) {
                     final img = _sampleImages[idx];
                     final isSelected = (_selectedImage ?? _sampleImages[0]) == img;
@@ -454,7 +454,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                               Image.network(
                                 img,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (context, error, stackTrace) => Container(
                                   color: Colors.grey[200],
                                   child: const Icon(Icons.checkroom, color: AppColors.mutedGrey),
                                 ),

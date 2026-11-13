@@ -18,7 +18,27 @@ class LocaleProvider extends ChangeNotifier {
     }
   }
 
+  void setLanguageCode(String code) {
+    final target = supportedLocales.firstWhere(
+      (l) => l.languageCode == code,
+      orElse: () => const Locale('en'),
+    );
+    setLocale(target);
+  }
+
   String get languageName {
+    switch (_locale.languageCode) {
+      case 'hi':
+        return 'हिंदी (Hindi)';
+      case 'mr':
+        return 'मराठी (Marathi)';
+      case 'en':
+      default:
+        return 'English';
+    }
+  }
+
+  String get shortName {
     switch (_locale.languageCode) {
       case 'hi':
         return 'हिंदी';
@@ -26,8 +46,7 @@ class LocaleProvider extends ChangeNotifier {
         return 'मराठी';
       case 'en':
       default:
-        return 'English';
+        return 'EN';
     }
   }
 }
-

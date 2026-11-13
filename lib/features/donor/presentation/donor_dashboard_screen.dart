@@ -2,16 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../../core/widgets/fb_status_chip.dart';
 import '../../authentication/presentation/auth_provider.dart';
+import '../../authentication/presentation/widgets/terms_and_conditions_modal.dart';
 import '../../donations/presentation/donation_provider.dart';
 
-class DonorDashboardScreen extends StatelessWidget {
+class DonorDashboardScreen extends StatefulWidget {
   const DonorDashboardScreen({super.key});
 
+  @override
+  State<DonorDashboardScreen> createState() => _DonorDashboardScreenState();
+}
+
+class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      TermsAndConditionsModal.showIfNeeded(context);
+    });
+  }
+
   void _showDonationTypeSheet(BuildContext context) {
+    final tr = context.tr;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -25,7 +44,7 @@ class DonorDashboardScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'What would you like to donate?',
+                tr.newDonation,
                 style: Theme.of(sheetCtx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -49,8 +68,8 @@ class DonorDashboardScreen extends StatelessWidget {
                   ),
                   child: const Icon(Icons.soup_kitchen, color: Colors.white),
                 ),
-                title: const Text('Donate Surplus Food', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Cooked meals, bakery, dairy, groceries (FSSAI safety pledge)'),
+                title: Text(tr.donateFood, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(tr.get('donate_food_sub')),
                 trailing: const Icon(Icons.chevron_right, color: AppColors.primaryGreen),
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
@@ -73,8 +92,8 @@ class DonorDashboardScreen extends StatelessWidget {
                   ),
                   child: const Icon(Icons.checkroom, color: Colors.white),
                 ),
-                title: const Text('Donate Clean Clothing', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Winter wear, blankets, children & adult garments'),
+                title: Text(tr.donateClothes, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(tr.get('donate_clothes_sub')),
                 trailing: const Icon(Icons.chevron_right, color: AppColors.orange),
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
@@ -90,25 +109,38 @@ class DonorDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final auth = context.watch<AuthProvider>();
     final donationProvider = context.watch<DonationProvider>();
     final currentUser = auth.user;
 
-    // Donor's own donations or all donations if mock donor
     final myDonations = donationProvider.getDonationsByDonor(
       currentUser?.id ?? 'usr-donor-101',
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Donor Dashboard'),
+        title: Text(tr.donorDashboard),
         actions: [
           IconButton(
+            icon: const Icon(Icons.translate),
+            tooltip: tr.language,
+            onPressed: () => showLanguageBottomSheet(context),
+          ),
+          IconButton(
+            icon: Icon(themeProvider.appearanceIcon),
+            tooltip: tr.appearance,
+            onPressed: () => showAppearanceBottomSheet(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.notifications_outlined),
+            tooltip: tr.notifications,
             onPressed: () => context.push('/notifications'),
           ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
+            tooltip: tr.profile,
             onPressed: () => context.push('/profile'),
           ),
         ],
@@ -117,7 +149,7 @@ class DonorDashboardScreen extends StatelessWidget {
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('New Donation'),
+        label: Text(tr.newDonation),
         onPressed: () => _showDonationTypeSheet(context),
       ),
       body: SingleChildScrollView(
@@ -135,6 +167,13 @@ class DonorDashboardScreen extends StatelessWidget {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,9 +195,9 @@ class DonorDashboardScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Have surplus meals or clean clothes tonight? Post a rescue in under 90 seconds.',
-                    style: TextStyle(color: AppColors.white, fontSize: 13, height: 1.4),
+                  Text(
+                    tr.appTagline,
+                    style: const TextStyle(color: AppColors.white, fontSize: 13, height: 1.4),
                   ),
                 ],
               ),
@@ -167,7 +206,7 @@ class DonorDashboardScreen extends StatelessWidget {
 
             // Quick Donation Action Buttons
             Text(
-              'Create a Donation',
+              tr.get('create_donation'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -177,7 +216,7 @@ class DonorDashboardScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: _ActionTile(
-                    title: 'Donate Food',
+                    title: tr.donateFood,
                     subtitle: 'Cooked, groceries, bakery',
                     icon: Icons.soup_kitchen_outlined,
                     color: AppColors.primaryGreen,
@@ -187,7 +226,7 @@ class DonorDashboardScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ActionTile(
-                    title: 'Donate Clothes',
+                    title: tr.donateClothes,
                     subtitle: 'Wearable, clean garments',
                     icon: Icons.checkroom_outlined,
                     color: AppColors.orange,
@@ -203,7 +242,7 @@ class DonorDashboardScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'My Active Listings (${myDonations.length})',
+                  '${tr.myDonations} (${myDonations.length})',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -219,42 +258,42 @@ class DonorDashboardScreen extends StatelessWidget {
             if (myDonations.isEmpty)
               FBEmptyState(
                 title: 'No Active Donations',
-                description: 'You have not listed any food or clothes recently. Tap "+ New Donation" to start rescuing surplus.',
-                icon: Icons.inventory_2_outlined,
-                actionLabel: 'Donate Surplus',
-                onAction: () => context.push('/create-donation'),
+                description: 'You haven\'t posted any food or clothing donations yet.',
+                icon: Icons.volunteer_activism_outlined,
+                actionLabel: tr.newDonation,
+                onAction: () => _showDonationTypeSheet(context),
               )
             else
-              ...myDonations.map((d) {
-                final dateFormat = DateFormat('hh:mm a');
+              ...myDonations.map((donation) {
+                final dateFormat = DateFormat('EEE, d MMM - hh:mm a');
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => context.push('/donation-detail/${d.id}'),
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => context.push('/donation-detail/${donation.id}'),
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                width: 48,
-                                height: 48,
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
-                                  color: d.isFood
+                                  color: donation.isFood
                                       ? AppColors.primaryGreen.withOpacity(0.12)
-                                      : AppColors.warningOrange.withOpacity(0.12),
+                                      : AppColors.orange.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
-                                  d.isFood ? Icons.restaurant : Icons.checkroom,
-                                  color: d.isFood
-                                      ? AppColors.primaryGreen
-                                      : AppColors.warningOrange,
-                                  size: 26,
+                                  donation.isFood ? Icons.restaurant : Icons.checkroom,
+                                  color: donation.isFood ? AppColors.primaryGreen : AppColors.orange,
+                                  size: 24,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -263,49 +302,31 @@ class DonorDashboardScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      d.title,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        color: AppColors.charcoal,
-                                      ),
+                                      donation.title,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 2),
                                     Text(
-                                      '${d.quantity.toStringAsFixed(0)} ${d.unit} • ${d.pickupAddress}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.mutedGrey,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      '${donation.quantity.toStringAsFixed(0)} ${donation.unit} • ${donation.city}',
+                                      style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
                                     ),
                                   ],
                                 ),
                               ),
+                              FBStatusChip(status: donation.status.name),
                             ],
                           ),
                           const SizedBox(height: 12),
                           const Divider(),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              FBStatusChip(status: d.status.name),
-                              Row(
-                                children: [
-                                  const Icon(Icons.timer_outlined, size: 14, color: AppColors.orange),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Deadline: ${dateFormat.format(d.pickupDeadline)}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.orange,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                '${tr.get("pickup_deadline")}: ${dateFormat.format(donation.pickupDeadline)}',
+                                style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
                               ),
+                              const Icon(Icons.chevron_right, size: 20, color: AppColors.mutedGrey),
                             ],
                           ),
                         ],
@@ -314,45 +335,7 @@ class DonorDashboardScreen extends StatelessWidget {
                   ),
                 );
               }),
-
-            const SizedBox(height: 24),
-
-            // Impact Counter Cards
-            Text(
-              'Your Community Impact',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _ImpactTile(
-                    count: donationProvider.totalMealsRescued.toStringAsFixed(0),
-                    label: 'Meals Rescued',
-                    icon: Icons.soup_kitchen_outlined,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ImpactTile(
-                    count: donationProvider.totalClothingItemsRedistributed.toString(),
-                    label: 'Clothes Shared',
-                    icon: Icons.checkroom_outlined,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ImpactTile(
-                    count: '${(donationProvider.totalMealsRescued * 2.5).toStringAsFixed(0)} kg',
-                    label: 'CO2 Saved',
-                    icon: Icons.eco_outlined,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 80),
           ],
         ),
       ),
@@ -378,9 +361,15 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: color.withOpacity(0.3)),
+      ),
+      color: color.withOpacity(0.06),
       child: InkWell(
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -389,64 +378,24 @@ class _ActionTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  shape: BoxShape.circle,
+                  color: color,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: color, size: 24),
+                child: Icon(icon, color: Colors.white, size: 22),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.charcoal),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                style: const TextStyle(fontSize: 11, color: AppColors.mutedGrey),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ImpactTile extends StatelessWidget {
-  final String count;
-  final String label;
-  final IconData icon;
-
-  const _ImpactTile({
-    required this.count,
-    required this.label,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 20, color: AppColors.primaryGreen),
-          const SizedBox(height: 6),
-          Text(
-            count,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.deepGreen),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 10, color: AppColors.mutedGrey),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }

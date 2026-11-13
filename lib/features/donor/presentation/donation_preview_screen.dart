@@ -184,7 +184,7 @@ class _DonationPreviewScreenState extends State<DonationPreviewScreen> {
                                 height: 200,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                errorBuilder: (context, error, stackTrace) => Container(
                                   height: 160,
                                   color: Colors.grey[200],
                                   child: Icon(

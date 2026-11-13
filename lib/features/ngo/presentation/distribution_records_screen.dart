@@ -220,7 +220,7 @@ class _DistributionRecordsScreenState extends State<DistributionRecordsScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${totalQty.toStringAsFixed(0)}',
+                          totalQty.toStringAsFixed(0),
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -420,7 +420,7 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
   final _notesController = TextEditingController();
 
   Donation? _selectedDonation;
-  DateTime _distributionDate = DateTime.now();
+  final DateTime _distributionDate = DateTime.now();
   bool _isSaving = false;
 
   @override
@@ -542,8 +542,8 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                     ?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
-              DropdownButtonFormField<Donation>(
-                value: _selectedDonation,
+              DropdownButtonFormField<String>(
+                value: _selectedDonation?.id,
                 isExpanded: true,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
@@ -555,23 +555,22 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                   ),
                 ),
                 items: widget.eligibleDonations.map((d) {
-                  return DropdownMenuItem<Donation>(
-                    value: d,
+                  return DropdownMenuItem<String>(
+                    value: d.id,
                     child: Text(
                       '${d.title} (${d.quantity.toStringAsFixed(0)} ${d.unit})',
                       overflow: TextOverflow.ellipsis,
                     ),
                   );
                 }).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _selectedDonation = val;
-                    if (val != null) {
-                      _quantityController.text = val.quantity.toStringAsFixed(
-                        0,
-                      );
-                    }
-                  });
+                onChanged: (id) {
+                  if (id != null) {
+                    final found = widget.eligibleDonations.firstWhere((d) => d.id == id);
+                    setState(() {
+                      _selectedDonation = found;
+                      _quantityController.text = found.quantity.toStringAsFixed(0);
+                    });
+                  }
                 },
               ),
               const SizedBox(height: 16),
@@ -600,8 +599,9 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.people),
                       validator: (val) {
-                        if (val == null || val.trim().isEmpty)
+                        if (val == null || val.trim().isEmpty) {
                           return 'Enter headcount';
+                        }
                         final n = int.tryParse(val.trim());
                         if (n == null || n <= 0) return 'Must be > 0';
                         return null;
@@ -617,8 +617,9 @@ class _LogDistributionFormState extends State<_LogDistributionForm> {
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.scale),
                       validator: (val) {
-                        if (val == null || val.trim().isEmpty)
+                        if (val == null || val.trim().isEmpty) {
                           return 'Enter quantity';
+                        }
                         final n = double.tryParse(val.trim());
                         if (n == null || n <= 0) return 'Must be > 0';
                         return null;

@@ -23,6 +23,7 @@ class AppColors {
   // Dark Theme Palette ("Rider Mode" & Night Operations)
   static const Color backgroundDark = Color(0xFF12181B);
   static const Color surfaceDark = Color(0xFF1E262B);
+  static const Color cardDark = Color(0xFF1E262B);
   static const Color borderDark = Color(0xFF2C373E);
   static const Color primaryAccentDark = Color(0xFF2BB374);
   static const Color textDarkPrimary = Color(0xFFE0E6EB);

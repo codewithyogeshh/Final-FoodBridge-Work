@@ -96,3 +96,4 @@ PORT=8000
    ```
 3. **Verify Database Connectivity:**
    Confirm RLS policies in Supabase dashboard under **Authentication > Policies**.
+

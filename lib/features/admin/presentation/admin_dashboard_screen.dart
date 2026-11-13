@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../authentication/domain/models/app_user.dart';
 import '../../authentication/presentation/auth_provider.dart';
+import '../../authentication/presentation/widgets/terms_and_conditions_modal.dart';
 import '../../donations/presentation/donation_provider.dart';
 import '../domain/models/complaint.dart';
 import 'admin_provider.dart';
@@ -25,6 +29,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      TermsAndConditionsModal.showIfNeeded(context);
+    });
   }
 
   @override
@@ -150,6 +157,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final donationProvider = context.watch<DonationProvider>();
     final adminProvider = context.watch<AdminProvider>();
     final authProvider = context.watch<AuthProvider>();
@@ -157,14 +166,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Console'),
+        title: Text(tr.adminConsole),
         actions: [
           IconButton(
+            icon: const Icon(Icons.translate),
+            tooltip: tr.language,
+            onPressed: () => showLanguageBottomSheet(context),
+          ),
+          IconButton(
+            icon: Icon(themeProvider.appearanceIcon),
+            tooltip: tr.appearance,
+            onPressed: () => showAppearanceBottomSheet(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.notifications_outlined),
+            tooltip: tr.notifications,
             onPressed: () => context.push('/notifications'),
           ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
+            tooltip: tr.profile,
             onPressed: () => context.push('/profile'),
           ),
         ],
@@ -175,11 +196,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           unselectedLabelColor: AppColors.mutedGrey,
           indicatorColor: AppColors.primaryGreen,
           tabs: [
-            Tab(text: 'Overview & Analytics (${analytics['totalDonations']})'),
-            Tab(text: 'NGO Approvals (${adminProvider.pendingNgoCount})'),
-            Tab(text: 'Users (${adminProvider.managedUsers.length})'),
-            Tab(text: 'Complaints (${adminProvider.openComplaintsCount})'),
-            const Tab(text: 'Audit Logs'),
+            Tab(text: '${tr.get("overview")} (${analytics['totalDonations']})'),
+            Tab(text: '${tr.get("verifications")} (${adminProvider.pendingNgoCount})'),
+            Tab(text: '${tr.get("user_management")} (${adminProvider.managedUsers.length})'),
+            Tab(text: '${tr.get("complaints")} (${adminProvider.openComplaintsCount})'),
+            Tab(text: tr.get("audit_logs")),
           ],
         ),
       ),

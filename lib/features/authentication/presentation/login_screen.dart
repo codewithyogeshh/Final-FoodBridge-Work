@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
 import '../domain/models/app_user.dart';
 import 'auth_provider.dart';
+import 'widgets/terms_and_conditions_modal.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -67,6 +70,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (mounted) {
       if (success) {
+        // Enforce terms and conditions acceptance for first time login users
+        if (!auth.hasAcceptedTerms) {
+          final accepted = await TermsAndConditionsModal.showIfNeeded(context);
+          if (!accepted) return;
+        }
+
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Welcome back, ${auth.user?.fullName}!'),
@@ -103,10 +114,23 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final tr = context.tr;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign In'),
+        title: Text(tr.signIn),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.translate),
+            tooltip: tr.language,
+            onPressed: () => showLanguageBottomSheet(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: tr.appearance,
+            onPressed: () => showAppearanceBottomSheet(context),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -117,39 +141,39 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Welcome Back',
+                  tr.welcomeBack,
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.deepGreen,
                       ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Sign in with your FoodBridge credentials or choose a quick role profile below.',
-                  style: TextStyle(color: AppColors.mutedGrey, fontSize: 14),
+                Text(
+                  tr.get('welcome_back_sub'),
+                  style: const TextStyle(color: AppColors.mutedGrey, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
 
                 // Role selector chip group for demo exploration
-                const Text(
-                  'Quick Select Demo Profile:',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.charcoal),
+                Text(
+                  tr.get('quick_profile'),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.charcoal),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _roleFilterChip(UserRole.donor, 'Donor'),
-                    _roleFilterChip(UserRole.ngo, 'NGO Shelter'),
-                    _roleFilterChip(UserRole.volunteer, 'Volunteer'),
-                    _roleFilterChip(UserRole.admin, 'Admin'),
+                    _roleFilterChip(UserRole.donor, tr.donor),
+                    _roleFilterChip(UserRole.ngo, tr.ngo),
+                    _roleFilterChip(UserRole.volunteer, tr.volunteer),
+                    _roleFilterChip(UserRole.admin, tr.admin),
                   ],
                 ),
                 const SizedBox(height: 20),
 
                 FBTextField(
-                  label: 'Email Address',
+                  label: tr.email,
                   hint: 'user@example.com',
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -166,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 FBTextField(
-                  label: 'Password',
+                  label: tr.password,
                   hint: '••••••••••••',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -193,32 +217,34 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => context.push('/forgot-password'),
-                    child: const Text(
-                      'Forgot Password?',
-                      style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                    child: Text(
+                      tr.forgotPassword,
+                      style: const TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 FBButton(
                   label: 'Sign In as ${_selectedRole.displayName}',
                   isLoading: auth.isLoading,
                   onPressed: _handleLogin,
                 ),
                 const SizedBox(height: 24),
+
                 Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Text(
-                      "Don't have an account? ",
-                      style: TextStyle(color: AppColors.mutedGrey),
+                    Text(
+                      tr.get('welcome_sub').contains('सत्यापित') ? 'खाते नाही का? ' : "Don't have an account? ",
+                      style: const TextStyle(color: AppColors.mutedGrey),
                     ),
                     GestureDetector(
                       onTap: () => context.push('/register'),
-                      child: const Text(
-                        'Register',
-                        style: TextStyle(
+                      child: Text(
+                        tr.register,
+                        style: const TextStyle(
                           color: AppColors.primaryGreen,
                           fontWeight: FontWeight.bold,
                         ),
@@ -226,6 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -239,16 +266,15 @@ class _LoginScreenState extends State<LoginScreen> {
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
-      selectedColor: AppColors.primaryGreen.withValues(alpha: 0.18),
+      selectedColor: AppColors.primaryGreen.withOpacity(0.18),
+      backgroundColor: AppColors.borderLight.withOpacity(0.4),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.deepGreen : AppColors.mutedGrey,
+        color: isSelected ? AppColors.deepGreen : AppColors.charcoal,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),
       onSelected: (selected) {
-        if (selected) {
-          _fillDemoCredentials(role);
-        }
+        if (selected) _fillDemoCredentials(role);
       },
     );
   }

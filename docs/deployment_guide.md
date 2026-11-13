@@ -94,3 +94,4 @@ Output locations:
 - **Geographic Boundary:** Pune Core Zone (Swargate, Shivajinagar, Kothrud).
 - **Monitoring Horizon:** 14-day observation period tracking pickup velocity, expiry prevention, and feedback reports.
 - **Rollback Protocol:** In the event of a critical platform halt, the system will switch to manual phone/WhatsApp dispatch using the contact export feature in the Admin Console.
+

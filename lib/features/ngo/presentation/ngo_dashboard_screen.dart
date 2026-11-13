@@ -3,12 +3,16 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../../core/widgets/fb_text_field.dart';
 import '../../authentication/domain/models/app_user.dart';
 import '../../authentication/presentation/auth_provider.dart';
+import '../../authentication/presentation/widgets/terms_and_conditions_modal.dart';
 import '../../donations/domain/models/donation.dart';
 import '../../donations/presentation/donation_provider.dart';
 
@@ -21,6 +25,14 @@ class NgoDashboardScreen extends StatefulWidget {
 
 class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
   String _selectedFilter = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      TermsAndConditionsModal.showIfNeeded(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,16 +54,31 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
       currentUser?.id ?? 'usr-ngo-202',
     );
 
+    final tr = context.tr;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NGO Portal'),
+        title: Text(tr.ngoPortal),
         actions: [
           IconButton(
+            icon: const Icon(Icons.translate),
+            tooltip: tr.language,
+            onPressed: () => showLanguageBottomSheet(context),
+          ),
+          IconButton(
+            icon: Icon(themeProvider.appearanceIcon),
+            tooltip: tr.appearance,
+            onPressed: () => showAppearanceBottomSheet(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.notifications_outlined),
+            tooltip: tr.notifications,
             onPressed: () => context.push('/notifications'),
           ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
+            tooltip: tr.profile,
             onPressed: () => context.push('/profile'),
           ),
         ],

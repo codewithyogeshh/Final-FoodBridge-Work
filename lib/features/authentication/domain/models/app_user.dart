@@ -83,6 +83,7 @@ class AppUser {
   final String? donorCategory;
   final String? availability;
   final String? transportType;
+  final bool hasAcceptedTerms;
   final DateTime createdAt;
 
   const AppUser({
@@ -102,6 +103,7 @@ class AppUser {
     this.donorCategory,
     this.availability,
     this.transportType,
+    this.hasAcceptedTerms = false,
     required this.createdAt,
   });
 
@@ -132,6 +134,7 @@ class AppUser {
       donorCategory: json['donor_category'] as String?,
       availability: json['availability'] as String?,
       transportType: json['transport_type'] as String?,
+      hasAcceptedTerms: json['has_accepted_terms'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -156,6 +159,7 @@ class AppUser {
       'donor_category': donorCategory,
       'availability': availability,
       'transport_type': transportType,
+      'has_accepted_terms': hasAcceptedTerms,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -177,6 +181,7 @@ class AppUser {
     String? donorCategory,
     String? availability,
     String? transportType,
+    bool? hasAcceptedTerms,
     DateTime? createdAt,
   }) {
     return AppUser(
@@ -196,8 +201,17 @@ class AppUser {
       donorCategory: donorCategory ?? this.donorCategory,
       availability: availability ?? this.availability,
       transportType: transportType ?? this.transportType,
+      hasAcceptedTerms: hasAcceptedTerms ?? this.hasAcceptedTerms,
       createdAt: createdAt ?? this.createdAt,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppUser && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 

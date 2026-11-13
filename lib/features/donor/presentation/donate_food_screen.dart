@@ -29,7 +29,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
   bool _isVeg = true;
   String _storageCondition = 'hot';
   DateTime _pickupDeadline = DateTime.now().add(const Duration(hours: 4));
-  DateTime _prepTime = DateTime.now().subtract(const Duration(hours: 1));
+  final DateTime _prepTime = DateTime.now().subtract(const Duration(hours: 1));
   bool _safetyCharterAgreed = false;
   String? _selectedImage;
 

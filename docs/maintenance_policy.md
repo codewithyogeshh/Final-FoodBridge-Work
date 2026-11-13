@@ -80,3 +80,4 @@ flowchart LR
 ```
 
 All new capabilities must undergo the complete SDLC validation pipeline, ensuring the core donation and food safety workflows remain 100% stable and regression-free.
+

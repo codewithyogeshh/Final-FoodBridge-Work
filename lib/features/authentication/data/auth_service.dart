@@ -403,6 +403,17 @@ class AuthService {
     }
   }
 
+  /// Update user in session and memory
+  Future<void> updateUser(AppUser user) async {
+    _currentUser = user;
+    if (_mockUsers.containsKey(user.email)) {
+      _mockUsers[user.email] = user;
+    }
+    await _sessionStorage.saveUserSession(user);
+    _authStateController.add(_currentUser);
+    AppLogger.info('User updated: ${user.email}, acceptedTerms=${user.hasAcceptedTerms}');
+  }
+
   /// Switch active role / demo profile instantly
   void switchDemoRole(UserRole role) {
     switch (role) {

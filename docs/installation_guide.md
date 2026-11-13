@@ -86,3 +86,4 @@ docker run -d -p 8000:8000 --env-file ./ai_service/.env foodbridge-ai:1.0.0
 2. Create an **Internal Testing Track** release.
 3. Add email addresses of pilot donors, verified NGO coordinators, and volunteers to the testers list.
 4. Testers accept the invite link and install directly via the Google Play Store.
+

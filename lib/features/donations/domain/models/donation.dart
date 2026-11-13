@@ -457,4 +457,12 @@ class Donation {
       'is_washed_and_clean': isWashedAndClean,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Donation && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

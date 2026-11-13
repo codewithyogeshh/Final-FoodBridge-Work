@@ -5,7 +5,7 @@ class NotificationProvider extends ChangeNotifier {
   final List<AppNotification> _notifications = [];
   final Set<String> _sentEventFingerprints = {};
   NotificationPreferences _preferences = const NotificationPreferences();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   NotificationProvider() {
     _seedInitialNotifications();
