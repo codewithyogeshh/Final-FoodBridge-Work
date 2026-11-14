@@ -7,7 +7,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_button.dart';
-import '../../authentication/domain/models/app_user.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../authentication/presentation/widgets/terms_and_conditions_modal.dart';
 
@@ -96,65 +95,6 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Role Switcher for Demo / Cross-role exploration
-          Text(
-            tr.get('switch_role'),
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.mutedGrey,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            child: Column(
-              children: [
-                _menuTile(
-                  Icons.restaurant,
-                  tr.donor,
-                  'Create food & clothing surplus listings',
-                  () {
-                    auth.switchRole(UserRole.donor);
-                    context.go('/donor');
-                  },
-                ),
-                const Divider(height: 1),
-                _menuTile(
-                  Icons.volunteer_activism,
-                  tr.ngo,
-                  'Claim donations & log distributions',
-                  () {
-                    auth.switchRole(UserRole.ngo);
-                    context.go('/ngo');
-                  },
-                ),
-                const Divider(height: 1),
-                _menuTile(
-                  Icons.two_wheeler,
-                  tr.volunteer,
-                  'Active courier dispatch & GPS missions',
-                  () {
-                    auth.switchRole(UserRole.volunteer);
-                    context.go('/volunteer');
-                  },
-                ),
-                const Divider(height: 1),
-                _menuTile(
-                  Icons.admin_panel_settings,
-                  tr.admin,
-                  'Verification queue, users & audit logs',
-                  () {
-                    auth.switchRole(UserRole.admin);
-                    context.go('/admin');
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
           // Appearance: Light / Dark / System (User requirement)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -171,15 +111,15 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(0.12),
+                  color: isDark ? Colors.white10 : AppColors.primaryGreen.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   themeProvider.appearanceName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primaryGreen,
+                    color: isDark ? AppColors.textDarkPrimary : AppColors.primaryGreen,
                   ),
                 ),
               ),
@@ -330,24 +270,10 @@ class ProfileScreen extends StatelessWidget {
       trailing: isSelected
           ? const Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 22)
           : const Icon(Icons.radio_button_unchecked, color: AppColors.mutedGrey, size: 20),
-      onTap: () => localeProvider.setLanguageCode(code),
-    );
-  }
-
-  Widget _menuTile(IconData icon, String title, String subtitle, VoidCallback onTap) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, color: AppColors.primaryGreen, size: 22),
-      ),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.mutedGrey)),
-      trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.mutedGrey),
-      onTap: onTap,
+      onTap: () {
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        localeProvider.setLanguageCode(code, userEmail: auth.user?.email);
+      },
     );
   }
 }

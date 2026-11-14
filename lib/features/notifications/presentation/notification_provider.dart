@@ -7,8 +7,10 @@ class NotificationProvider extends ChangeNotifier {
   NotificationPreferences _preferences = const NotificationPreferences();
   final bool _isLoading = false;
 
-  NotificationProvider() {
-    _seedInitialNotifications();
+  NotificationProvider({bool seedInitial = true}) {
+    if (seedInitial) {
+      _seedInitialNotifications();
+    }
   }
 
   List<AppNotification> get allNotifications => List.unmodifiable(_notifications);

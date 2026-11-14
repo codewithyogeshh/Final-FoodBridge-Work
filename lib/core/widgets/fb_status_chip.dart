@@ -13,7 +13,9 @@ class FBStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final config = _getStatusConfig(status);
+    final bg = isDark ? config.textColor.withOpacity(0.18) : config.backgroundColor;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -21,9 +23,12 @@ class FBStatusChip extends StatelessWidget {
         vertical: compact ? 4 : 6,
       ),
       decoration: BoxDecoration(
-        color: config.backgroundColor,
+        color: bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: config.textColor.withOpacity(0.3), width: 1),
+        border: Border.all(
+          color: config.textColor.withOpacity(isDark ? 0.35 : 0.25),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

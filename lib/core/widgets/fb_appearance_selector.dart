@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../features/authentication/presentation/auth_provider.dart';
 import '../localization/app_translations.dart';
 import '../localization/locale_provider.dart';
 import '../theme/app_colors.dart';
@@ -255,9 +256,10 @@ void showLanguageBottomSheet(BuildContext context) {
               title: 'English',
               subtitle: 'Primary Language',
               isSelected: localeProvider.locale.languageCode == 'en',
-              onTap: () {
-                localeProvider.setLanguageCode('en');
-                Navigator.pop(ctx);
+              onTap: () async {
+                final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
+                await localeProvider.setLanguageCode('en', userEmail: userEmail);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
             ),
             const SizedBox(height: 8),
@@ -266,9 +268,10 @@ void showLanguageBottomSheet(BuildContext context) {
               title: 'हिंदी (Hindi)',
               subtitle: 'राष्ट्रभाषा • Hindi Translation',
               isSelected: localeProvider.locale.languageCode == 'hi',
-              onTap: () {
-                localeProvider.setLanguageCode('hi');
-                Navigator.pop(ctx);
+              onTap: () async {
+                final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
+                await localeProvider.setLanguageCode('hi', userEmail: userEmail);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
             ),
             const SizedBox(height: 8),
@@ -277,9 +280,10 @@ void showLanguageBottomSheet(BuildContext context) {
               title: 'मराठी (Marathi)',
               subtitle: 'महाराष्ट्र राज्य • Marathi Translation',
               isSelected: localeProvider.locale.languageCode == 'mr',
-              onTap: () {
-                localeProvider.setLanguageCode('mr');
-                Navigator.pop(ctx);
+              onTap: () async {
+                final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
+                await localeProvider.setLanguageCode('mr', userEmail: userEmail);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
             ),
             const SizedBox(height: 12),

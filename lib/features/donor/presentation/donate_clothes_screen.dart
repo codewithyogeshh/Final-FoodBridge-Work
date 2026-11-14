@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../donations/domain/models/donation.dart';
+import '../../donations/presentation/donation_provider.dart';
 import 'donation_preview_screen.dart';
 
 class DonateClothesScreen extends StatefulWidget {
-  const DonateClothesScreen({super.key});
+  final String? initialTitle;
+  final String? initialQty;
+  final String? initialDesc;
+
+  const DonateClothesScreen({
+    super.key,
+    this.initialTitle,
+    this.initialQty,
+    this.initialDesc,
+  });
 
   @override
   State<DonateClothesScreen> createState() => _DonateClothesScreenState();
@@ -28,8 +40,9 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
   String _targetSize = 'Free Size / Mixed';
   String _conditionGrade = 'Like New';
   DateTime _pickupDeadline = DateTime.now().add(const Duration(days: 3));
-  bool _cleanlinessDeclarationAgreed = false;
+  bool _cleanlinessDeclarationAgreed = true;
   String? _selectedImage;
+  bool _isPosting = false;
 
   final List<String> _clothingCategories = [
     'Winter Wear',
@@ -63,9 +76,16 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
   void initState() {
     super.initState();
     final auth = context.read<AuthProvider>();
+    _titleController.text = widget.initialTitle ?? 'Clean Clothes & Warm Wear';
+    _quantityController.text = widget.initialQty ?? '10';
+    _descriptionController.text = widget.initialDesc ?? 'Clean, washed, tear-free clothes ready for redistribution.';
     if (auth.user?.address != null) {
       _addressController.text = auth.user!.address!;
+    } else {
+      _addressController.text = 'Shop 4, MG Road, Camp, Pune';
     }
+    _cleanlinessDeclarationAgreed = true;
+    _selectedImage = _sampleImages[0];
   }
 
   @override
@@ -103,6 +123,153 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
         });
       }
     }
+  }
+
+  Future<void> _postDonationDirectly() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (!_cleanlinessDeclarationAgreed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please acknowledge the hygiene and cleanliness declaration.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isPosting = true);
+    final auth = context.read<AuthProvider>();
+    final donationProvider = context.read<DonationProvider>();
+    final user = auth.user;
+    final qty = double.tryParse(_quantityController.text.trim()) ?? 10.0;
+
+    final donation = Donation(
+      id: 'cloth-${DateTime.now().millisecondsSinceEpoch}',
+      donorId: user?.id ?? 'usr-donor-101',
+      donorName: user?.organizationName ?? user?.fullName ?? 'FoodBridge Donor',
+      donorPhone: user?.phone ?? '+91 98200 12345',
+      title: _titleController.text.trim().isNotEmpty
+          ? _titleController.text.trim()
+          : 'Clean Clothes & Warm Wear',
+      description: _descriptionController.text.trim().isNotEmpty
+          ? _descriptionController.text.trim()
+          : 'Clean, washed, tear-free clothes ready for redistribution.',
+      quantity: qty,
+      unit: _unitController.text.trim().isNotEmpty ? _unitController.text.trim() : 'pieces',
+      type: DonationType.clothing,
+      status: DonationStatus.available,
+      pickupAddress: _addressController.text.trim().isNotEmpty
+          ? _addressController.text.trim()
+          : (user?.address ?? 'Camp, Pune'),
+      city: 'Pune',
+      createdAt: DateTime.now(),
+      pickupDeadline: _pickupDeadline,
+      clothingCategory: _clothingCategory,
+      targetSize: _targetSize,
+      conditionGrade: _conditionGrade,
+      isWashedAndClean: true,
+      safetyCharterAgreed: true,
+      imageUrl: _selectedImage ?? _sampleImages[0],
+      pickupOtp: '${(1000 + (DateTime.now().millisecondsSinceEpoch % 9000))}',
+      deliveryOtp: '${(1000 + ((DateTime.now().millisecondsSinceEpoch ~/ 7) % 9000))}',
+      dropoffAddress: 'Goonj Community Hub, Swargate, Pune',
+    );
+
+    final success = await donationProvider.createDonation(donation);
+    if (!mounted) return;
+    setState(() => _isPosting = false);
+
+    if (success) {
+      _showSuccessDialog(donation);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(donationProvider.errorMessage ?? 'Failed to publish clothing donation.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+    }
+  }
+
+  void _showSuccessDialog(Donation donation) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 28),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Clothes Donation Posted!',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your clothing donation "${donation.title}" is now active.',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Local NGOs and relief partners in Pune have been notified immediately.',
+              style: TextStyle(color: AppColors.mutedGrey, fontSize: 13, height: 1.3),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.key, color: AppColors.primaryGreen, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Pickup OTP: ${donation.pickupOtp}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.deepGreen,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.go('/donor');
+            },
+            child: const Text('Dashboard'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.push('/donor/my-donations');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('View in My Donations'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleProceedToPreview() {
@@ -158,11 +325,12 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final dateFormat = DateFormat('EEE, d MMM - hh:mm a');
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Donate Clean Clothing'),
+        title: Text(tr.get('donate_clothes_title')),
       ),
       body: SafeArea(
         child: Form(
@@ -188,7 +356,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Dignity in Giving',
+                            tr.get('list_clothes'),
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.deepGreen,
@@ -196,7 +364,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Please donate gently worn, undamaged, and clean clothing to shelter residents and orphanages.',
+                            tr.get('list_clothes_sub'),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: AppColors.charcoal.withOpacity(0.8),
                                 ),
@@ -520,10 +688,23 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
               ),
               const SizedBox(height: 28),
 
-              // Review and Preview Button
+              // Direct Post and Preview Listing Buttons
               FBButton(
-                label: 'Review & Preview Listing',
-                icon: Icons.arrow_forward,
+                label: tr.get('publish_clothes'),
+                icon: Icons.checkroom_outlined,
+                isLoading: _isPosting,
+                onPressed: _postDonationDirectly,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.preview_outlined, size: 18),
+                label: Text(tr.get('preview_donation')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.deepGreen,
+                  side: const BorderSide(color: AppColors.primaryGreen),
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 onPressed: _handleProceedToPreview,
               ),
               const SizedBox(height: 32),

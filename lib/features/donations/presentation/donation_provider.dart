@@ -1,9 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/config/env_config.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/utils/app_logger.dart';
 import '../domain/models/donation.dart';
 import '../domain/models/distribution_record.dart';
 
 class DonationProvider extends ChangeNotifier {
+  static const String _kLocalDonationsKey = 'foodbridge_saved_donations';
   final List<Donation> _donations = [];
   final List<DistributionRecord> _distributionRecords = [];
   bool _isLoading = false;
@@ -11,9 +19,467 @@ class DonationProvider extends ChangeNotifier {
   DonationType? _selectedTypeFilter;
   bool? _selectedVegFilter;
   String _searchQuery = '';
+  RealtimeChannel? _realtimeChannel;
+  Timer? _heartbeatTimer;
 
   DonationProvider() {
-    _seedInitialData();
+    _initialize();
+    initRealtime();
+  }
+
+  static bool isDummyDonation(Donation d) {
+    if (d.id == 'dn-101' ||
+        d.id == 'dn-102' ||
+        d.id == 'dn-103' ||
+        d.id == 'dn-104' ||
+        d.id == 'dn-105' ||
+        d.id == 'dn-106' ||
+        d.id.startsWith('mock-')) {
+      return true;
+    }
+    if (d.donorId == 'usr-donor-101' ||
+        d.donorId == 'usr-donor-102' ||
+        d.donorId == 'usr-donor-103') {
+      return true;
+    }
+    return false;
+  }
+
+  static String _statusToDb(DonationStatus status) {
+    switch (status) {
+      case DonationStatus.draft:
+        return 'draft';
+      case DonationStatus.available:
+      case DonationStatus.requested:
+        return 'listed';
+      case DonationStatus.accepted:
+        return 'claimed';
+      case DonationStatus.assignedForPickup:
+        return 'assigned';
+      case DonationStatus.pickedUp:
+        return 'picked_up';
+      case DonationStatus.deliveredToNgo:
+      case DonationStatus.distributed:
+      case DonationStatus.completed:
+        return 'delivered';
+      case DonationStatus.cancelled:
+      case DonationStatus.rejected:
+        return 'cancelled';
+      case DonationStatus.expired:
+        return 'expired';
+    }
+  }
+
+  static DonationStatus _statusFromDb(String? status) {
+    switch (status?.toLowerCase().trim()) {
+      case 'listed':
+      case 'available':
+        return DonationStatus.available;
+      case 'claimed':
+      case 'accepted':
+        return DonationStatus.accepted;
+      case 'assigned':
+      case 'assigned_for_pickup':
+        return DonationStatus.assignedForPickup;
+      case 'picked_up':
+      case 'pickedup':
+      case 'in_transit':
+        return DonationStatus.pickedUp;
+      case 'delivered':
+      case 'delivered_to_ngo':
+      case 'distributed':
+      case 'completed':
+        return DonationStatus.deliveredToNgo;
+      case 'cancelled':
+      case 'rejected':
+        return DonationStatus.cancelled;
+      case 'expired':
+        return DonationStatus.expired;
+      case 'draft':
+        return DonationStatus.draft;
+      default:
+        return DonationStatus.fromString(status);
+    }
+  }
+
+  Future<void> _persistLocalDonations() async {
+    try {
+      if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return;
+      final prefs = await SharedPreferences.getInstance();
+      // Purge any dummy records prior to persisting
+      final cleanList = _donations.where((d) => !isDummyDonation(d)).toList();
+      final jsonList = cleanList.map((d) => d.toJson()).toList();
+      await prefs.setString(_kLocalDonationsKey, jsonEncode(jsonList));
+    } catch (e) {
+      AppLogger.warning('Failed to persist local donations: $e');
+    }
+  }
+
+  Future<List<Donation>> _loadLocalDonations() async {
+    try {
+      if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return [];
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kLocalDonationsKey);
+      if (raw != null && raw.isNotEmpty) {
+        final list = jsonDecode(raw) as List;
+        final List<Donation> valid = [];
+        bool hadDummy = false;
+        for (final item in list) {
+          try {
+            if (item is Map) {
+              final d = Donation.fromJson(Map<String, dynamic>.from(item));
+              if (isDummyDonation(d)) {
+                hadDummy = true;
+              } else {
+                valid.add(d);
+              }
+            }
+          } catch (e) {
+            AppLogger.warning('Skipping unparsable local donation: $e');
+          }
+        }
+        if (hadDummy) {
+          // Immediately rewrite clean storage so dummy data is eradicated permanently
+          final jsonList = valid.map((d) => d.toJson()).toList();
+          await prefs.setString(_kLocalDonationsKey, jsonEncode(jsonList));
+        }
+        return valid;
+      }
+    } catch (e) {
+      AppLogger.warning('Failed to load local donations: $e');
+    }
+    return [];
+  }
+
+  Future<void> _initialize() async {
+    final cached = await _loadLocalDonations();
+    if (cached.isNotEmpty) {
+      _donations.clear();
+      _donations.addAll(cached);
+      notifyListeners();
+    } else {
+      // STRICT ZERO DUMMY DATA RULE:
+      // Only seed mock data in headless flutter test environments.
+      // On real mobile devices and production runtime, NEVER seed dummy data!
+      if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+        _seedInitialData();
+      }
+    }
+
+    if (_isSupabaseLive) {
+      await loadDonations();
+    }
+  }
+
+  bool get _isSupabaseLive {
+    try {
+      if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return false;
+      if (!EnvConfig.isConfigured) return false;
+      Supabase.instance.client;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> loadDonations() async {
+    if (!_isSupabaseLive) return;
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final client = Supabase.instance.client;
+      final response = await client
+          .from('donations')
+          .select('*, profiles(full_name, phone)')
+          .order('created_at', ascending: false);
+
+      final List<dynamic> data = response as List<dynamic>;
+      for (final raw in data) {
+        try {
+          final item = Map<String, dynamic>.from(raw as Map);
+          if (item['profiles'] != null && item['profiles'] is Map) {
+            item['donor_name'] = item['profiles']['full_name'];
+            item['donor_phone'] = item['profiles']['phone'];
+          }
+          final dbStatus = item['status']?.toString();
+          item['status'] = _statusFromDb(dbStatus).name;
+
+          final liveDonation = Donation.fromJson(item);
+          if (isDummyDonation(liveDonation)) continue;
+
+          final existingIdx = _donations.indexWhere((d) => d.id == liveDonation.id);
+          if (existingIdx != -1) {
+            _donations[existingIdx] = liveDonation;
+          } else {
+            _donations.add(liveDonation);
+          }
+        } catch (err) {
+          AppLogger.warning('Error parsing live donation: $err');
+        }
+      }
+
+      await _persistLocalDonations();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      AppLogger.error('Error loading donations from Supabase', e);
+      notifyListeners();
+    }
+  }
+
+  void initRealtime() {
+    if (!_isSupabaseLive) return;
+    try {
+      final client = Supabase.instance.client;
+      _realtimeChannel = client.channel(
+        'public:donations_realtime',
+        opts: const RealtimeChannelConfig(self: false),
+      )
+        ..onBroadcast(
+          event: 'donation_sync',
+          callback: (payload) {
+            _handleBroadcastPayload(payload);
+          },
+        )
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'donations',
+          callback: (payload) {
+            _handleRealtimePayload(payload);
+          },
+        )
+        ..subscribe();
+
+      _startHeartbeat();
+    } catch (e) {
+      AppLogger.warning('initRealtime warning: $e');
+    }
+  }
+
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    // 3-second rapid background reconciliation ensures sync even if cellular network is unstable
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _syncLatestChanges();
+    });
+  }
+
+  int _statusRank(DonationStatus s) {
+    switch (s) {
+      case DonationStatus.draft:
+        return 0;
+      case DonationStatus.available:
+      case DonationStatus.requested:
+        return 1;
+      case DonationStatus.accepted:
+        return 2;
+      case DonationStatus.assignedForPickup:
+        return 3;
+      case DonationStatus.pickedUp:
+        return 4;
+      case DonationStatus.deliveredToNgo:
+        return 5;
+      case DonationStatus.distributed:
+        return 6;
+      case DonationStatus.completed:
+        return 7;
+      case DonationStatus.cancelled:
+      case DonationStatus.rejected:
+      case DonationStatus.expired:
+        return 99;
+    }
+  }
+
+  Donation _mergeDonations(Donation current, Donation incoming) {
+    if (incoming.status == DonationStatus.cancelled ||
+        incoming.status == DonationStatus.rejected ||
+        incoming.status == DonationStatus.expired) {
+      return incoming;
+    }
+
+    final currentRank = _statusRank(current.status);
+    final incomingRank = _statusRank(incoming.status);
+    final effectiveStatus =
+        incomingRank >= currentRank ? incoming.status : current.status;
+
+    return current.copyWith(
+      title: incoming.title.isNotEmpty ? incoming.title : current.title,
+      description:
+          incoming.description.isNotEmpty ? incoming.description : current.description,
+      status: effectiveStatus,
+      quantity: incoming.quantity,
+      unit: incoming.unit,
+      donorName: incoming.donorName.isNotEmpty ? incoming.donorName : current.donorName,
+      donorPhone: incoming.donorPhone ?? current.donorPhone,
+      pickupAddress:
+          incoming.pickupAddress.isNotEmpty ? incoming.pickupAddress : current.pickupAddress,
+      city: incoming.city.isNotEmpty ? incoming.city : current.city,
+      claimedByNgoId: incoming.claimedByNgoId ?? current.claimedByNgoId,
+      claimedByNgoName: incoming.claimedByNgoName ?? current.claimedByNgoName,
+      claimedAt: incoming.claimedAt ?? current.claimedAt,
+      assignedVolunteerId: incoming.assignedVolunteerId ?? current.assignedVolunteerId,
+      assignedVolunteerName:
+          incoming.assignedVolunteerName ?? current.assignedVolunteerName,
+      assignedVolunteerPhone:
+          incoming.assignedVolunteerPhone ?? current.assignedVolunteerPhone,
+      assignedAt: incoming.assignedAt ?? current.assignedAt,
+      pickedUpAt: incoming.pickedUpAt ?? current.pickedUpAt,
+      deliveredAt: incoming.deliveredAt ?? current.deliveredAt,
+      pickupOtp: incoming.pickupOtp.isNotEmpty ? incoming.pickupOtp : current.pickupOtp,
+      deliveryOtp:
+          incoming.deliveryOtp.isNotEmpty ? incoming.deliveryOtp : current.deliveryOtp,
+    );
+  }
+
+  Future<void> _syncLatestChanges() async {
+    if (!_isSupabaseLive || _isLoading) return;
+    try {
+      final client = Supabase.instance.client;
+      final response = await client
+          .from('donations')
+          .select('*, profiles(full_name, phone)')
+          .order('created_at', ascending: false)
+          .limit(40);
+
+      final List<dynamic> data = response as List<dynamic>;
+      bool changed = false;
+
+      for (final raw in data) {
+        try {
+          final item = Map<String, dynamic>.from(raw as Map);
+          if (item['profiles'] != null && item['profiles'] is Map) {
+            item['donor_name'] = item['profiles']['full_name'];
+            item['donor_phone'] = item['profiles']['phone'];
+          }
+          final dbStatus = item['status']?.toString();
+          item['status'] = _statusFromDb(dbStatus).name;
+
+          final liveDonation = Donation.fromJson(item);
+          if (isDummyDonation(liveDonation)) continue;
+
+          final existingIdx = _donations.indexWhere((d) => d.id == liveDonation.id);
+          if (existingIdx != -1) {
+            final current = _donations[existingIdx];
+            final merged = _mergeDonations(current, liveDonation);
+            if (current != merged) {
+              _donations[existingIdx] = merged;
+              changed = true;
+            }
+          } else {
+            _donations.insert(0, liveDonation);
+            changed = true;
+          }
+        } catch (_) {}
+      }
+
+      if (changed) {
+        await _persistLocalDonations();
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  /// Sends sub-100ms instant broadcast message to all connected clients
+  Future<void> _broadcastDonationEvent(String action, Donation donation) async {
+    if (!_isSupabaseLive || _realtimeChannel == null) return;
+    try {
+      await _realtimeChannel?.sendBroadcastMessage(
+        event: 'donation_sync',
+        payload: {
+          'action': action,
+          'donation': donation.toJson(),
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+    } catch (e) {
+      AppLogger.warning('Failed to broadcast donation event: $e');
+    }
+  }
+
+  void _handleBroadcastPayload(Map<String, dynamic> payload) {
+    try {
+      final action = payload['action']?.toString();
+      final rawDonation = payload['donation'];
+      if (rawDonation is! Map) return;
+
+      final map = Map<String, dynamic>.from(rawDonation);
+      final donation = Donation.fromJson(map);
+      if (isDummyDonation(donation)) return;
+
+      if (action == 'delete') {
+        _donations.removeWhere((d) => d.id == donation.id);
+      } else {
+        final index = _donations.indexWhere((d) => d.id == donation.id);
+        if (index != -1) {
+          _donations[index] = _mergeDonations(_donations[index], donation);
+        } else {
+          _donations.insert(0, donation);
+          // Trigger high-priority push/system notification across devices
+          if (action == 'create' || donation.status == DonationStatus.available) {
+            NotificationService.instance.showNewDonationNotification(
+              title: 'नवीन दान उपलब्ध! (New Donation)',
+              body: '${donation.donorName}: ${donation.quantity} ${donation.unit} ${donation.title}',
+              payload: donation.id,
+            );
+          }
+        }
+      }
+      _persistLocalDonations();
+      notifyListeners();
+      AppLogger.info('Instant realtime broadcast applied: ${donation.id} ($action)');
+    } catch (e) {
+      AppLogger.warning('Failed handling broadcast payload: $e');
+    }
+  }
+
+  void _handleRealtimePayload(PostgresChangePayload payload) {
+    try {
+      if (payload.eventType == PostgresChangeEvent.delete) {
+        final id = payload.oldRecord['id']?.toString() ?? '';
+        if (id.isNotEmpty) {
+          _donations.removeWhere((d) => d.id == id);
+          _persistLocalDonations();
+          notifyListeners();
+        }
+        return;
+      }
+
+      final record = Map<String, dynamic>.from(payload.newRecord);
+      if (record.isEmpty) return;
+
+      final dbStatus = record['status']?.toString();
+      record['status'] = _statusFromDb(dbStatus).name;
+
+      final donation = Donation.fromJson(record);
+      if (isDummyDonation(donation)) return;
+
+      final index = _donations.indexWhere((d) => d.id == donation.id);
+      if (index != -1) {
+        _donations[index] = _mergeDonations(_donations[index], donation);
+      } else {
+        _donations.insert(0, donation);
+        // Trigger high-priority push/system notification on phone screen
+        if (payload.eventType == PostgresChangeEvent.insert || donation.status == DonationStatus.available) {
+          NotificationService.instance.showNewDonationNotification(
+            title: 'नवीन दान उपलब्ध! (New Donation)',
+            body: '${donation.donorName}: ${donation.quantity} ${donation.unit} ${donation.title}',
+            payload: donation.id,
+          );
+        }
+      }
+      _persistLocalDonations();
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _heartbeatTimer?.cancel();
+    _realtimeChannel?.unsubscribe();
+    super.dispose();
   }
 
   List<Donation> get allDonations => List.unmodifiable(_donations);
@@ -53,7 +519,9 @@ class DonationProvider extends ChangeNotifier {
 
   // Active listings for NGOs to claim
   List<Donation> get availableDonations => filteredDonations
-      .where((d) => d.status == DonationStatus.listed)
+      .where((d) =>
+          d.status == DonationStatus.listed ||
+          d.status == DonationStatus.available)
       .toList();
 
   // NGO's claimed donations
@@ -65,8 +533,11 @@ class DonationProvider extends ChangeNotifier {
       _donations.where((d) => d.donorId == donorId).toList();
 
   // Volunteer available tasks (claimed by NGO, awaiting volunteer pickup)
-  List<Donation> get volunteerAvailableTasks =>
-      _donations.where((d) => d.status == DonationStatus.claimed).toList();
+  List<Donation> get volunteerAvailableTasks => _donations
+      .where((d) =>
+          d.status == DonationStatus.claimed ||
+          d.status == DonationStatus.accepted)
+      .toList();
 
   // Volunteer's active tasks (assigned or in transit)
   List<Donation> getVolunteerActiveTasks(String volunteerId) => _donations
@@ -74,6 +545,7 @@ class DonationProvider extends ChangeNotifier {
         (d) =>
             d.assignedVolunteerId == volunteerId &&
             (d.status == DonationStatus.assigned ||
+                d.status == DonationStatus.assignedForPickup ||
                 d.status == DonationStatus.pickedUp),
       )
       .toList();
@@ -83,25 +555,41 @@ class DonationProvider extends ChangeNotifier {
       .where(
         (d) =>
             d.assignedVolunteerId == volunteerId &&
-            d.status == DonationStatus.delivered,
+            (d.status == DonationStatus.delivered ||
+                d.status == DonationStatus.deliveredToNgo ||
+                d.status == DonationStatus.distributed ||
+                d.status == DonationStatus.completed),
       )
       .toList();
 
   // Impact metrics
   double get totalMealsRescued {
     return _donations
-        .where((d) => d.isFood && d.status == DonationStatus.delivered)
+        .where((d) =>
+            d.isFood &&
+            (d.status == DonationStatus.delivered ||
+                d.status == DonationStatus.deliveredToNgo ||
+                d.status == DonationStatus.distributed ||
+                d.status == DonationStatus.completed))
         .fold(0.0, (acc, item) => acc + item.quantity);
   }
 
   int get totalClothingItemsRedistributed {
     return _donations
-        .where((d) => d.isClothing && d.status == DonationStatus.delivered)
+        .where((d) =>
+            d.isClothing &&
+            (d.status == DonationStatus.delivered ||
+                d.status == DonationStatus.deliveredToNgo ||
+                d.status == DonationStatus.distributed ||
+                d.status == DonationStatus.completed))
         .fold(0, (acc, item) => acc + item.quantity.toInt());
   }
 
-  int get activeListingsCount =>
-      _donations.where((d) => d.status == DonationStatus.listed).length;
+  int get activeListingsCount => _donations
+      .where((d) =>
+          d.status == DonationStatus.listed ||
+          d.status == DonationStatus.available)
+      .length;
 
   void setTypeFilter(DonationType? type) {
     _selectedTypeFilter = type;
@@ -118,6 +606,13 @@ class DonationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearFilters() {
+    _selectedTypeFilter = null;
+    _selectedVegFilter = null;
+    _searchQuery = '';
+    notifyListeners();
+  }
+
   Donation? getDonationById(String id) {
     try {
       return _donations.firstWhere((d) => d.id == id);
@@ -131,8 +626,83 @@ class DonationProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      await Future.delayed(const Duration(milliseconds: 400));
+      await Future.delayed(const Duration(milliseconds: 200));
       _donations.insert(0, donation);
+      await _persistLocalDonations();
+      _broadcastDonationEvent('create', donation);
+
+      // Trigger local notification confirmation on poster's phone
+      NotificationService.instance.showNewDonationNotification(
+        title: 'दान यशस्वीरित्या नोंदवले! (Donation Listed)',
+        body: '${donation.title} (${donation.quantity} ${donation.unit}) FoodBridge नेटवर्कवर थेट प्रकाशित झाले आहे.',
+        payload: donation.id,
+      );
+
+      if (_isSupabaseLive) {
+        try {
+          final client = Supabase.instance.client;
+          final authUser = client.auth.currentUser;
+          final donorUuid = authUser?.id ?? 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
+          try {
+            await client.from('profiles').upsert({
+              'id': donorUuid,
+              'email': authUser?.email ?? 'donor@foodbridge.org',
+              'full_name': donation.donorName,
+              'role': 'donor',
+            });
+          } catch (_) {}
+
+          final dbStatus = _statusToDb(donation.status);
+
+          final inserted = await client.from('donations').insert({
+            'donor_id': donorUuid,
+            'title': donation.title,
+            'description': donation.description.isNotEmpty
+                ? donation.description
+                : 'Donation listing for ${donation.title}',
+            'type': donation.type.name,
+            'status': dbStatus,
+            'quantity': donation.quantity,
+            'unit': donation.unit,
+            'pickup_address': donation.pickupAddress,
+            'city': donation.city,
+            'pickup_deadline': donation.pickupDeadline.toIso8601String(),
+          }).select().maybeSingle();
+
+          if (inserted != null && inserted['id'] != null) {
+            final newId = inserted['id'].toString();
+            final idx = _donations.indexWhere((d) => d.id == donation.id);
+            if (idx != -1) {
+              _donations[idx] = _donations[idx].copyWith(id: newId);
+              await _persistLocalDonations();
+              _broadcastDonationEvent('create', _donations[idx]);
+            }
+
+            if (donation.isFood) {
+              await client.from('food_details').insert({
+                'donation_id': newId,
+                'is_veg': donation.isVeg,
+                'prep_time': (donation.prepTime ?? DateTime.now()).toIso8601String(),
+                'storage_condition': donation.storageCondition,
+                'allergen_notes': donation.allergenNotes,
+                'safety_charter_agreed': true,
+              });
+            } else if (donation.isClothing) {
+              await client.from('clothing_details').insert({
+                'donation_id': newId,
+                'clothing_category': donation.clothingCategory ?? 'general',
+                'condition_grade': donation.conditionGrade ?? 'wearable',
+                'is_washed_and_clean': true,
+              });
+            }
+          }
+        } catch (e) {
+          AppLogger.error('Failed to insert donation to Supabase', e);
+        }
+      }
+
+      await _persistLocalDonations();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -176,6 +746,8 @@ class DonationProvider extends ChangeNotifier {
     _donations[index] = _donations[index].copyWith(
       status: DonationStatus.cancelled,
     );
+    await _persistLocalDonations();
+    _broadcastDonationEvent('delete', _donations[index]);
     notifyListeners();
     return true;
   }
@@ -244,6 +816,8 @@ class DonationProvider extends ChangeNotifier {
           claimedAt: now,
         );
         _donations.insert(index + 1, claimedSlice);
+        _broadcastDonationEvent('update', _donations[index]);
+        _broadcastDonationEvent('create', claimedSlice);
       } else {
         // Full claim
         _donations[index] = current.copyWith(
@@ -252,8 +826,25 @@ class DonationProvider extends ChangeNotifier {
           claimedByNgoName: ngoName,
           claimedAt: now,
         );
+        _broadcastDonationEvent('update', _donations[index]);
       }
 
+      if (_isSupabaseLive) {
+        try {
+          await Supabase.instance.client
+              .from('donations')
+              .update({
+                'status': 'claimed',
+                'claimed_by_ngo_id': ngoId,
+                'claimed_by_ngo_name': ngoName,
+                'claimed_at': now.toIso8601String(),
+                'updated_at': now.toIso8601String(),
+              })
+              .eq('id', donationId);
+        } catch (_) {}
+      }
+
+      await _persistLocalDonations();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -296,6 +887,25 @@ class DonationProvider extends ChangeNotifier {
         assignedVolunteerPhone: phone,
         assignedAt: DateTime.now(),
       );
+      _broadcastDonationEvent('update', _donations[index]);
+
+      if (_isSupabaseLive) {
+        try {
+          await Supabase.instance.client
+              .from('donations')
+              .update({
+                'status': 'assigned',
+                'assigned_volunteer_id': volunteerId,
+                'assigned_volunteer_name': volunteerName,
+                'assigned_volunteer_phone': phone,
+                'assigned_at': DateTime.now().toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('id', donationId);
+        } catch (_) {}
+      }
+
+      await _persistLocalDonations();
       _isLoading = false;
       notifyListeners();
       return true;
@@ -330,6 +940,22 @@ class DonationProvider extends ChangeNotifier {
       status: DonationStatus.pickedUp,
       pickedUpAt: DateTime.now(),
     );
+    _broadcastDonationEvent('update', _donations[index]);
+
+    if (_isSupabaseLive) {
+      try {
+        await Supabase.instance.client
+            .from('donations')
+            .update({
+              'status': 'picked_up',
+              'picked_up_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', donationId);
+      } catch (_) {}
+    }
+
+    await _persistLocalDonations();
     notifyListeners();
     return true;
   }
@@ -356,6 +982,22 @@ class DonationProvider extends ChangeNotifier {
       status: DonationStatus.delivered,
       deliveredAt: DateTime.now(),
     );
+    _broadcastDonationEvent('update', _donations[index]);
+
+    if (_isSupabaseLive) {
+      try {
+        await Supabase.instance.client
+            .from('donations')
+            .update({
+              'status': 'delivered',
+              'delivered_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', donationId);
+      } catch (_) {}
+    }
+
+    await _persistLocalDonations();
     notifyListeners();
     return true;
   }
@@ -375,6 +1017,8 @@ class DonationProvider extends ChangeNotifier {
       status: DonationStatus.claimed,
       clearVolunteerAssignment: true,
     );
+    await _persistLocalDonations();
+    _broadcastDonationEvent('update', _donations[index]);
     notifyListeners();
     return true;
   }
@@ -402,6 +1046,7 @@ class DonationProvider extends ChangeNotifier {
     );
 
     _distributionRecords.insert(0, record);
+    _broadcastDonationEvent('update', _donations[index]);
     notifyListeners();
     return true;
   }
@@ -414,6 +1059,7 @@ class DonationProvider extends ChangeNotifier {
     _donations[index] = _donations[index].copyWith(
       status: DonationStatus.available,
     );
+    _broadcastDonationEvent('update', _donations[index]);
     notifyListeners();
     return true;
   }

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/exit_confirmation_dialog.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../../core/widgets/fb_status_chip.dart';
@@ -111,6 +112,7 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
   Widget build(BuildContext context) {
     final tr = context.tr;
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final auth = context.watch<AuthProvider>();
     final donationProvider = context.watch<DonationProvider>();
     final currentUser = auth.user;
@@ -119,7 +121,8 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
       currentUser?.id ?? 'usr-donor-101',
     );
 
-    return Scaffold(
+    return FoodBridgeExitScope(
+      child: Scaffold(
       appBar: AppBar(
         title: Text(tr.donorDashboard),
         actions: [
@@ -161,27 +164,33 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(20.0),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.deepGreen, AppColors.primaryGreen],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: isDark ? AppColors.surfaceDark : null,
+                gradient: isDark
+                    ? null
+                    : const LinearGradient(
+                        colors: [AppColors.deepGreen, AppColors.primaryGreen],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                border: isDark ? Border.all(color: AppColors.borderDark) : null,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryGreen.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                boxShadow: isDark
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: AppColors.primaryGreen.withOpacity(0.18),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Hello, ${currentUser?.fullName ?? "Donor"}!',
-                    style: const TextStyle(
-                      color: AppColors.white,
+                    style: TextStyle(
+                      color: isDark ? AppColors.textDarkPrimary : AppColors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -190,14 +199,18 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
                   Text(
                     currentUser?.organizationName ?? 'Community Donor Member',
                     style: TextStyle(
-                      color: AppColors.white.withOpacity(0.85),
+                      color: isDark ? AppColors.textDarkSecondary : AppColors.white.withOpacity(0.85),
                       fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     tr.appTagline,
-                    style: const TextStyle(color: AppColors.white, fontSize: 13, height: 1.4),
+                    style: TextStyle(
+                      color: isDark ? AppColors.textDarkSecondary : AppColors.white,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -339,7 +352,8 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }
 

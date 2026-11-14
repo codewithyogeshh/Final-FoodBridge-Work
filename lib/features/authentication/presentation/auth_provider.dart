@@ -33,6 +33,13 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
+  Future<AppUser?> restoreSession() async {
+    final restored = await _authService.restoreSession();
+    _user = restored;
+    notifyListeners();
+    return _user;
+  }
+
   Future<bool> login({
     required String email,
     required String password,

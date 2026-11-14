@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../authentication/data/auth_service.dart';
 import '../../authentication/domain/models/app_user.dart';
 import '../../donations/domain/models/donation.dart';
 import '../domain/models/audit_log.dart';
@@ -55,6 +58,8 @@ class PendingNgoApplication {
   final String contactPerson;
   final String phone;
   final String documentName;
+  final String? documentPath;
+  final String? email;
   final DateTime appliedAt;
 
   const PendingNgoApplication({
@@ -65,11 +70,41 @@ class PendingNgoApplication {
     required this.contactPerson,
     required this.phone,
     required this.documentName,
+    this.documentPath,
+    this.email,
     required this.appliedAt,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'regNo': regNo,
+    'darpanId': darpanId,
+    'contactPerson': contactPerson,
+    'phone': phone,
+    'documentName': documentName,
+    'documentPath': documentPath,
+    'email': email,
+    'appliedAt': appliedAt.toIso8601String(),
+  };
+
+  factory PendingNgoApplication.fromJson(Map<String, dynamic> map) => PendingNgoApplication(
+    id: map['id'] as String? ?? 'ngo-app-${DateTime.now().millisecondsSinceEpoch}',
+    name: map['name'] as String? ?? 'NGO Shelter',
+    regNo: map['regNo'] as String? ?? '',
+    darpanId: map['darpanId'] as String? ?? '',
+    contactPerson: map['contactPerson'] as String? ?? '',
+    phone: map['phone'] as String? ?? '',
+    documentName: map['documentName'] as String? ?? 'Document.pdf',
+    documentPath: map['documentPath'] as String?,
+    email: map['email'] as String?,
+    appliedAt: DateTime.tryParse(map['appliedAt'] as String? ?? '') ?? DateTime.now(),
+  );
 }
 
 class AdminProvider extends ChangeNotifier {
+  static const String _kPendingNgosStorageKey = 'foodbridge_pending_ngos_key_v1';
+
   final List<PendingNgoApplication> _pendingNgos = [];
   final List<ManagedUser> _managedUsers = [];
   final List<Complaint> _complaints = [];
@@ -79,6 +114,7 @@ class AdminProvider extends ChangeNotifier {
 
   AdminProvider() {
     _seedInitialAdminData();
+    _loadPendingNgos();
   }
 
   List<PendingNgoApplication> get pendingNgos => List.unmodifiable(_pendingNgos);
@@ -91,6 +127,38 @@ class AdminProvider extends ChangeNotifier {
   int get pendingNgoCount => _pendingNgos.length;
   int get openComplaintsCount =>
       _complaints.where((c) => c.status == ComplaintStatus.open).length;
+
+  Future<void> _persistPendingNgos() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = _pendingNgos.map((n) => jsonEncode(n.toJson())).toList();
+      await prefs.setStringList(_kPendingNgosStorageKey, list);
+    } catch (_) {}
+  }
+
+  Future<void> _loadPendingNgos() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_kPendingNgosStorageKey);
+      if (list != null && list.isNotEmpty) {
+        _pendingNgos.clear();
+        for (final item in list) {
+          try {
+            final map = jsonDecode(item) as Map<String, dynamic>;
+            _pendingNgos.add(PendingNgoApplication.fromJson(map));
+          } catch (_) {}
+        }
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  void addPendingNgoApplication(PendingNgoApplication app) {
+    _pendingNgos.removeWhere((n) => n.id == app.id || (app.email != null && n.email == app.email));
+    _pendingNgos.insert(0, app);
+    _persistPendingNgos();
+    notifyListeners();
+  }
 
   /// 1. NGO Verification: Approve
   Future<bool> approveNgo({
@@ -109,6 +177,27 @@ class AdminProvider extends ChangeNotifier {
 
     final app = _pendingNgos[index];
     _pendingNgos.removeAt(index);
+    await _persistPendingNgos();
+
+    // Mark verified in AuthService so NGO can now log in
+    await AuthService().verifyNgo(
+      ngoId: app.id,
+      email: app.email,
+      organizationName: app.name,
+      darpanId: app.darpanId,
+      registrationNumber: app.regNo,
+    );
+
+    // Add to managed users
+    _managedUsers.add(
+      ManagedUser(
+        id: app.id,
+        fullName: app.name,
+        email: app.email ?? '${app.id}@foodbridge.org',
+        role: UserRole.ngo,
+        createdAt: app.appliedAt,
+      ),
+    );
 
     _logAudit(
       actorId: adminId,
@@ -141,6 +230,12 @@ class AdminProvider extends ChangeNotifier {
 
     final app = _pendingNgos[index];
     _pendingNgos.removeAt(index);
+    await _persistPendingNgos();
+
+    await AuthService().rejectNgo(
+      ngoId: app.id,
+      email: app.email,
+    );
 
     _logAudit(
       actorId: adminId,
@@ -319,8 +414,33 @@ class AdminProvider extends ChangeNotifier {
     final total = allDonations.length;
     final food = allDonations.where((d) => d.isFood).length;
     final clothing = allDonations.where((d) => d.isClothing).length;
-    final completed = allDonations.where((d) => d.status == DonationStatus.completed).length;
-    final deliveries = allDonations.where((d) => d.status == DonationStatus.delivered || d.status == DonationStatus.completed).length;
+
+    final available = allDonations
+        .where((d) =>
+            d.status == DonationStatus.available ||
+            d.status == DonationStatus.listed)
+        .length;
+
+    final claimed = allDonations
+        .where((d) =>
+            d.status == DonationStatus.accepted ||
+            d.status == DonationStatus.claimed)
+        .length;
+
+    final inTransit = allDonations
+        .where((d) =>
+            d.status == DonationStatus.assigned ||
+            d.status == DonationStatus.assignedForPickup ||
+            d.status == DonationStatus.pickedUp)
+        .length;
+
+    final delivered = allDonations
+        .where((d) =>
+            d.status == DonationStatus.delivered ||
+            d.status == DonationStatus.deliveredToNgo ||
+            d.status == DonationStatus.distributed ||
+            d.status == DonationStatus.completed)
+        .length;
 
     final uniqueNgos = allDonations
         .where((d) => d.claimedByNgoId != null)
@@ -335,21 +455,39 @@ class AdminProvider extends ChangeNotifier {
         .length;
 
     final totalMeals = allDonations
-        .where((d) => d.isFood && (d.status == DonationStatus.delivered || d.status == DonationStatus.completed))
+        .where((d) =>
+            d.isFood &&
+            (d.status == DonationStatus.delivered ||
+                d.status == DonationStatus.deliveredToNgo ||
+                d.status == DonationStatus.distributed ||
+                d.status == DonationStatus.completed))
         .fold<double>(0.0, (acc, item) => acc + item.quantity);
 
     final totalClothes = allDonations
-        .where((d) => d.isClothing && (d.status == DonationStatus.delivered || d.status == DonationStatus.completed))
+        .where((d) =>
+            d.isClothing &&
+            (d.status == DonationStatus.delivered ||
+                d.status == DonationStatus.deliveredToNgo ||
+                d.status == DonationStatus.distributed ||
+                d.status == DonationStatus.completed))
         .fold<int>(0, (acc, item) => acc + item.quantity.toInt());
+
+    final completed = allDonations
+        .where((d) => d.status == DonationStatus.completed)
+        .length;
 
     return {
       'totalDonations': total,
+      'availableDonations': available,
+      'claimedDonations': claimed,
+      'inTransitDonations': inTransit,
+      'deliveredDonations': delivered,
+      'completedDonations': completed,
+      'successfulDeliveries': delivered,
       'foodDonations': food,
       'clothingDonations': clothing,
-      'completedDonations': completed,
-      'successfulDeliveries': deliveries,
-      'activeNgos': uniqueNgos > 0 ? uniqueNgos : 3,
-      'activeVolunteers': uniqueVolunteers > 0 ? uniqueVolunteers : 2,
+      'activeNgos': uniqueNgos,
+      'activeVolunteers': uniqueVolunteers,
       'totalMealsRescued': totalMeals,
       'totalClothingItems': totalClothes,
     };

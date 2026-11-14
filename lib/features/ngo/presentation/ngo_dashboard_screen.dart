@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/exit_confirmation_dialog.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_empty_state.dart';
@@ -56,8 +57,10 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
 
     final tr = context.tr;
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return FoodBridgeExitScope(
+      child: Scaffold(
       appBar: AppBar(
         title: Text(tr.ngoPortal),
         actions: [
@@ -95,7 +98,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: AppColors.deepGreen,
+                  color: isDark ? AppColors.surfaceDark : AppColors.deepGreen,
+                  border: isDark ? Border.all(color: AppColors.borderDark) : null,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
@@ -103,12 +107,12 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.15),
+                        color: isDark ? AppColors.primaryGreen.withOpacity(0.2) : AppColors.white.withOpacity(0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.verified,
-                        color: AppColors.white,
+                        color: isDark ? AppColors.primaryGreen : AppColors.white,
                         size: 28,
                       ),
                     ),
@@ -120,8 +124,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                           Text(
                             currentUser?.organizationName ??
                                 'Asha Children Foundation',
-                            style: const TextStyle(
-                              color: AppColors.white,
+                            style: TextStyle(
+                              color: isDark ? AppColors.textDarkPrimary : AppColors.white,
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                             ),
@@ -129,15 +133,15 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                           const SizedBox(height: 2),
                           Text(
                             'Darpan: ${currentUser?.darpanId ?? "MH/2019/0219482"} • Tap to view verification',
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: isDark ? AppColors.textDarkSecondary : Colors.white70,
                               fontSize: 13,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Colors.white70),
+                    Icon(Icons.chevron_right, color: isDark ? AppColors.textDarkSecondary : Colors.white70),
                   ],
                 ),
               ),
@@ -308,7 +312,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _filterChip(String key, String label) {

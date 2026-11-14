@@ -28,13 +28,15 @@ void main() {
     expect(find.text('FoodBridge'), findsOneWidget);
     expect(find.text('Share More. Waste Less. Bridge the Need.'), findsOneWidget);
 
-    // Fast-forward past the splash screen timer (1500ms) to onboarding
+    // Fast-forward past the splash screen timer (1200ms) to onboarding
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     // Verify Onboarding / Role selection screen is rendered
-    expect(find.text('Welcome to FoodBridge'), findsOneWidget);
-    expect(find.text('I Want to Donate'), findsOneWidget);
-    expect(find.text('We are an NGO / Shelter'), findsOneWidget);
-    expect(find.text('I Want to Volunteer'), findsOneWidget);
+    expect(find.text('Select Your Role'), findsOneWidget);
+    expect(find.text('Restaurant\nDonor'), findsOneWidget);
+    expect(find.text('Normal\nDonor'), findsOneWidget);
+    expect(find.text('Volunteer'), findsOneWidget);
+    expect(find.text('Admin'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
   });
 }

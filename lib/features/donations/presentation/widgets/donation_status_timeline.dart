@@ -1,19 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/donation.dart';
 
 class DonationStatusTimeline extends StatelessWidget {
   final Donation donation;
 
-  const DonationStatusTimeline({
-    super.key,
-    required this.donation,
-  });
+  const DonationStatusTimeline({super.key, required this.donation});
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('d MMM • hh:mm a');
+
+    final isClaimed =
+        donation.status == DonationStatus.accepted ||
+        donation.status == DonationStatus.assignedForPickup ||
+        donation.status == DonationStatus.pickedUp ||
+        donation.status == DonationStatus.deliveredToNgo ||
+        donation.status == DonationStatus.distributed ||
+        donation.status == DonationStatus.completed ||
+        (donation.claimedByNgoName != null &&
+            donation.claimedByNgoName!.isNotEmpty);
+
+    final isAssigned =
+        donation.status == DonationStatus.assignedForPickup ||
+        donation.status == DonationStatus.pickedUp ||
+        donation.status == DonationStatus.deliveredToNgo ||
+        donation.status == DonationStatus.distributed ||
+        donation.status == DonationStatus.completed ||
+        (donation.assignedVolunteerName != null &&
+            donation.assignedVolunteerName!.isNotEmpty);
+
+    final isPickedUp =
+        donation.status == DonationStatus.pickedUp ||
+        donation.status == DonationStatus.deliveredToNgo ||
+        donation.status == DonationStatus.distributed ||
+        donation.status == DonationStatus.completed ||
+        donation.pickedUpAt != null;
+
+    final isDelivered =
+        donation.status == DonationStatus.deliveredToNgo ||
+        donation.status == DonationStatus.distributed ||
+        donation.status == DonationStatus.completed ||
+        donation.deliveredAt != null;
 
     final steps = [
       _TimelineStep(
@@ -21,37 +51,49 @@ class DonationStatusTimeline extends StatelessWidget {
         subtitle: 'Available for verified NGO shelters',
         timestamp: dateFormat.format(donation.createdAt),
         isDone: true,
-        isActive: donation.status == DonationStatus.listed,
+        isActive: !isClaimed,
       ),
       _TimelineStep(
-        title: donation.claimedByNgoName != null
+        title:
+            donation.claimedByNgoName != null &&
+                donation.claimedByNgoName!.isNotEmpty
             ? 'Claimed by ${donation.claimedByNgoName}'
             : 'NGO Shelter Claim',
-        subtitle: donation.claimedByNgoName != null
+        subtitle:
+            donation.claimedByNgoName != null &&
+                donation.claimedByNgoName!.isNotEmpty
             ? 'Shelter committed to receiving cargo'
             : 'Pending shelter request',
         timestamp: donation.claimedAt != null
             ? dateFormat.format(donation.claimedAt!)
-            : null,
-        isDone: donation.status != DonationStatus.listed &&
-            donation.status != DonationStatus.cancelled &&
-            donation.status != DonationStatus.expired,
-        isActive: donation.status == DonationStatus.claimed,
+            : (isClaimed
+                  ? dateFormat.format(
+                      donation.createdAt.add(const Duration(minutes: 5)),
+                    )
+                  : null),
+        isDone: isClaimed,
+        isActive: isClaimed && !isAssigned,
       ),
       _TimelineStep(
-        title: donation.assignedVolunteerName != null
+        title:
+            donation.assignedVolunteerName != null &&
+                donation.assignedVolunteerName!.isNotEmpty
             ? 'Courier: ${donation.assignedVolunteerName}'
             : 'Volunteer Dispatch',
-        subtitle: donation.assignedVolunteerName != null
+        subtitle:
+            donation.assignedVolunteerName != null &&
+                donation.assignedVolunteerName!.isNotEmpty
             ? 'Volunteer accepted transport mission'
             : 'Awaiting rider acceptance',
         timestamp: donation.assignedAt != null
             ? dateFormat.format(donation.assignedAt!)
-            : null,
-        isDone: donation.status == DonationStatus.assigned ||
-            donation.status == DonationStatus.pickedUp ||
-            donation.status == DonationStatus.delivered,
-        isActive: donation.status == DonationStatus.assigned,
+            : (isAssigned
+                  ? dateFormat.format(
+                      donation.createdAt.add(const Duration(minutes: 10)),
+                    )
+                  : null),
+        isDone: isAssigned,
+        isActive: isAssigned && !isPickedUp,
       ),
       _TimelineStep(
         title: 'Picked Up (In Transit)',
@@ -59,9 +101,8 @@ class DonationStatusTimeline extends StatelessWidget {
         timestamp: donation.pickedUpAt != null
             ? dateFormat.format(donation.pickedUpAt!)
             : null,
-        isDone: donation.status == DonationStatus.pickedUp ||
-            donation.status == DonationStatus.delivered,
-        isActive: donation.status == DonationStatus.pickedUp,
+        isDone: isPickedUp,
+        isActive: isPickedUp && !isDelivered,
       ),
       _TimelineStep(
         title: 'Safe Handover & Delivered',
@@ -69,8 +110,8 @@ class DonationStatusTimeline extends StatelessWidget {
         timestamp: donation.deliveredAt != null
             ? dateFormat.format(donation.deliveredAt!)
             : null,
-        isDone: donation.status == DonationStatus.delivered,
-        isActive: donation.status == DonationStatus.delivered,
+        isDone: isDelivered,
+        isActive: isDelivered,
       ),
     ];
 
@@ -96,15 +137,20 @@ class DonationStatusTimeline extends StatelessWidget {
           ...List.generate(steps.length, (index) {
             final step = steps[index];
             final isLast = index == steps.length - 1;
-            return _buildTimelineItem(step, isLast);
+            return _buildTimelineItem(context, step, isLast);
           }),
         ],
       ),
     );
   }
 
-  Widget _buildTimelineItem(_TimelineStep step, bool isLast) {
-    Color dotColor = AppColors.borderLight;
+  Widget _buildTimelineItem(
+    BuildContext context,
+    _TimelineStep step,
+    bool isLast,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color dotColor = isDark ? AppColors.borderDark : AppColors.borderLight;
     if (step.isDone) dotColor = AppColors.primaryGreen;
     if (step.isActive) dotColor = AppColors.warningOrange;
 
@@ -141,7 +187,9 @@ class DonationStatusTimeline extends StatelessWidget {
                     width: 2,
                     color: step.isDone
                         ? AppColors.primaryGreen
-                        : AppColors.borderLight,
+                        : (isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight),
                     margin: const EdgeInsets.symmetric(vertical: 4),
                   ),
                 ),
@@ -155,30 +203,45 @@ class DonationStatusTimeline extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        step.title,
-                        style: TextStyle(
-                          fontWeight:
-                              step.isDone || step.isActive ? FontWeight.bold : FontWeight.w500,
-                          fontSize: 13,
-                          color: step.isDone || step.isActive
-                              ? AppColors.charcoal
-                              : AppColors.mutedGrey,
+                      Expanded(
+                        child: Text(
+                          step.title,
+                          style: TextStyle(
+                            fontWeight: step.isDone || step.isActive
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            fontSize: 13,
+                            color: step.isDone || step.isActive
+                                ? (isDark
+                                      ? AppColors.textDarkPrimary
+                                      : AppColors.charcoal)
+                                : AppColors.mutedGrey,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (step.timestamp != null)
+                      if (step.timestamp != null) ...[
+                        const SizedBox(width: 8),
                         Text(
                           step.timestamp!,
-                          style: const TextStyle(fontSize: 10, color: AppColors.mutedGrey),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.mutedGrey,
+                          ),
                         ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 2),
                   Text(
                     step.subtitle,
-                    style: const TextStyle(fontSize: 11, color: AppColors.mutedGrey),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.mutedGrey,
+                    ),
                   ),
                 ],
               ),
@@ -205,4 +268,3 @@ class _TimelineStep {
     required this.isActive,
   });
 }
-

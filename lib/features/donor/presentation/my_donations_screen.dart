@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../../core/widgets/fb_status_chip.dart';
@@ -32,6 +33,83 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
     super.dispose();
   }
 
+  void _showDonationTypeSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Create New Donation',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.deepGreen),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Select category to proceed with instant donation posting',
+                style: TextStyle(color: AppColors.mutedGrey, fontSize: 13),
+              ),
+              const SizedBox(height: 18),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: AppColors.primaryGreen.withOpacity(0.4)),
+                ),
+                tileColor: AppColors.primaryGreen.withOpacity(0.06),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.soup_kitchen, color: Colors.white),
+                ),
+                title: const Text('Donate Food Surplus', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Cooked meals, groceries, bakery & fruits'),
+                trailing: const Icon(Icons.chevron_right, color: AppColors.primaryGreen),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  context.push('/donate-food');
+                },
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: AppColors.orange.withOpacity(0.4)),
+                ),
+                tileColor: AppColors.orange.withOpacity(0.06),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.orange,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.checkroom, color: Colors.white),
+                ),
+                title: const Text('Donate Clothes', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Wearable clothes, winter wear & blankets'),
+                trailing: const Icon(Icons.chevron_right, color: AppColors.orange),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  context.push('/donate-clothes');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -53,17 +131,19 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
             d.status == DonationStatus.expired)
         .toList();
 
+    final tr = context.tr;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Donations'),
+        title: Text(tr.myDonations),
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primaryGreen,
           unselectedLabelColor: AppColors.mutedGrey,
           indicatorColor: AppColors.primaryGreen,
           tabs: [
-            Tab(text: 'Active Listings (${activeDonations.length})'),
-            Tab(text: 'History (${historyDonations.length})'),
+            Tab(text: '${tr.get('active_tab')} (${activeDonations.length})'),
+            Tab(text: '${tr.get('completed_tab')} (${historyDonations.length})'),
           ],
         ),
       ),
@@ -71,8 +151,8 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('New Donation'),
-        onPressed: () => context.push('/create-donation'),
+        label: Text(tr.newDonation),
+        onPressed: () => _showDonationTypeSheet(context),
       ),
       body: TabBarView(
         controller: _tabController,
@@ -93,7 +173,7 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
             : 'Completed and historical deliveries will appear here.',
         icon: Icons.inventory_2_outlined,
         actionLabel: isActive ? 'Post a Donation' : null,
-        onAction: isActive ? () => context.push('/create-donation') : null,
+        onAction: isActive ? () => _showDonationTypeSheet(context) : null,
       );
     }
 

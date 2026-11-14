@@ -284,3 +284,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================================
+-- 6. ENABLE SUPABASE REALTIME REPLICATION
+-- ============================================================================
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.donations;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.donation_requests;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.assignments;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+

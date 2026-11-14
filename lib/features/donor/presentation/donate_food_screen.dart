@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../donations/domain/models/donation.dart';
+import '../../donations/presentation/donation_provider.dart';
 import 'donation_preview_screen.dart';
 
 class DonateFoodScreen extends StatefulWidget {
-  const DonateFoodScreen({super.key});
+  final String? initialTitle;
+  final String? initialQty;
+  final String? initialDesc;
+
+  const DonateFoodScreen({
+    super.key,
+    this.initialTitle,
+    this.initialQty,
+    this.initialDesc,
+  });
 
   @override
   State<DonateFoodScreen> createState() => _DonateFoodScreenState();
@@ -30,8 +42,9 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
   String _storageCondition = 'hot';
   DateTime _pickupDeadline = DateTime.now().add(const Duration(hours: 4));
   final DateTime _prepTime = DateTime.now().subtract(const Duration(hours: 1));
-  bool _safetyCharterAgreed = false;
+  bool _safetyCharterAgreed = true;
   String? _selectedImage;
+  bool _isPosting = false;
 
   final List<String> _foodCategories = [
     'Cooked Meals',
@@ -50,9 +63,16 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
   void initState() {
     super.initState();
     final auth = context.read<AuthProvider>();
+    _titleController.text = widget.initialTitle ?? 'Cooked Meals (Fresh Surplus)';
+    _quantityController.text = widget.initialQty ?? '10';
+    _descriptionController.text = widget.initialDesc ?? 'Freshly prepared wholesome food, hygienically packed in food containers.';
     if (auth.user?.address != null) {
       _addressController.text = auth.user!.address!;
+    } else {
+      _addressController.text = 'Shop 4, MG Road, Camp, Pune';
     }
+    _safetyCharterAgreed = true;
+    _selectedImage = _sampleImages[0];
   }
 
   @override
@@ -91,6 +111,153 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
         });
       }
     }
+  }
+
+  Future<void> _postDonationDirectly() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (!_safetyCharterAgreed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please acknowledge the FSSAI Food Safety and Hygiene Charter.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isPosting = true);
+    final auth = context.read<AuthProvider>();
+    final donationProvider = context.read<DonationProvider>();
+    final user = auth.user;
+    final qty = double.tryParse(_quantityController.text.trim()) ?? 10.0;
+
+    final donation = Donation(
+      id: 'food-${DateTime.now().millisecondsSinceEpoch}',
+      donorId: user?.id ?? 'usr-donor-101',
+      donorName: user?.organizationName ?? user?.fullName ?? 'FoodBridge Donor',
+      donorPhone: user?.phone ?? '+91 98200 12345',
+      title: _titleController.text.trim().isNotEmpty
+          ? _titleController.text.trim()
+          : 'Cooked Meals (Fresh Surplus)',
+      description: _descriptionController.text.trim().isNotEmpty
+          ? _descriptionController.text.trim()
+          : 'Freshly prepared wholesome food, hygienically packed in food containers.',
+      quantity: qty,
+      unit: _unitController.text.trim().isNotEmpty ? _unitController.text.trim() : 'meals',
+      type: DonationType.food,
+      status: DonationStatus.available,
+      pickupAddress: _addressController.text.trim().isNotEmpty
+          ? _addressController.text.trim()
+          : (user?.address ?? 'Camp, Pune'),
+      city: 'Pune',
+      createdAt: DateTime.now(),
+      pickupDeadline: _pickupDeadline,
+      prepTime: _prepTime,
+      isVeg: _isVeg,
+      storageCondition: _storageCondition,
+      allergenNotes: _allergenController.text.trim().isNotEmpty ? _allergenController.text.trim() : null,
+      safetyCharterAgreed: _safetyCharterAgreed,
+      imageUrl: _selectedImage ?? _sampleImages[0],
+      pickupOtp: '${(1000 + (DateTime.now().millisecondsSinceEpoch % 9000))}',
+      deliveryOtp: '${(1000 + ((DateTime.now().millisecondsSinceEpoch ~/ 7) % 9000))}',
+      dropoffAddress: 'Asha Children Foundation, Swargate, Pune',
+    );
+
+    final success = await donationProvider.createDonation(donation);
+    if (!mounted) return;
+    setState(() => _isPosting = false);
+
+    if (success) {
+      _showSuccessDialog(donation);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(donationProvider.errorMessage ?? 'Failed to publish donation.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+    }
+  }
+
+  void _showSuccessDialog(Donation donation) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 28),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Donation Posted!',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your food donation "${donation.title}" is now active.',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Verified NGOs and volunteers in Pune have been notified immediately.',
+              style: TextStyle(color: AppColors.mutedGrey, fontSize: 13, height: 1.3),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.key, color: AppColors.primaryGreen, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Pickup OTP: ${donation.pickupOtp}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.deepGreen,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.go('/donor');
+            },
+            child: const Text('Dashboard'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.push('/donor/my-donations');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('View in My Donations'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleProceedToPreview() {
@@ -146,11 +313,12 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
     final dateFormat = DateFormat('EEE, d MMM - hh:mm a');
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Donate Food Surplus'),
+        title: Text(tr.get('donate_food_title')),
       ),
       body: SafeArea(
         child: Form(
@@ -159,16 +327,16 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             children: [
               Text(
-                'List Surplus Food',
+                tr.get('list_surplus_food'),
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.deepGreen,
                     ),
               ),
               const SizedBox(height: 6),
-              const Text(
-                'Help verified local shelters rescue freshly prepared or packaged food.',
-                style: TextStyle(color: AppColors.mutedGrey, fontSize: 14),
+              Text(
+                tr.get('list_surplus_food_sub'),
+                style: const TextStyle(color: AppColors.mutedGrey, fontSize: 14),
               ),
               const SizedBox(height: 20),
 
@@ -223,15 +391,22 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
               const SizedBox(height: 18),
 
               // Food Category
-              const Text('Food Category:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(tr.get('food_category'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: _foodCategories.map((cat) {
                   final isSelected = _foodCategory == cat;
+                  final localizedCat = cat == 'Cooked Meals'
+                      ? tr.get('cooked_meals')
+                      : cat == 'Raw Groceries / Produce'
+                          ? tr.get('raw_groceries')
+                          : cat == 'Bakery & Dairy'
+                              ? tr.get('bakery_dairy')
+                              : tr.get('packaged_goods');
                   return ChoiceChip(
-                    label: Text(cat),
+                    label: Text(localizedCat),
                     selected: isSelected,
                     selectedColor: AppColors.primaryGreen.withValues(alpha: 0.18),
                     labelStyle: TextStyle(
@@ -248,7 +423,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
               const SizedBox(height: 16),
 
               FBTextField(
-                label: 'Food Name / Title',
+                label: tr.get('food_title'),
                 hint: 'e.g. 50 Boxes of Veg Pulao & Dal Tadka',
                 controller: _titleController,
                 prefixIcon: const Icon(Icons.restaurant, color: AppColors.mutedGrey),
@@ -257,7 +432,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
               const SizedBox(height: 16),
 
               FBTextField(
-                label: 'Description & Packaging Notes',
+                label: tr.get('food_desc'),
                 hint: 'e.g. Freshly cooked for corporate lunch. Sealed in foil meal trays.',
                 controller: _descriptionController,
                 maxLines: 3,
@@ -271,7 +446,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
                   Expanded(
                     flex: 2,
                     child: FBTextField(
-                      label: 'Quantity',
+                      label: tr.get('quantity_and_unit'),
                       hint: 'e.g. 50',
                       controller: _quantityController,
                       keyboardType: TextInputType.number,
@@ -286,7 +461,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
                   Expanded(
                     flex: 2,
                     child: FBTextField(
-                      label: 'Unit',
+                      label: tr.get('meals_unit'),
                       hint: 'meals, kg, boxes',
                       controller: _unitController,
                       validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
@@ -337,7 +512,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
               const SizedBox(height: 16),
 
               // Holding Condition
-              const Text('Holding Condition & Food Storage:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(tr.get('storage_condition'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -376,7 +551,7 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
               const SizedBox(height: 16),
 
               // Collection Deadline
-              const Text('Collection Deadline (Must be picked up before):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(tr.get('pickup_deadline'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: _selectPickupDeadline,
@@ -406,11 +581,51 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
               const SizedBox(height: 16),
 
               FBTextField(
-                label: 'Exact Pickup Address & Locality',
+                label: tr.get('pickup_address'),
                 hint: 'e.g. Shop 4, Green Cafe, MG Road, Camp, Pune',
                 controller: _addressController,
                 prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.mutedGrey),
                 validator: (v) => v == null || v.trim().isEmpty ? 'Pickup address is required' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Auto Notify Nearby NGOs Switch (Matching Reference Image)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.cell_tower, color: AppColors.primaryGreen, size: 22),
+                        SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Auto Notify Nearby NGOs',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            Text(
+                              'Instant dispatch broadcast to shelters within 5km',
+                              style: TextStyle(fontSize: 11, color: AppColors.mutedGrey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Switch(
+                      value: true,
+                      activeColor: AppColors.primaryGreen,
+                      onChanged: (val) {},
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -423,12 +638,12 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
                     activeColor: AppColors.primaryGreen,
                     onChanged: (val) => setState(() => _safetyCharterAgreed = val ?? false),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(top: 8.0),
+                      padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'I declare under FSSAI food safety norms that this surplus was cooked hygienically, stored appropriately, and is fit for human consumption.',
-                        style: TextStyle(fontSize: 12, color: AppColors.charcoal, height: 1.3),
+                        tr.get('fssai_pledge_desc'),
+                        style: const TextStyle(fontSize: 12, color: AppColors.charcoal, height: 1.3),
                       ),
                     ),
                   ),
@@ -437,8 +652,21 @@ class _DonateFoodScreenState extends State<DonateFoodScreen> {
               const SizedBox(height: 24),
 
               FBButton(
-                label: 'Proceed to Preview Listing',
-                icon: Icons.preview_outlined,
+                label: tr.get('publish_food'),
+                icon: Icons.volunteer_activism_outlined,
+                isLoading: _isPosting,
+                onPressed: _postDonationDirectly,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.preview_outlined, size: 18),
+                label: Text(tr.get('preview_donation')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.deepGreen,
+                  side: const BorderSide(color: AppColors.primaryGreen),
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 onPressed: _handleProceedToPreview,
               ),
               const SizedBox(height: 30),

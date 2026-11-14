@@ -6,9 +6,41 @@ import '../../../core/localization/locale_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
+import '../../../core/widgets/foodbridge_logo.dart';
 
-class OnboardingScreen extends StatelessWidget {
+/// The official FoodBridge Role Selection Screen (Matching Image 1 Screen 2).
+/// Displays a 2x2 grid of roles:
+/// - Restaurant Donor
+/// - Normal Donor
+/// - Volunteer
+/// - Admin
+/// With interactive selection state and the solid green 'Continue ->' pill button.
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  String _selectedRoleKey = 'normal_donor'; // 'restaurant_donor', 'normal_donor', 'volunteer', 'admin'
+
+  void _onContinue() {
+    switch (_selectedRoleKey) {
+      case 'restaurant_donor':
+        context.push('/login?role=donor&category=restaurant');
+        break;
+      case 'normal_donor':
+        context.push('/login?role=donor&category=individual');
+        break;
+      case 'volunteer':
+        context.push('/volunteer/get-started');
+        break;
+      case 'admin':
+        context.push('/login?role=admin');
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,86 +74,172 @@ class OnboardingScreen extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 8),
-              Text(
-                tr.get('welcome'),
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.deepGreen,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                tr.get('welcome_sub'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.mutedGrey,
-                    ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                localeProvider.locale.languageCode == 'mr'
-                    ? 'सहभागाचा मार्ग निवडा:'
-                    : localeProvider.locale.languageCode == 'hi'
-                        ? 'अपनी भागीदारी का प्रकार चुनें:'
-                        : 'Choose how you want to participate:',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              _RoleCard(
-                title: tr.get('onboarding_role_donor'),
-                subtitle: tr.get('donate_food_sub'),
-                icon: Icons.restaurant,
-                accentColor: AppColors.primaryGreen,
-                onTap: () => context.push('/register?role=donor'),
+              // Top Logo Header
+              const Center(
+                child: FoodBridgeLogo(
+                  size: 64,
+                  showTagline: false,
+                ),
               ),
               const SizedBox(height: 12),
-              _RoleCard(
-                title: tr.get('onboarding_role_ngo'),
-                subtitle: 'Verified charities, food banks & shelter homes',
-                icon: Icons.volunteer_activism,
-                accentColor: AppColors.orange,
-                onTap: () => context.push('/register?role=ngo'),
-              ),
-              const SizedBox(height: 12),
-              _RoleCard(
-                title: tr.get('onboarding_role_volunteer'),
-                subtitle: 'Deliver & coordinate hyper-local rescue dispatches',
-                icon: Icons.two_wheeler,
-                accentColor: AppColors.deepGreen,
-                onTap: () => context.push('/register?role=volunteer'),
-              ),
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    localeProvider.locale.languageCode == 'mr'
-                        ? 'आधीच खाते आहे? '
-                        : localeProvider.locale.languageCode == 'hi'
-                            ? 'क्या आपका पहले से खाता है? '
-                            : 'Already have an account? ',
-                    style: const TextStyle(color: AppColors.mutedGrey),
-                  ),
-                  GestureDetector(
-                    onTap: () => context.push('/login'),
-                    child: Text(
-                      tr.signIn,
-                      style: const TextStyle(
-                        color: AppColors.primaryGreen,
+              Center(
+                child: Text(
+                  localeProvider.locale.languageCode == 'mr'
+                      ? 'तुमची भूमिका निवडा'
+                      : localeProvider.locale.languageCode == 'hi'
+                          ? 'अपनी भूमिका चुनें'
+                          : 'Select Your Role',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: AppColors.deepGreen,
                       ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 2x2 Grid of Roles - Row 1
+              Row(
+                children: [
+                  Expanded(
+                    child: _RoleGridCard(
+                      title: localeProvider.locale.languageCode == 'mr'
+                          ? 'हॉटेल / रेस्टॉरंट'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'रेस्टोरेंट डोनर'
+                              : 'Restaurant\nDonor',
+                      subtitle: localeProvider.locale.languageCode == 'mr'
+                          ? 'हॉटेलमधील अन्न दान करा'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'रेस्टोरेंट से भोजन दान करें'
+                              : 'Donate Food from Your Restaurant',
+                      icon: Icons.restaurant_menu,
+                      isSelected: _selectedRoleKey == 'restaurant_donor',
+                      onTap: () => setState(() => _selectedRoleKey = 'restaurant_donor'),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _RoleGridCard(
+                      title: localeProvider.locale.languageCode == 'mr'
+                          ? 'सामान्य दाता'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'सामान्य डोनर'
+                              : 'Normal\nDonor',
+                      subtitle: localeProvider.locale.languageCode == 'mr'
+                          ? 'घरी बनवलेले अन्न शेअर करा'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'घर से भोजन साझा करें'
+                              : 'Share Food from Home',
+                      icon: Icons.card_giftcard,
+                      isSelected: _selectedRoleKey == 'normal_donor',
+                      onTap: () => setState(() => _selectedRoleKey = 'normal_donor'),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
+
+              // 2x2 Grid of Roles - Row 2
+              Row(
+                children: [
+                  Expanded(
+                    child: _RoleGridCard(
+                      title: localeProvider.locale.languageCode == 'mr'
+                          ? 'स्वयंसेवक'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'स्वयंसेवक'
+                              : 'Volunteer',
+                      subtitle: localeProvider.locale.languageCode == 'mr'
+                          ? 'समुदायाची सेवा व मदत'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'समुदाय की सेवा और सहायता'
+                              : 'Serve & Support Our Community',
+                      icon: Icons.groups_outlined,
+                      isSelected: _selectedRoleKey == 'volunteer',
+                      onTap: () => setState(() => _selectedRoleKey = 'volunteer'),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _RoleGridCard(
+                      title: localeProvider.locale.languageCode == 'mr'
+                          ? 'प्रशासक'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'एडमिन'
+                              : 'Admin',
+                      subtitle: localeProvider.locale.languageCode == 'mr'
+                          ? 'प्लॅटफॉर्म व्यवस्थापन व देखरेख'
+                          : localeProvider.locale.languageCode == 'hi'
+                              ? 'प्लेटफॉर्म प्रबंधन व निगरानी'
+                              : 'Manage & Monitor The Platform',
+                      icon: Icons.admin_panel_settings_outlined,
+                      isSelected: _selectedRoleKey == 'admin',
+                      onTap: () => setState(() => _selectedRoleKey = 'admin'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Solid green Continue button matching design
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _onContinue,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    elevation: 3,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        localeProvider.locale.languageCode == 'mr'
+                            ? 'पुढे जा'
+                            : localeProvider.locale.languageCode == 'hi'
+                                ? 'आगे बढ़ें'
+                                : 'Continue',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Direct link to NGO Shelter Portal
+              Center(
+                child: TextButton(
+                  onPressed: () => context.push('/register?role=ngo'),
+                  child: Text(
+                    localeProvider.locale.languageCode == 'mr'
+                        ? 'नोंदणीकृत NGO आहात का? येथे सामील व्हा →'
+                        : localeProvider.locale.languageCode == 'hi'
+                            ? 'पंजीकृत एनजीओ हैं? यहाँ शामिल हों →'
+                            : 'Are you a verified NGO? Register shelter here →',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -130,18 +248,18 @@ class OnboardingScreen extends StatelessWidget {
   }
 }
 
-class _RoleCard extends StatelessWidget {
+class _RoleGridCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final Color accentColor;
+  final bool isSelected;
   final VoidCallback onTap;
 
-  const _RoleCard({
+  const _RoleGridCard({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.accentColor,
+    required this.isSelected,
     required this.onTap,
   });
 
@@ -149,53 +267,80 @@ class _RoleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      color: isDark ? AppColors.cardDark : AppColors.white,
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark ? AppColors.primaryGreen.withOpacity(0.18) : const Color(0xFFEAF8F0))
+                : (isDark ? AppColors.cardDark : AppColors.white),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryGreen : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+              width: isSelected ? 2.2 : 1.2,
+            ),
+            boxShadow: [
+              if (isSelected)
+                BoxShadow(
+                  color: AppColors.primaryGreen.withOpacity(0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              else
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  color: isSelected
+                      ? AppColors.primaryGreen
+                      : (isDark ? Colors.white10 : const Color(0xFFEDF7EE)),
+                  shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: accentColor, size: 26),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.mutedGrey,
-                          ),
-                    ),
-                  ],
+                child: Icon(
+                  icon,
+                  size: 26,
+                  color: isSelected ? Colors.white : AppColors.primaryGreen,
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.mutedGrey),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  height: 1.2,
+                  color: isSelected ? AppColors.primaryGreen : (isDark ? Colors.white : AppColors.charcoal),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? Colors.white60 : AppColors.mutedGrey,
+                  height: 1.2,
+                ),
+              ),
             ],
           ),
         ),

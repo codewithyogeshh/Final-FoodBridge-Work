@@ -25,7 +25,18 @@ import '../../features/volunteer/presentation/volunteer_history_screen.dart';
 import '../../features/volunteer/presentation/volunteer_mission_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../features/donor/presentation/analytics_screen.dart';
+import '../../features/donor/presentation/restaurant_donor_dashboard_screen.dart';
+import '../../features/authentication/presentation/admin_login_screen.dart';
+import '../../features/donations/presentation/tracking_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/volunteer/presentation/volunteer_get_started_screen.dart';
+import '../../features/volunteer/presentation/volunteer_available_tasks_screen.dart';
+import '../../features/volunteer/presentation/volunteer_task_tracking_screen.dart';
+import '../../features/volunteer/presentation/volunteer_activity_screen.dart';
+import '../../features/volunteer/presentation/volunteer_impact_screen.dart';
+import '../../features/volunteer/presentation/volunteer_profile_screen.dart';
+import '../../features/volunteer/presentation/volunteer_rewards_screen.dart';
 import 'route_guard.dart';
 
 class AppRouter {
@@ -39,6 +50,7 @@ class AppRouter {
           location: state.matchedLocation,
           isAuthenticated: authProvider.isAuthenticated,
           userRole: authProvider.user?.role,
+          donorCategory: authProvider.user?.donorCategory,
         );
       },
       routes: [
@@ -77,6 +89,25 @@ class AppRouter {
           builder: (context, state) => const DonorDashboardScreen(),
         ),
         GoRoute(
+          path: '/restaurant-donor',
+          builder: (context, state) => const RestaurantDonorDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/admin-login',
+          builder: (context, state) => const AdminLoginScreen(),
+        ),
+        GoRoute(
+          path: '/tracking/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id'] ?? 'dn-101';
+            return TrackingScreen(donationId: id);
+          },
+        ),
+        GoRoute(
+          path: '/analytics',
+          builder: (context, state) => const AnalyticsScreen(),
+        ),
+        GoRoute(
           path: '/donor/dashboard',
           builder: (context, state) => const DonorDashboardScreen(),
         ),
@@ -90,11 +121,29 @@ class AppRouter {
         ),
         GoRoute(
           path: '/donate-food',
-          builder: (context, state) => const DonateFoodScreen(),
+          builder: (context, state) {
+            final title = state.uri.queryParameters['title'];
+            final qty = state.uri.queryParameters['qty'];
+            final desc = state.uri.queryParameters['desc'];
+            return DonateFoodScreen(
+              initialTitle: title,
+              initialQty: qty,
+              initialDesc: desc,
+            );
+          },
         ),
         GoRoute(
           path: '/donate-clothes',
-          builder: (context, state) => const DonateClothesScreen(),
+          builder: (context, state) {
+            final title = state.uri.queryParameters['title'];
+            final qty = state.uri.queryParameters['qty'];
+            final desc = state.uri.queryParameters['desc'];
+            return DonateClothesScreen(
+              initialTitle: title,
+              initialQty: qty,
+              initialDesc: desc,
+            );
+          },
         ),
         GoRoute(
           path: '/donation-preview',
@@ -138,8 +187,36 @@ class AppRouter {
           builder: (context, state) => const NgoVerificationScreen(),
         ),
         GoRoute(
+          path: '/volunteer/get-started',
+          builder: (context, state) => const VolunteerGetStartedScreen(),
+        ),
+        GoRoute(
           path: '/volunteer',
           builder: (context, state) => const VolunteerDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/volunteer/tasks',
+          builder: (context, state) => const VolunteerAvailableTasksScreen(),
+        ),
+        GoRoute(
+          path: '/volunteer/tracking',
+          builder: (context, state) => const VolunteerTaskTrackingScreen(),
+        ),
+        GoRoute(
+          path: '/volunteer/activity',
+          builder: (context, state) => const VolunteerActivityScreen(),
+        ),
+        GoRoute(
+          path: '/volunteer/impact',
+          builder: (context, state) => const VolunteerImpactScreen(),
+        ),
+        GoRoute(
+          path: '/volunteer/profile',
+          builder: (context, state) => const VolunteerProfileScreen(),
+        ),
+        GoRoute(
+          path: '/volunteer/rewards',
+          builder: (context, state) => const VolunteerRewardsScreen(),
         ),
         GoRoute(
           path: '/volunteer/history',

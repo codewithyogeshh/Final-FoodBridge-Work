@@ -353,63 +353,69 @@ class Donation {
 
   factory Donation.fromJson(Map<String, dynamic> json) {
     return Donation(
-      id: json['id'] as String,
-      donorId: json['donor_id'] as String? ?? 'unknown-donor',
-      donorName: json['donor_name'] as String? ?? 'FoodBridge Donor',
-      donorPhone: json['donor_phone'] as String?,
-      title: json['title'] as String? ?? 'Donation',
-      description: json['description'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
+      donorId: json['donor_id']?.toString() ?? 'unknown-donor',
+      donorName: json['donor_name']?.toString() ?? 'FoodBridge Donor',
+      donorPhone: json['donor_phone']?.toString(),
+      title: json['title']?.toString() ?? 'Donation',
+      description: json['description']?.toString() ?? '',
       quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
-      unit: json['unit'] as String? ?? 'items',
-      type: DonationType.fromString(json['type'] as String?),
-      status: DonationStatus.fromString(json['status'] as String?),
-      pickupAddress: json['pickup_address'] as String? ?? '',
-      city: json['city'] as String? ?? 'Pune',
+      unit: json['unit']?.toString() ?? 'items',
+      type: DonationType.fromString(json['type']?.toString()),
+      status: DonationStatus.fromString(json['status']?.toString()),
+      pickupAddress: json['pickup_address']?.toString() ?? '',
+      city: json['city']?.toString() ?? 'Pune',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 18.5204,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 73.8567,
       createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
       pickupDeadline: json['pickup_deadline'] != null
-          ? DateTime.tryParse(json['pickup_deadline'] as String) ??
+          ? DateTime.tryParse(json['pickup_deadline'].toString()) ??
               DateTime.now().add(const Duration(hours: 4))
           : DateTime.now().add(const Duration(hours: 4)),
-      claimedByNgoId: json['claimed_by_ngo_id'] as String?,
-      claimedByNgoName: json['claimed_by_ngo_name'] as String?,
+      claimedByNgoId: json['claimed_by_ngo_id']?.toString(),
+      claimedByNgoName: json['claimed_by_ngo_name']?.toString(),
       claimedAt: json['claimed_at'] != null
-          ? DateTime.tryParse(json['claimed_at'] as String)
+          ? DateTime.tryParse(json['claimed_at'].toString())
           : null,
-      assignedVolunteerId: json['assigned_volunteer_id'] as String?,
-      assignedVolunteerName: json['assigned_volunteer_name'] as String?,
-      assignedVolunteerPhone: json['assigned_volunteer_phone'] as String?,
+      assignedVolunteerId: json['assigned_volunteer_id']?.toString(),
+      assignedVolunteerName: json['assigned_volunteer_name']?.toString(),
+      assignedVolunteerPhone: json['assigned_volunteer_phone']?.toString(),
       assignedAt: json['assigned_at'] != null
-          ? DateTime.tryParse(json['assigned_at'] as String)
+          ? DateTime.tryParse(json['assigned_at'].toString())
           : null,
       pickedUpAt: json['picked_up_at'] != null
-          ? DateTime.tryParse(json['picked_up_at'] as String)
+          ? DateTime.tryParse(json['picked_up_at'].toString())
           : null,
       deliveredAt: json['delivered_at'] != null
-          ? DateTime.tryParse(json['delivered_at'] as String)
+          ? DateTime.tryParse(json['delivered_at'].toString())
           : null,
-      imageUrl: json['image_url'] as String?,
-      pickupOtp: json['pickup_otp'] as String? ?? '4829',
-      deliveryOtp: json['delivery_otp'] as String? ?? '9152',
-      dropoffAddress: json['dropoff_address'] as String? ??
+      imageUrl: json['image_url']?.toString(),
+      pickupOtp: json['pickup_otp']?.toString() ?? '4829',
+      deliveryOtp: json['delivery_otp']?.toString() ?? '9152',
+      dropoffAddress: json['dropoff_address']?.toString() ??
           'Asha Children Shelter, Plot 12 Swargate, Pune',
       estimatedDistanceKm:
           (json['estimated_distance_km'] as num?)?.toDouble() ?? 3.8,
-      estimatedMinutes: json['estimated_minutes'] as int? ?? 14,
-      isVeg: json['is_veg'] as bool? ?? true,
+      estimatedMinutes: (json['estimated_minutes'] as num?)?.toInt() ?? 14,
+      isVeg: json['is_veg'] is bool
+          ? json['is_veg'] as bool
+          : (json['is_veg']?.toString().toLowerCase() == 'true'),
       prepTime: json['prep_time'] != null
-          ? DateTime.tryParse(json['prep_time'] as String)
+          ? DateTime.tryParse(json['prep_time'].toString())
           : null,
-      storageCondition: json['storage_condition'] as String? ?? 'ambient',
-      allergenNotes: json['allergen_notes'] as String?,
-      safetyCharterAgreed: json['safety_charter_agreed'] as bool? ?? true,
-      clothingCategory: json['clothing_category'] as String?,
-      targetSize: json['target_size'] as String?,
-      conditionGrade: json['condition_grade'] as String?,
-      isWashedAndClean: json['is_washed_and_clean'] as bool? ?? true,
+      storageCondition: json['storage_condition']?.toString() ?? 'ambient',
+      allergenNotes: json['allergen_notes']?.toString(),
+      safetyCharterAgreed: json['safety_charter_agreed'] is bool
+          ? json['safety_charter_agreed'] as bool
+          : true,
+      clothingCategory: json['clothing_category']?.toString(),
+      targetSize: json['target_size']?.toString(),
+      conditionGrade: json['condition_grade']?.toString(),
+      isWashedAndClean: json['is_washed_and_clean'] is bool
+          ? json['is_washed_and_clean'] as bool
+          : true,
     );
   }
 

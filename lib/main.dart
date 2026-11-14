@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'core/config/env_config.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/localization/locale_provider.dart';
@@ -11,8 +14,22 @@ import 'features/authentication/presentation/auth_provider.dart';
 import 'features/donations/presentation/donation_provider.dart';
 import 'features/notifications/presentation/notification_provider.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await NotificationService.instance.initialize();
+
+  if (EnvConfig.isConfigured) {
+    try {
+      await Supabase.initialize(
+        url: EnvConfig.supabaseUrl,
+        anonKey: EnvConfig.supabaseAnonKey,
+      );
+    } catch (_) {
+      // Gracefully continue if network is unreachable or in tests
+    }
+  }
+
   runApp(
     MultiProvider(
       providers: [
@@ -20,7 +37,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DonationProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider(seedInitial: false)),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: const FoodBridgeApp(),

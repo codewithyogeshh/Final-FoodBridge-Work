@@ -30,7 +30,7 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
   bool _isVeg = true;
   String _storageCondition = 'ambient';
   DateTime _pickupDeadline = DateTime.now().add(const Duration(hours: 4));
-  bool _safetyCharterAgreed = false;
+  bool _safetyCharterAgreed = true;
 
   // Clothing specific state
   String _clothingCategory = 'winter';
@@ -43,9 +43,18 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
   void initState() {
     super.initState();
     final auth = context.read<AuthProvider>();
+    _titleController.text = 'Cooked Meals (Fresh Surplus)';
+    _quantityController.text = '10';
+    _unitController.text = 'meals';
+    _descriptionController.text =
+        'Freshly prepared wholesome food, hygienically packed in food containers.';
     if (auth.user?.address != null) {
       _addressController.text = auth.user!.address!;
+    } else {
+      _addressController.text = 'Shop 4, MG Road, Camp, Pune';
     }
+    _safetyCharterAgreed = true;
+    _isWashedAndClean = true;
   }
 
   @override

@@ -59,10 +59,12 @@ void main() {
 
     testWidgets('OnboardingScreen renders role selection cards and instructions', (tester) async {
       await tester.pumpWidget(createTestableWidget(const OnboardingScreen()));
-      expect(find.text('Welcome to FoodBridge'), findsOneWidget);
-      expect(find.text('I Want to Donate'), findsOneWidget);
-      expect(find.text('We are an NGO / Shelter'), findsOneWidget);
-      expect(find.text('I Want to Volunteer'), findsOneWidget);
+      expect(find.text('Select Your Role'), findsOneWidget);
+      expect(find.text('Restaurant\nDonor'), findsOneWidget);
+      expect(find.text('Normal\nDonor'), findsOneWidget);
+      expect(find.text('Volunteer'), findsOneWidget);
+      expect(find.text('Admin'), findsOneWidget);
+      expect(find.text('Continue'), findsOneWidget);
     });
 
     testWidgets('LoginScreen renders email, password fields and sign in action', (tester) async {
@@ -82,8 +84,10 @@ void main() {
 
     testWidgets('DonorDashboardScreen renders quick actions and active listings', (tester) async {
       await tester.pumpWidget(createTestableWidget(const DonorDashboardScreen()));
+      expect(find.textContaining('Hello'), findsOneWidget);
       expect(find.text('Donor Dashboard'), findsOneWidget);
-      expect(find.text('New Donation'), findsOneWidget);
+      expect(find.text('New Donation'), findsWidgets);
+      expect(find.text('Donate Surplus Food'), findsOneWidget);
     });
 
     testWidgets('NgoDashboardScreen renders discovery feed and claim actions', (tester) async {
@@ -93,8 +97,11 @@ void main() {
 
     testWidgets('VolunteerDashboardScreen renders task feed and availability toggle', (tester) async {
       await tester.pumpWidget(createTestableWidget(const VolunteerDashboardScreen()));
-      expect(find.text('Volunteer Dispatch'), findsOneWidget);
-      expect(find.text('Online'), findsOneWidget);
+      expect(find.text('Hello Volunteer 👋'), findsOneWidget);
+      expect(find.text('Tasks Done'), findsOneWidget);
+      expect(find.text('Hours'), findsOneWidget);
+      expect(find.text('Rating'), findsOneWidget);
+      expect(find.text('Upcoming Tasks'), findsOneWidget);
     });
 
     testWidgets('AdminDashboardScreen renders 5 control tabs and live console', (tester) async {
@@ -110,10 +117,10 @@ void main() {
       expect(find.byType(ChoiceChip), findsWidgets);
     });
 
-    testWidgets('ProfileScreen renders user details, settings and role switcher', (tester) async {
+    testWidgets('ProfileScreen renders user details, settings and enforces strict auth without role switcher', (tester) async {
       await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
       expect(find.text('Profile & Settings'), findsOneWidget);
-      expect(find.text('SWITCH ACTIVE ROLE VIEW'), findsOneWidget);
+      expect(find.text('SWITCH ACTIVE ROLE VIEW'), findsNothing);
     });
   });
 }

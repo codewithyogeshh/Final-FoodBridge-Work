@@ -1,9 +1,12 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
+import '../../admin/presentation/admin_provider.dart';
 import '../domain/models/app_user.dart';
 import 'auth_provider.dart';
 
@@ -38,6 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _selectedAvailability = 'Flexible / On-Call';
   String _selectedTransport = 'Two-Wheeler / Scooter';
   String? _uploadedDocumentName;
+  String? _uploadedDocumentPath;
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -64,6 +68,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
     'Car / Van',
     'On Foot (Hyper-local)',
   ];
+
+  Future<void> _pickDocument() async {
+    try {
+      final files = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+      if (files.isNotEmpty) {
+        final file = files.first;
+        setState(() {
+          _uploadedDocumentName = file.name;
+          _uploadedDocumentPath = file.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('डॉक्युमेंट जोडले: ${file.name}'),
+              backgroundColor: AppColors.primaryGreen,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('File selection error: $e'),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -100,6 +137,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (_selectedRole == UserRole.ngo && (_uploadedDocumentName == null || _uploadedDocumentName!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('कृपया पडताळणीसाठी अधिकृत 12A/80G/Darpan डॉक्युमेंट सिलेक्ट करा.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
     final auth = context.read<AuthProvider>();
 
     final success = await auth.register(
@@ -123,14 +170,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (mounted) {
       if (success) {
         if (_selectedRole == UserRole.ngo) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('NGO registration submitted! Verification is pending administrator review.'),
-              backgroundColor: AppColors.primaryGreen,
-              duration: Duration(seconds: 4),
+          // 1. Submit application into Admin review queue
+          final adminProvider = context.read<AdminProvider>();
+          final ngoOrgName = _orgController.text.trim().isNotEmpty ? _orgController.text.trim() : _nameController.text.trim();
+          adminProvider.addPendingNgoApplication(
+            PendingNgoApplication(
+              id: auth.user?.id ?? 'ngo-app-${DateTime.now().millisecondsSinceEpoch}',
+              name: ngoOrgName,
+              regNo: _darpanController.text.trim(),
+              darpanId: _darpanController.text.trim(),
+              contactPerson: _contactPersonController.text.trim().isNotEmpty ? _contactPersonController.text.trim() : _nameController.text.trim(),
+              phone: _phoneController.text.trim(),
+              documentName: _uploadedDocumentName ?? '12A_80G_Certificate.pdf',
+              documentPath: _uploadedDocumentPath,
+              email: _emailController.text.trim().toLowerCase(),
+              appliedAt: DateTime.now(),
             ),
           );
-          context.go('/ngo');
+
+          // 2. Clear current session since unverified NGO cannot login immediately
+          await auth.logout();
+
+          if (mounted) {
+            await showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                icon: const Icon(Icons.verified_user_outlined, color: AppColors.warningOrange, size: 48),
+                title: const Text('पडताळणी प्रलंबित (Pending Review)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18), textAlign: TextAlign.center),
+                content: const Text(
+                  'संस्थेची नोंदणी यशस्वीरित्या सबमिट झाली आहे!\n\nतुमचे अधिकृत 12A/80G डॉक्युमेंट फूडब्रिज ॲडमिन पडताळणीसाठी (Review) पाठवले आहे. ॲडमिनने मंजुरी (Approve) दिल्यानंतरच तुमचे लॉगिन सुरू होईल.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14),
+                ),
+                actionsAlignment: MainAxisAlignment.center,
+                actions: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      context.go('/login');
+                    },
+                    child: const Text('समजले (लॉगिनवर जा)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          }
         } else if (_selectedRole == UserRole.volunteer) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -162,10 +252,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final tr = context.tr;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Account'),
+        title: Text(tr.get('create_account')),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -183,25 +274,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Select your role to configure your dedicated redistribution profile.',
-                  style: TextStyle(color: AppColors.mutedGrey, fontSize: 14),
+                Text(
+                  tr.get('welcome_sub'),
+                  style: const TextStyle(color: AppColors.mutedGrey, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
 
                 // Role selector tabs (Admin strictly excluded)
-                const Text(
-                  'Choose Your Role:',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.charcoal),
+                Text(
+                  tr.get('select_role'),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.charcoal),
                 ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: _roleOption(UserRole.donor, 'Donor', Icons.storefront_outlined)),
+                    Expanded(child: _roleOption(UserRole.donor, tr.donor, Icons.storefront_outlined)),
                     const SizedBox(width: 8),
-                    Expanded(child: _roleOption(UserRole.ngo, 'NGO Shelter', Icons.volunteer_activism_outlined)),
+                    Expanded(child: _roleOption(UserRole.ngo, tr.ngo, Icons.volunteer_activism_outlined)),
                     const SizedBox(width: 8),
-                    Expanded(child: _roleOption(UserRole.volunteer, 'Volunteer', Icons.two_wheeler_outlined)),
+                    Expanded(child: _roleOption(UserRole.volunteer, tr.volunteer, Icons.two_wheeler_outlined)),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -440,17 +531,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const SizedBox(height: 8),
         InkWell(
-          onTap: () {
-            setState(() {
-              _uploadedDocumentName = '80G_Tax_Exemption_Certificate.pdf';
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Document attached: 80G_Tax_Exemption_Certificate.pdf'),
-                backgroundColor: AppColors.primaryGreen,
-              ),
-            );
-          },
+          onTap: _pickDocument,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -470,15 +551,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    _uploadedDocumentName ?? 'Tap to select Registration Document (PDF/JPG)',
-                    style: TextStyle(
-                      color: _uploadedDocumentName != null ? AppColors.deepGreen : AppColors.mutedGrey,
-                      fontWeight: _uploadedDocumentName != null ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 13,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _uploadedDocumentName ?? 'Tap to select Registration Document (PDF/JPG)',
+                        style: TextStyle(
+                          color: _uploadedDocumentName != null ? AppColors.deepGreen : AppColors.mutedGrey,
+                          fontWeight: _uploadedDocumentName != null ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_uploadedDocumentPath != null)
+                        Text(
+                          _uploadedDocumentPath!,
+                          style: const TextStyle(fontSize: 10, color: AppColors.mutedGrey),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
                   ),
                 ),
+                if (_uploadedDocumentName != null)
+                  IconButton(
+                    icon: const Icon(Icons.change_circle_outlined, color: AppColors.primaryGreen, size: 20),
+                    tooltip: 'Change Document',
+                    onPressed: _pickDocument,
+                  ),
               ],
             ),
           ),
