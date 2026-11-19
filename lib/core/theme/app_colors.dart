@@ -2,40 +2,48 @@ import 'package:flutter/material.dart';
 
 /// FoodBridge Design System Colors
 /// Clean, accessible, professional palette designed for ease of use by all citizens.
-/// Features a true neutral dark theme (no green tint) and restrained, calm accents.
+/// Strict adherence to Realtime Colors 60-30-10 Rule:
+/// - 60% Dominant Base: Canvas (#F8FAFC Light, #0B0F17 Dark)
+/// - 30% Structural Hierarchy: Cards & Modals (#FFFFFF Light, #131B26 Dark), Borders (#E2E8F0 / #223046)
+/// - 10% High-Impact Accent: Emerald Green (#059669 / #10B981) + Warm Amber (#F59E0B)
 class AppColors {
   AppColors._();
 
-  // Core Brand Palette (Clean, restrained emerald green)
+  // Core Brand Palette (Sustainable Emerald Green, meets WCAG AAA/AA)
   static const Color primaryGreen = Color(0xFF1E7E4E);
   static const Color deepGreen = Color(0xFF14532D);
-  static const Color warmCream = Color(0xFFF8F9FA); // Clean neutral off-white
-  static const Color charcoal = Color(0xFF1F2937);
-  static const Color mutedGrey = Color(0xFF6B7280);
+  static const Color emeraldLight = Color(0xFFECFDF5);
+  static const Color warmCream = Color(0xFFF8FAFC);
+  static const Color charcoal = Color(0xFF0F172A);
+  static const Color mutedGrey = Color(0xFF64748B);
   static const Color orange = Color(0xFFD97706);
+  static const Color amberWarm = Color(0xFFF59E0B);
+  static const Color amberLight = Color(0xFFFEF3C7);
   static const Color warningOrange = Color(0xFFD97706);
   static const Color errorRed = Color(0xFFDC2626);
   static const Color white = Color(0xFFFFFFFF);
   static const Color mintLight = Color(0xFFF0FDF4);
+  static const Color skyBlue = Color(0xFF0284C7);
+  static const Color skyLight = Color(0xFFF0F9FF);
 
-  // Surface & Borders (Light)
-  static const Color borderLight = Color(0xFFE5E7EB);
-  static const Color borderGrey = Color(0xFFE5E7EB);
+  // Surface & Borders (Light) - 60-30-10 Scaffolding
+  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color borderGrey = Color(0xFFE2E8F0);
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color backgroundLight = Color(0xFFF8F9FA);
+  static const Color backgroundLight = Color(0xFFF8FAFC);
 
-  // True Neutral Dark Theme Palette (No green tint, standard clean dark slate)
-  static const Color backgroundDark = Color(0xFF121212);
-  static const Color surfaceDark = Color(0xFF1E1E1E);
-  static const Color cardDark = Color(0xFF1E1E1E);
-  static const Color borderDark = Color(0xFF2E2E2E);
-  static const Color primaryAccentDark = Color(0xFF2E9E66);
-  static const Color textDarkPrimary = Color(0xFFF9FAFB);
-  static const Color textDarkSecondary = Color(0xFF9CA3AF);
+  // True Neutral Dark Theme Palette (Rich Midnight Obsidian, no muddy tint)
+  static const Color backgroundDark = Color(0xFF0B0F17);
+  static const Color surfaceDark = Color(0xFF131B26);
+  static const Color cardDark = Color(0xFF131B26);
+  static const Color borderDark = Color(0xFF223046);
+  static const Color primaryAccentDark = Color(0xFF10B981);
+  static const Color textDarkPrimary = Color(0xFFF8FAFC);
+  static const Color textDarkSecondary = Color(0xFF94A3B8);
 
-  // Status Tints (Subtle, calm, professional - not loud/rainbow)
-  static const Color statusDraftBg = Color(0xFFF3F4F6);
-  static const Color statusDraftText = Color(0xFF4B5563);
+  // Status Tints (Subtle, calm, professional)
+  static const Color statusDraftBg = Color(0xFFF1F5F9);
+  static const Color statusDraftText = Color(0xFF475569);
 
   static const Color statusAvailableBg = Color(0xFFECFDF5);
   static const Color statusAvailableText = Color(0xFF065F46);

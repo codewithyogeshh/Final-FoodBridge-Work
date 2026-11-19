@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/avatar_image_helper.dart';
 import '../../authentication/presentation/auth_provider.dart';
+import '../../notifications/presentation/notification_provider.dart';
 import 'widgets/volunteer_bottom_nav.dart';
 
 /// Screen 7: Volunteer Profile Screen
@@ -14,7 +16,10 @@ class VolunteerProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final auth = context.watch<AuthProvider>();
+    final notificationProvider = context.watch<NotificationProvider>();
     final user = auth.user;
+
+    final avatarProvider = AvatarImageHelper.resolve(user?.avatarUrl);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.backgroundDark : const Color(0xFFF8FAF9),
@@ -30,6 +35,11 @@ class VolunteerProfileScreen extends StatelessWidget {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit Profile',
+            onPressed: () => context.push('/profile/edit'),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/profile'),
           ),
@@ -42,21 +52,51 @@ class VolunteerProfileScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 14),
 
-            // Profile Avatar with Green Ring Border
+            // Profile Avatar with Green Ring Border and Edit Overlay
             Center(
               child: Stack(
                 children: [
-                  Container(
-                    width: 84,
-                    height: 84,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.primaryGreen, width: 3),
+                  GestureDetector(
+                    onTap: () => context.push('/profile/edit'),
+                    child: Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.primaryGreen, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryGreen.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(3),
+                      child: CircleAvatar(
+                        backgroundColor: const Color(0xFFEDF7EE),
+                        backgroundImage: avatarProvider,
+                        child: avatarProvider == null
+                            ? const Icon(Icons.person, size: 48, color: AppColors.primaryGreen)
+                            : null,
+                      ),
                     ),
-                    padding: const EdgeInsets.all(3),
-                    child: const CircleAvatar(
-                      backgroundColor: Color(0xFFEDF7EE),
-                      child: Icon(Icons.person, size: 48, color: AppColors.primaryGreen),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () => context.push('/profile/edit'),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                      ),
                     ),
                   ),
                 ],
@@ -78,6 +118,13 @@ class VolunteerProfileScreen extends StatelessWidget {
               'FoodBridge Volunteer',
               style: TextStyle(fontSize: 13, color: AppColors.mutedGrey),
             ),
+            if (user?.phone != null || user?.email != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                user?.phone ?? user?.email ?? '',
+                style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+              ),
+            ],
             const SizedBox(height: 8),
 
             // Top Volunteer Badge
@@ -138,6 +185,14 @@ class VolunteerProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _buildMenuItem(
+                      icon: Icons.person_outline,
+                      iconBg: const Color(0xFFE8F5E9),
+                      iconColor: AppColors.primaryGreen,
+                      title: 'Edit Profile (प्रोफाइल संपादित करा)',
+                      onTap: () => context.push('/profile/edit'),
+                    ),
+                    _buildDivider(isDark),
+                    _buildMenuItem(
                       icon: Icons.timeline,
                       iconBg: const Color(0xFFEDF7EE),
                       iconColor: AppColors.primaryGreen,
@@ -150,7 +205,9 @@ class VolunteerProfileScreen extends StatelessWidget {
                       iconBg: const Color(0xFFFFF4E5),
                       iconColor: AppColors.orange,
                       title: 'Notifications',
-                      badge: '3',
+                      badge: notificationProvider.unreadCount > 0
+                          ? '${notificationProvider.unreadCount}'
+                          : null,
                       onTap: () => context.push('/notifications'),
                     ),
                     _buildDivider(isDark),

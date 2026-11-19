@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 
-class FBCard extends StatelessWidget {
+/// Production FBCard with:
+/// - Realtime Colors 60-30-10 Token System (Light/Dark adaptive)
+/// - Animate Spring Micro-Interaction (tactile scale on pointer-down)
+class FBCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
@@ -22,27 +26,67 @@ class FBCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final effectiveBorder = border ??
-        const BorderSide(color: AppColors.borderLight, width: 1.0);
+  State<FBCard> createState() => _FBCardState();
+}
 
-    return Card(
-      elevation: elevation,
-      color: color ?? AppColors.white,
+class _FBCardState extends State<FBCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveBorder = widget.border ??
+        BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 1.0,
+        );
+    final effectiveColor = widget.color ??
+        (isDark ? AppColors.surfaceDark : AppColors.surfaceLight);
+
+    final cardWidget = Card(
+      elevation: widget.elevation,
+      color: effectiveColor,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: BorderRadius.circular(widget.borderRadius),
         side: effectiveBorder,
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: Padding(
-          padding: padding ?? const EdgeInsets.all(16.0),
-          child: child,
-        ),
+      child: widget.onTap != null
+          ? InkWell(
+              onTap: widget.onTap,
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              child: Padding(
+                padding: widget.padding ?? const EdgeInsets.all(16.0),
+                child: widget.child,
+              ),
+            )
+          : Padding(
+              padding: widget.padding ?? const EdgeInsets.all(16.0),
+              child: widget.child,
+            ),
+    );
+
+    if (widget.onTap == null) {
+      return cardWidget;
+    }
+
+    return Listener(
+      onPointerDown: (_) {
+        setState(() => _isPressed = true);
+        HapticFeedback.selectionClick();
+      },
+      onPointerUp: (_) {
+        if (mounted) setState(() => _isPressed = false);
+      },
+      onPointerCancel: (_) {
+        if (mounted) setState(() => _isPressed = false);
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.985 : 1.0,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: cardWidget,
       ),
     );
   }
 }
-

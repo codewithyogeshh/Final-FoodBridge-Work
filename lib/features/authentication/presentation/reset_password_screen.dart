@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
+import '../../../core/services/email_service.dart';
 import 'auth_provider.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class ResetPasswordScreen extends StatefulWidget {
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _emailController;
+  final _otpController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -34,6 +36,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void dispose() {
     _emailController.dispose();
+    _otpController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -44,7 +47,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     final auth = context.read<AuthProvider>();
     final email = _emailController.text.trim();
+    final otp = _otpController.text.trim();
     final newPassword = _newPasswordController.text.trim();
+
+    // Verify SMTP / Email OTP code
+    final isOtpValid = EmailService.instance.verifyOtp(
+      email: email,
+      enteredOtp: otp,
+      purpose: 'forgot_password',
+    );
+
+    if (!isOtpValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid or expired verification code! Please check your email.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
 
     final success = await auth.resetPassword(
       email: email,
@@ -116,6 +137,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Email is required';
               if (!v.contains('@') || !v.contains('.')) return 'Enter valid email';
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          FBTextField(
+            label: 'Email Verification OTP',
+            hint: '6-digit code sent to your email',
+            controller: _otpController,
+            keyboardType: TextInputType.number,
+            prefixIcon: const Icon(Icons.password, color: AppColors.primaryGreen),
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Verification code is required';
+              if (v.trim().length != 6) return 'Verification code must be 6 digits';
               return null;
             },
           ),

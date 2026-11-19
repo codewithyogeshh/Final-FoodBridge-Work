@@ -43,7 +43,7 @@ class _VolunteerActivityScreenState extends State<VolunteerActivityScreen> {
       ),
       _ActivityItemData(
         title: 'Delivery Completed',
-        location: 'Slum Area, Pune',
+        location: 'Sadar Bazar, Satara',
         time: 'Yesterday • 6:20 PM',
         tag: '+50 pts',
         type: 'deliveries',
@@ -79,7 +79,11 @@ class _VolunteerActivityScreenState extends State<VolunteerActivityScreen> {
                 )),
             ...liveActive.map((d) => _ActivityItemData(
                   title: 'Food Pickup In Progress: ${d.title}',
-                  location: '${d.pickupAddress} (${d.city})',
+                  location: (d.city.isNotEmpty &&
+                          !d.pickupAddress.toLowerCase().contains(d.city.toLowerCase()) &&
+                          !d.city.toLowerCase().contains('pune'))
+                      ? '${d.pickupAddress}, ${d.city}'
+                      : d.pickupAddress,
                   time: d.assignedAt != null ? dateFormat.format(d.assignedAt!) : 'In Progress',
                   tag: 'In Progress',
                   type: 'donations',

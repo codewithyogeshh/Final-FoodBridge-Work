@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
+import '../../../core/services/media_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/donation_image_widget.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
 import '../../authentication/presentation/auth_provider.dart';
@@ -42,6 +45,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
   DateTime _pickupDeadline = DateTime.now().add(const Duration(days: 3));
   bool _cleanlinessDeclarationAgreed = true;
   String? _selectedImage;
+  ImageSource? _photoSource;
   bool _isPosting = false;
 
   final List<String> _clothingCategories = [
@@ -72,6 +76,56 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
     'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600', // Kids & shirts
   ];
 
+  Future<void> _captureFromCamera() async {
+    final xfile = await MediaService.instance.pickImageFromCamera();
+    if (xfile != null && mounted) {
+      setState(() {
+        _selectedImage = xfile.path;
+        _photoSource = ImageSource.camera;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('📸 Photo captured from Camera!'),
+          backgroundColor: AppColors.primaryGreen,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    final xfile = await MediaService.instance.pickImageFromGallery();
+    if (xfile != null && mounted) {
+      setState(() {
+        _selectedImage = xfile.path;
+        _photoSource = ImageSource.gallery;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🖼️ Photo selected from Gallery!'),
+          backgroundColor: AppColors.primaryGreen,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  Widget _photoChip(String label, String url) {
+    final isSelected = _selectedImage == url;
+    return ChoiceChip(
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+      selected: isSelected,
+      onSelected: (val) {
+        if (val) {
+          setState(() {
+            _selectedImage = url;
+            _photoSource = null;
+          });
+        }
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -79,10 +133,10 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
     _titleController.text = widget.initialTitle ?? 'Clean Clothes & Warm Wear';
     _quantityController.text = widget.initialQty ?? '10';
     _descriptionController.text = widget.initialDesc ?? 'Clean, washed, tear-free clothes ready for redistribution.';
-    if (auth.user?.address != null) {
+    if (auth.user?.address != null && auth.user!.address!.trim().isNotEmpty) {
       _addressController.text = auth.user!.address!;
     } else {
-      _addressController.text = 'Shop 4, MG Road, Camp, Pune';
+      _addressController.text = 'Powai Naka, Satara';
     }
     _cleanlinessDeclarationAgreed = true;
     _selectedImage = _sampleImages[0];
@@ -144,6 +198,22 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
     final user = auth.user;
     final qty = double.tryParse(_quantityController.text.trim()) ?? 10.0;
 
+    String finalImageUrl = _selectedImage ?? _sampleImages[0];
+    // If it's a locally captured image from camera or gallery, upload to Supabase Storage
+    if (_selectedImage != null &&
+        !_selectedImage!.startsWith('http://') &&
+        !_selectedImage!.startsWith('https://')) {
+      try {
+        final uploaded = await MediaService.instance.uploadPhoto(
+          file: XFile(_selectedImage!),
+          folder: 'clothes',
+        );
+        finalImageUrl = uploaded;
+      } catch (e) {
+        debugPrint('[DonateClothesScreen] Storage upload error: $e');
+      }
+    }
+
     final donation = Donation(
       id: 'cloth-${DateTime.now().millisecondsSinceEpoch}',
       donorId: user?.id ?? 'usr-donor-101',
@@ -161,8 +231,10 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
       status: DonationStatus.available,
       pickupAddress: _addressController.text.trim().isNotEmpty
           ? _addressController.text.trim()
-          : (user?.address ?? 'Camp, Pune'),
-      city: 'Pune',
+          : (user?.address ?? 'Powai Naka, Satara'),
+      city: _addressController.text.toLowerCase().contains('pune')
+          ? 'Pune'
+          : (_addressController.text.toLowerCase().contains('mumbai') ? 'Mumbai' : 'Satara'),
       createdAt: DateTime.now(),
       pickupDeadline: _pickupDeadline,
       clothingCategory: _clothingCategory,
@@ -170,10 +242,10 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
       conditionGrade: _conditionGrade,
       isWashedAndClean: true,
       safetyCharterAgreed: true,
-      imageUrl: _selectedImage ?? _sampleImages[0],
+      imageUrl: finalImageUrl,
       pickupOtp: '${(1000 + (DateTime.now().millisecondsSinceEpoch % 9000))}',
       deliveryOtp: '${(1000 + ((DateTime.now().millisecondsSinceEpoch ~/ 7) % 9000))}',
-      dropoffAddress: 'Goonj Community Hub, Swargate, Pune',
+      dropoffAddress: 'Goonj Community Hub, Sadar Bazar, Satara',
     );
 
     final success = await donationProvider.createDonation(donation);
@@ -198,6 +270,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actionsOverflowButtonSpacing: 8,
         title: const Row(
           children: [
             Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 28),
@@ -206,46 +279,54 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
               child: Text(
                 'Clothes Donation Posted!',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your clothing donation "${donation.title}" is now active.',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Local NGOs and relief partners in Pune have been notified immediately.',
-              style: TextStyle(color: AppColors.mutedGrey, fontSize: 13, height: 1.3),
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreen.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Your clothing donation "${donation.title}" is now active.',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.key, color: AppColors.primaryGreen, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Pickup OTP: ${donation.pickupOtp}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.deepGreen,
-                      fontSize: 13,
+              const SizedBox(height: 8),
+              const Text(
+                'Local NGOs and relief partners in Satara have been notified immediately.',
+                style: TextStyle(color: AppColors.mutedGrey, fontSize: 13, height: 1.3),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.key, color: AppColors.primaryGreen, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Pickup OTP: ${donation.pickupOtp}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.deepGreen,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -301,7 +382,9 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
       type: DonationType.clothing,
       status: DonationStatus.available,
       pickupAddress: _addressController.text.trim(),
-      city: 'Pune',
+      city: _addressController.text.toLowerCase().contains('pune')
+          ? 'Pune'
+          : (_addressController.text.toLowerCase().contains('mumbai') ? 'Mumbai' : 'Satara'),
       createdAt: DateTime.now(),
       pickupDeadline: _pickupDeadline,
       clothingCategory: _clothingCategory,
@@ -312,7 +395,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
       imageUrl: _selectedImage ?? _sampleImages[0],
       pickupOtp: '${(1000 + (DateTime.now().millisecondsSinceEpoch % 9000))}',
       deliveryOtp: '${(1000 + ((DateTime.now().millisecondsSinceEpoch ~/ 7) % 9000))}',
-      dropoffAddress: 'Asha Children Foundation, Swargate, Pune',
+      dropoffAddress: 'Asha Children Foundation, Sadar Bazar, Satara',
     );
 
     Navigator.push(
@@ -327,6 +410,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
   Widget build(BuildContext context) {
     final tr = context.tr;
     final dateFormat = DateFormat('EEE, d MMM - hh:mm a');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -411,7 +495,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                     selected: isSelected,
                     selectedColor: AppColors.primaryGreen,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.charcoal,
+                      color: isSelected ? Colors.white : (isDark ? AppColors.textDarkPrimary : AppColors.charcoal),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                     onSelected: (selected) {
@@ -440,7 +524,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                     selected: isSelected,
                     selectedColor: AppColors.primaryGreen,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.charcoal,
+                      color: isSelected ? Colors.white : (isDark ? AppColors.textDarkPrimary : AppColors.charcoal),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                     onSelected: (selected) {
@@ -469,7 +553,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                     selected: isSelected,
                     selectedColor: AppColors.primaryGreen,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.charcoal,
+                      color: isSelected ? Colors.white : (isDark ? AppColors.textDarkPrimary : AppColors.charcoal),
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                     onSelected: (selected) {
@@ -542,7 +626,7 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
                   FBTextField(
                     label: 'Pickup Address (Donor Location) *',
                     controller: _addressController,
-                    hint: 'Building, Street, Landmark, Pune',
+                    hint: 'Building, Street, Landmark, Satara',
                     prefixIcon: const Icon(Icons.location_on_outlined),
                     maxLines: 2,
                     validator: (val) => val == null || val.trim().isEmpty ? 'Please enter pickup address' : null,
@@ -588,66 +672,146 @@ class _DonateClothesScreenState extends State<DonateClothesScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Image Selector
+              // Image Upload / Selector (Camera, Gallery, Presets)
               Text(
-                'Item Photo / Proof *',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                tr.get('photo_clothes_packaging'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                height: 100,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _sampleImages.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
-                  itemBuilder: (context, idx) {
-                    final img = _sampleImages[idx];
-                    final isSelected = (_selectedImage ?? _sampleImages[0]) == img;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedImage = img),
-                      child: Container(
-                        width: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isSelected ? AppColors.primaryGreen : Colors.transparent,
-                            width: 3,
-                          ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Image.network(
-                                img,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.checkroom, color: AppColors.mutedGrey),
-                                ),
-                              ),
-                              if (isSelected)
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.surfaceDark : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                      child: SizedBox(
+                        width: 120,
+                        height: 160,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            DonationImageWidget(
+                              imageUrl: _selectedImage,
+                              isFood: false,
+                              width: 120,
+                              height: 160,
+                              fit: BoxFit.cover,
+                            ),
+                              if (_photoSource != null)
                                 Positioned(
-                                  top: 4,
-                                  right: 4,
+                                  bottom: 6,
+                                  left: 6,
+                                  right: 6,
                                   child: Container(
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primaryGreen,
-                                      shape: BoxShape.circle,
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.7),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
-                                    padding: const EdgeInsets.all(2),
-                                    child: const Icon(Icons.check, color: Colors.white, size: 14),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          _photoSource == ImageSource.camera
+                                              ? Icons.camera_alt
+                                              : Icons.photo_library,
+                                          size: 11,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _photoSource == ImageSource.camera ? 'Camera' : 'Gallery',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                             ],
                           ),
                         ),
                       ),
-                    );
-                  },
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      tr.get('select_or_snap'),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                  if (_selectedImage != null && _selectedImage != _sampleImages[0])
+                                    TextButton(
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                        minimumSize: Size.zero,
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedImage = _sampleImages[0];
+                                          _photoSource = null;
+                                        });
+                                      },
+                                      child: const Text('Reset', style: TextStyle(fontSize: 11)),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: [
+                                  ActionChip(
+                                    avatar: const Icon(Icons.camera_alt, size: 14, color: AppColors.primaryGreen),
+                                    label: Text(tr.get('camera'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    onPressed: _captureFromCamera,
+                                  ),
+                                  ActionChip(
+                                    avatar: const Icon(Icons.photo_library, size: 14, color: AppColors.primaryGreen),
+                                    label: Text(tr.get('gallery'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    onPressed: _pickFromGallery,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              const Text('Sample Presets:', style: TextStyle(fontSize: 10, color: AppColors.mutedGrey)),
+                              const SizedBox(height: 4),
+                              Wrap(
+                                spacing: 4,
+                                runSpacing: 4,
+                                children: [
+                                  _photoChip('Jackets', _sampleImages[0]),
+                                  _photoChip('Folded', _sampleImages[1]),
+                                  _photoChip('Kids Wear', _sampleImages[2]),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 24),
 
               // Cleanliness & Quality Declaration

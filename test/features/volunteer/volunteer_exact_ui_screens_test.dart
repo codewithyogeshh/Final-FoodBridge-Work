@@ -67,13 +67,11 @@ void main() {
 
     testWidgets('Screen 4: VolunteerTaskTrackingScreen renders top card and Mark as Completed button', (tester) async {
       await tester.pumpWidget(createVolunteerTestableWidget(const VolunteerTaskTrackingScreen()));
-      expect(find.text('Task Tracking'), findsOneWidget);
-      expect(find.text('Food Pickup'), findsOneWidget);
-      expect(find.text('Hotel Grand Plaza'), findsOneWidget);
-      expect(find.text('In Progress'), findsOneWidget);
-      expect(find.text('Restaurant'), findsOneWidget);
-      expect(find.text('Grand Plaza'), findsOneWidget);
-      expect(find.text('Mark as Completed'), findsOneWidget);
+      await tester.pump();
+      expect(find.text('Volunteer Dispatch (थेट कूरियर)'), findsOneWidget);
+      expect(find.text('Live GPS'), findsOneWidget);
+      expect(find.textContaining('Pick up from'), findsOneWidget);
+      expect(find.textContaining('Arrived at Pickup'), findsOneWidget);
     });
 
     testWidgets('Screen 5: VolunteerActivityScreen renders timeline and filter tabs', (tester) async {

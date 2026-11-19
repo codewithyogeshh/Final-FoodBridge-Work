@@ -51,7 +51,7 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
     if (auth.user?.address != null) {
       _addressController.text = auth.user!.address!;
     } else {
-      _addressController.text = 'Shop 4, MG Road, Camp, Pune';
+      _addressController.text = 'Powai Naka, Satara';
     }
     _safetyCharterAgreed = true;
     _isWashedAndClean = true;
@@ -127,7 +127,9 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
       type: _donationType,
       status: DonationStatus.listed,
       pickupAddress: _addressController.text.trim(),
-      city: 'Pune',
+      city: _addressController.text.toLowerCase().contains('pune')
+          ? 'Pune'
+          : (_addressController.text.toLowerCase().contains('mumbai') ? 'Mumbai' : 'Satara'),
       createdAt: DateTime.now(),
       pickupDeadline: _pickupDeadline,
       isVeg: _isVeg,

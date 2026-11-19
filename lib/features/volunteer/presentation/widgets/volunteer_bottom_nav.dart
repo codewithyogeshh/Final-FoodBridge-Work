@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../authentication/presentation/auth_provider.dart';
+import '../../../donations/presentation/donation_provider.dart';
+import 'mission_completed_dialog.dart';
+import 'qr_camera_scanner_view.dart';
 
 /// The official 5-tab Volunteer Bottom Navigation Bar matching the reference mockup.
 /// Tabs:
@@ -40,77 +45,58 @@ class VolunteerBottomNav extends StatelessWidget {
   }
 
   void _showScanQrSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 48,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Scan Mission QR / OTP',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.deepGreen,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Align the donor or NGO handover QR code to verify pickup or delivery.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.mutedGrey),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F8F5),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.primaryGreen, width: 2),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.qr_code_scanner,
-                  size: 96,
-                  color: AppColors.primaryGreen,
+    DonationProvider? donationProvider;
+    AuthProvider? auth;
+    try {
+      donationProvider = context.read<DonationProvider>();
+      auth = context.read<AuthProvider>();
+    } catch (_) {}
+
+    final volunteerId = auth?.user?.id ?? 'usr-vol-301';
+    final activeTasks = donationProvider?.getVolunteerActiveTasks(volunteerId) ?? [];
+    final activeTask = activeTasks.isNotEmpty ? activeTasks.first : null;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QrCameraScannerView(
+          expectedDonationId: activeTask?.id,
+          targetNgoName: activeTask?.claimedByNgoName,
+          onScanned: (rawPayload) async {
+            String? parsedOtp;
+            String? parsedId;
+            if (rawPayload.startsWith('foodbridge://') || rawPayload.contains('otp=')) {
+              final uri = Uri.tryParse(rawPayload);
+              parsedOtp = uri?.queryParameters['otp'];
+              parsedId = uri?.queryParameters['id'];
+            } else if (RegExp(r'^\d{4}$').hasMatch(rawPayload.trim())) {
+              parsedOtp = rawPayload.trim();
+            }
+
+            final targetId = activeTask?.id ?? parsedId;
+            final finalOtp = parsedOtp ?? activeTask?.deliveryOtp ?? '0000';
+
+            if (targetId != null && donationProvider != null) {
+              final success = await donationProvider.confirmDeliveryWithOtp(
+                donationId: targetId,
+                enteredOtp: finalOtp,
+              );
+              if (context.mounted && success) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => MissionCompletedDialog(task: activeTask),
+                );
+              }
+            } else if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('QR Scanned: $rawPayload. No matching mission found.'),
+                  backgroundColor: AppColors.orange,
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: const Text('Simulate Successful Verification'),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
+              );
+            }
+          },
         ),
       ),
     );

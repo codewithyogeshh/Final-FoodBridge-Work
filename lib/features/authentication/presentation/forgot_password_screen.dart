@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
+import '../../../core/services/email_service.dart';
 import 'auth_provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -29,6 +30,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     final auth = context.read<AuthProvider>();
     final email = _emailController.text.trim();
+
+    // Dispatch real email OTP via SMTP
+    await EmailService.instance.sendForgotPasswordOtp(email);
 
     final success = await auth.sendPasswordResetEmail(email);
 

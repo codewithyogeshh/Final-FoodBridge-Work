@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/notification_service.dart';
 import '../../authentication/data/auth_service.dart';
 import '../../authentication/domain/models/app_user.dart';
 import '../../donations/domain/models/donation.dart';
@@ -15,6 +16,8 @@ class ManagedUser {
   final bool isSuspended;
   final String? suspensionReason;
   final DateTime createdAt;
+  final String? avatarUrl;
+  final String? phone;
 
   const ManagedUser({
     required this.id,
@@ -24,6 +27,8 @@ class ManagedUser {
     this.isSuspended = false,
     this.suspensionReason,
     required this.createdAt,
+    this.avatarUrl,
+    this.phone,
   });
 
   ManagedUser copyWith({
@@ -35,6 +40,9 @@ class ManagedUser {
     String? suspensionReason,
     bool clearSuspensionReason = false,
     DateTime? createdAt,
+    String? avatarUrl,
+    bool clearAvatar = false,
+    String? phone,
   }) {
     return ManagedUser(
       id: id ?? this.id,
@@ -46,6 +54,52 @@ class ManagedUser {
           ? null
           : (suspensionReason ?? this.suspensionReason),
       createdAt: createdAt ?? this.createdAt,
+      avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
+      phone: phone ?? this.phone,
+    );
+  }
+
+  factory ManagedUser.fromAppUser(
+    AppUser user, {
+    bool isSuspended = false,
+    String? suspensionReason,
+  }) {
+    return ManagedUser(
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      isSuspended: isSuspended,
+      suspensionReason: suspensionReason,
+      createdAt: user.createdAt,
+      avatarUrl: user.avatarUrl,
+      phone: user.phone,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'fullName': fullName,
+    'email': email,
+    'role': role.name,
+    'isSuspended': isSuspended,
+    'suspensionReason': suspensionReason,
+    'createdAt': createdAt.toIso8601String(),
+    'avatarUrl': avatarUrl,
+    'phone': phone,
+  };
+
+  factory ManagedUser.fromJson(Map<String, dynamic> json) {
+    return ManagedUser(
+      id: json['id'] as String? ?? 'usr-${DateTime.now().millisecondsSinceEpoch}',
+      fullName: json['fullName'] as String? ?? 'User',
+      email: json['email'] as String? ?? '',
+      role: UserRole.fromString(json['role'] as String?),
+      isSuspended: json['isSuspended'] as bool? ?? false,
+      suspensionReason: json['suspensionReason'] as String?,
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      avatarUrl: json['avatarUrl'] as String?,
+      phone: json['phone'] as String?,
     );
   }
 }
@@ -104,6 +158,7 @@ class PendingNgoApplication {
 
 class AdminProvider extends ChangeNotifier {
   static const String _kPendingNgosStorageKey = 'foodbridge_pending_ngos_key_v1';
+  static const String _kSuspendedUsersKey = 'foodbridge_admin_suspended_users_v1';
 
   final List<PendingNgoApplication> _pendingNgos = [];
   final List<ManagedUser> _managedUsers = [];
@@ -115,6 +170,7 @@ class AdminProvider extends ChangeNotifier {
   AdminProvider() {
     _seedInitialAdminData();
     _loadPendingNgos();
+    syncUsersWithAuth();
   }
 
   List<PendingNgoApplication> get pendingNgos => List.unmodifiable(_pendingNgos);
@@ -127,6 +183,142 @@ class AdminProvider extends ChangeNotifier {
   int get pendingNgoCount => _pendingNgos.length;
   int get openComplaintsCount =>
       _complaints.where((c) => c.status == ComplaintStatus.open).length;
+
+  Future<void> syncUsersWithAuth() async {
+    try {
+      SharedPreferences? prefs;
+      try {
+        prefs = await SharedPreferences.getInstance();
+      } catch (_) {}
+
+      // 1. Load persistent suspension overrides
+      final suspendedMapRaw = prefs?.getString(_kSuspendedUsersKey);
+      final Map<String, String> suspendedMap = {};
+      if (suspendedMapRaw != null && suspendedMapRaw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(suspendedMapRaw) as Map<String, dynamic>;
+          decoded.forEach((k, v) => suspendedMap[k.toLowerCase().trim()] = v.toString());
+        } catch (_) {}
+      }
+
+      // Preserve any in-memory suspensions too
+      for (final u in _managedUsers) {
+        if (u.isSuspended) {
+          suspendedMap[u.email.toLowerCase().trim()] =
+              u.suspensionReason ?? 'Administrative suspension';
+        }
+      }
+
+      // 2. Scan SharedPreferences directly for individual user profiles (foodbridge_user_profile_*)
+      final Map<String, AppUser> profileOverrides = {};
+      if (prefs != null) {
+        for (final key in prefs.getKeys()) {
+          if (key.startsWith('foodbridge_user_profile_')) {
+            final email = key.replaceFirst('foodbridge_user_profile_', '').toLowerCase().trim();
+            final userJson = prefs.getString(key);
+            if (userJson != null && userJson.isNotEmpty) {
+              try {
+                final user = AppUser.fromJson(jsonDecode(userJson));
+                profileOverrides[email] = user;
+              } catch (_) {}
+            }
+          }
+        }
+      }
+
+      // 3. Fetch all users from AuthService (includes mock, registered & backend users)
+      final authUsers = await AuthService().fetchAllUsers();
+
+      // 4. Merge or append to _managedUsers
+      for (final authUser in authUsers) {
+        final emailKey = authUser.email.toLowerCase().trim();
+        final override = profileOverrides[emailKey];
+        final effectiveFullName = (override != null && override.fullName.trim().isNotEmpty)
+            ? override.fullName.trim()
+            : authUser.fullName.trim();
+        final effectiveAvatarUrl = override?.avatarUrl ?? authUser.avatarUrl;
+        final effectivePhone = override?.phone ?? authUser.phone;
+        final effectiveRole = override?.role ?? authUser.role;
+
+        final isSuspended = suspendedMap.containsKey(emailKey);
+        final reason = suspendedMap[emailKey];
+
+        final existingIdx = _managedUsers.indexWhere(
+          (m) => m.email.toLowerCase().trim() == emailKey || m.id == authUser.id,
+        );
+
+        if (existingIdx != -1) {
+          final curr = _managedUsers[existingIdx];
+          _managedUsers[existingIdx] = curr.copyWith(
+            fullName: effectiveFullName.isNotEmpty ? effectiveFullName : curr.fullName,
+            avatarUrl: effectiveAvatarUrl ?? curr.avatarUrl,
+            phone: effectivePhone ?? curr.phone,
+            role: effectiveRole,
+            isSuspended: isSuspended || curr.isSuspended,
+            suspensionReason: isSuspended ? reason : curr.suspensionReason,
+          );
+        } else {
+          _managedUsers.add(
+            ManagedUser(
+              id: authUser.id,
+              fullName: effectiveFullName.isNotEmpty ? effectiveFullName : 'User',
+              email: authUser.email,
+              role: effectiveRole,
+              createdAt: authUser.createdAt,
+              avatarUrl: effectiveAvatarUrl,
+              phone: effectivePhone,
+              isSuspended: isSuspended,
+              suspensionReason: reason,
+            ),
+          );
+        }
+      }
+
+      // 5. Update complaints and audit logs with latest volunteer name
+      final volUser = _managedUsers.where(
+        (u) => u.email.toLowerCase().trim() == 'volunteer@foodbridge.org' || u.id == 'usr-vol-303',
+      ).firstOrNull;
+      if (volUser != null && volUser.fullName.trim().isNotEmpty) {
+        final currentVolName = volUser.fullName.trim();
+        for (int i = 0; i < _complaints.length; i++) {
+          final c = _complaints[i];
+          if (c.reporterRole == 'volunteer' || c.reporterName.contains('Rohit Kulkarni')) {
+            _complaints[i] = Complaint(
+              id: c.id,
+              reporterName: '$currentVolName (Volunteer)',
+              reporterRole: c.reporterRole,
+              respondentName: c.respondentName,
+              category: c.category,
+              description: c.description,
+              status: c.status,
+              resolutionNotes: c.resolutionNotes,
+              createdAt: c.createdAt,
+              resolvedAt: c.resolvedAt,
+            );
+          }
+        }
+        for (int i = 0; i < _auditLogs.length; i++) {
+          final a = _auditLogs[i];
+          if (a.actorId == 'usr-vol-303' || a.details.contains('Rohit Kulkarni')) {
+            _auditLogs[i] = AuditLogEntry(
+              id: a.id,
+              actorId: a.actorId,
+              actorRole: a.actorRole,
+              action: a.action,
+              targetEntity: a.targetEntity,
+              targetId: a.targetId,
+              details: a.details.replaceAll('Rohit Kulkarni', currentVolName),
+              timestamp: a.timestamp,
+            );
+          }
+        }
+      }
+
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> refreshUsers() => syncUsersWithAuth();
 
   Future<void> _persistPendingNgos() async {
     try {
@@ -208,6 +400,14 @@ class AdminProvider extends ChangeNotifier {
       details: 'Approved NGO "${app.name}" with Darpan ID: ${app.darpanId}',
     );
 
+    try {
+      NotificationService.instance.showSystemNotification(
+        title: 'संस्था खाते मंजूर! 🎉 (NGO Approved)',
+        body: 'संस्था "${app.name}" चे खाते ॲडमिनकडून प्रमाणित झाले आहे. आता संस्था अन्नदान स्वीकारू शकते.',
+        payload: app.id,
+      );
+    } catch (_) {}
+
     notifyListeners();
     return true;
   }
@@ -272,6 +472,19 @@ class AdminProvider extends ChangeNotifier {
       suspensionReason: reason,
     );
 
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final suspendedMapRaw = prefs.getString(_kSuspendedUsersKey);
+      final Map<String, dynamic> map = {};
+      if (suspendedMapRaw != null && suspendedMapRaw.isNotEmpty) {
+        try {
+          map.addAll(jsonDecode(suspendedMapRaw));
+        } catch (_) {}
+      }
+      map[user.email.toLowerCase().trim()] = reason;
+      await prefs.setString(_kSuspendedUsersKey, jsonEncode(map));
+    } catch (_) {}
+
     _logAudit(
       actorId: adminId,
       actorRole: 'admin',
@@ -305,6 +518,18 @@ class AdminProvider extends ChangeNotifier {
       isSuspended: false,
       clearSuspensionReason: true,
     );
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final suspendedMapRaw = prefs.getString(_kSuspendedUsersKey);
+      if (suspendedMapRaw != null && suspendedMapRaw.isNotEmpty) {
+        try {
+          final Map<String, dynamic> map = jsonDecode(suspendedMapRaw);
+          map.remove(user.email.toLowerCase().trim());
+          await prefs.setString(_kSuspendedUsersKey, jsonEncode(map));
+        } catch (_) {}
+      }
+    } catch (_) {}
 
     _logAudit(
       actorId: adminId,
@@ -509,7 +734,7 @@ class AdminProvider extends ChangeNotifier {
       ),
       PendingNgoApplication(
         id: 'ngo-app-2',
-        name: 'Pune City Hunger Relief',
+        name: 'Satara City Hunger Relief',
         regNo: 'MH/2021/004921',
         darpanId: 'MH/2021/DARPAN-8910',
         contactPerson: 'Anand Deshmukh',
@@ -525,6 +750,7 @@ class AdminProvider extends ChangeNotifier {
         fullName: 'The Green Leaf Bistro',
         email: 'donor@foodbridge.org',
         role: UserRole.donor,
+        phone: '+91 98200 12345',
         createdAt: now.subtract(const Duration(days: 30)),
       ),
       ManagedUser(
@@ -532,6 +758,7 @@ class AdminProvider extends ChangeNotifier {
         fullName: 'Asha Children Foundation',
         email: 'ngo@foodbridge.org',
         role: UserRole.ngo,
+        phone: '+91 98220 54321',
         createdAt: now.subtract(const Duration(days: 45)),
       ),
       ManagedUser(
@@ -539,13 +766,23 @@ class AdminProvider extends ChangeNotifier {
         fullName: 'Rohit Kulkarni',
         email: 'volunteer@foodbridge.org',
         role: UserRole.volunteer,
+        phone: '+91 97654 99887',
         createdAt: now.subtract(const Duration(days: 20)),
+      ),
+      ManagedUser(
+        id: 'usr-adm-001',
+        fullName: 'Super Admin - Neha Deshmukh',
+        email: 'admin@foodbridge.org',
+        role: UserRole.admin,
+        phone: '+91 94220 11223',
+        createdAt: now.subtract(const Duration(days: 180)),
       ),
       ManagedUser(
         id: 'usr-donor-404',
         fullName: 'Flagged Commercial Caterer',
         email: 'spammer@caterers.com',
         role: UserRole.donor,
+        phone: '+91 91234 56789',
         isSuspended: true,
         suspensionReason: 'Repeated non-hygienic packaging reports and late cancellation.',
         createdAt: now.subtract(const Duration(days: 10)),

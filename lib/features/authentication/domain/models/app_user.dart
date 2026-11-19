@@ -83,7 +83,9 @@ class AppUser {
   final String? donorCategory;
   final String? availability;
   final String? transportType;
+  final String? avatarUrl;
   final bool hasAcceptedTerms;
+  final bool isEmailVerified;
   final DateTime createdAt;
 
   const AppUser({
@@ -103,7 +105,9 @@ class AppUser {
     this.donorCategory,
     this.availability,
     this.transportType,
+    this.avatarUrl,
     this.hasAcceptedTerms = false,
+    this.isEmailVerified = true,
     required this.createdAt,
   });
 
@@ -134,7 +138,9 @@ class AppUser {
       donorCategory: json['donor_category'] as String?,
       availability: json['availability'] as String?,
       transportType: json['transport_type'] as String?,
+      avatarUrl: json['avatar_url'] as String? ?? json['profile_image_url'] as String?,
       hasAcceptedTerms: json['has_accepted_terms'] as bool? ?? false,
+      isEmailVerified: json['is_email_verified'] as bool? ?? true,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -159,7 +165,9 @@ class AppUser {
       'donor_category': donorCategory,
       'availability': availability,
       'transport_type': transportType,
+      'avatar_url': avatarUrl,
       'has_accepted_terms': hasAcceptedTerms,
+      'is_email_verified': isEmailVerified,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -181,7 +189,10 @@ class AppUser {
     String? donorCategory,
     String? availability,
     String? transportType,
+    String? avatarUrl,
+    bool clearAvatar = false,
     bool? hasAcceptedTerms,
+    bool? isEmailVerified,
     DateTime? createdAt,
   }) {
     return AppUser(
@@ -201,7 +212,9 @@ class AppUser {
       donorCategory: donorCategory ?? this.donorCategory,
       availability: availability ?? this.availability,
       transportType: transportType ?? this.transportType,
+      avatarUrl: clearAvatar ? null : (avatarUrl ?? this.avatarUrl),
       hasAcceptedTerms: hasAcceptedTerms ?? this.hasAcceptedTerms,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       createdAt: createdAt ?? this.createdAt,
     );
   }

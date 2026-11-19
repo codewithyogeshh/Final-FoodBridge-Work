@@ -63,6 +63,19 @@ class NotificationService {
     }
   }
 
+  /// Display a general system notification on the device screen
+  Future<void> showSystemNotification({
+    required String title,
+    required String body,
+    String? payload,
+    int? notificationId,
+  }) => showNewDonationNotification(
+    title: title,
+    body: body,
+    payload: payload,
+    notificationId: notificationId,
+  );
+
   /// Display a high-priority system notification on the device screen
   Future<void> showNewDonationNotification({
     required String title,

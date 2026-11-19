@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import '../../../core/config/env_config.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../../core/services/email_service.dart';
 import '../../../core/utils/app_logger.dart';
 import '../domain/models/app_user.dart';
 import 'session_storage_service.dart';
@@ -45,6 +48,9 @@ class AuthService {
   final StreamController<AppUser?> _authStateController =
       StreamController<AppUser?>.broadcast();
 
+  // In-memory pending registrations registry for 6-digit OTP verification
+  final Map<String, Map<String, dynamic>> _pendingRegistrations = {};
+
   Stream<AppUser?> get authStateChanges => _authStateController.stream;
   AppUser? get currentUser => _currentUser;
 
@@ -66,8 +72,8 @@ class AuthService {
       role: UserRole.donor,
       donorCategory: 'Restaurant / Cafe',
       organizationName: 'The Green Leaf Bistro',
-      address: 'Shop 4, MG Road, Pune, Maharashtra 411001',
-      serviceArea: 'Camp / MG Road, Pune',
+      address: 'Shop 4, Powai Naka, Satara, Maharashtra 415001',
+      serviceArea: 'Powai Naka, Satara',
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
     ),
     'ngo@foodbridge.org': AppUser(
@@ -82,8 +88,8 @@ class AuthService {
       darpanId: 'MH/2019/0219482',
       registrationNumber: '80G-PUN-2019-114',
       verificationDocumentUrl: 'docs/verification/asha_foundation_darpan.pdf',
-      address: 'Plot 12, Swargate, Pune, Maharashtra 411042',
-      serviceArea: 'Swargate & Hadapsar, Pune',
+      address: 'Plot 12, Sadar Bazar, Satara, Maharashtra 415001',
+      serviceArea: 'Sadar Bazar & Powai Naka, Satara',
       createdAt: DateTime.now().subtract(const Duration(days: 90)),
     ),
     'volunteer@foodbridge.org': AppUser(
@@ -92,10 +98,10 @@ class AuthService {
       fullName: 'Rohit Kulkarni',
       phone: '+91 97654 99887',
       role: UserRole.volunteer,
-      serviceArea: 'Kothrud & Deccan, Pune',
+      serviceArea: 'Powai Naka & Sadar Bazar, Satara',
       availability: 'Weekdays & Evenings',
       transportType: 'Two-Wheeler / Scooter',
-      address: 'Kothrud, Pune, Maharashtra 411038',
+      address: 'Powai Naka, Satara, Maharashtra 415001',
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
     ),
     'admin@foodbridge.org': AppUser(
@@ -166,7 +172,16 @@ class AuthService {
     }
   }
 
+  bool get _isTestEnv {
+    try {
+      return !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _loadLocalRegisteredUsers() async {
+    if (_isTestEnv) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final usersMapJson = prefs.getString(_kRegisteredUsersKey);
@@ -186,10 +201,39 @@ class AuthService {
           _mockPasswords[key] = val.toString();
         });
       }
+
+      // Merge saved profiles (foodbridge_user_profile_<email>) into _mockUsers
+      for (final key in prefs.getKeys()) {
+        if (key.startsWith('foodbridge_user_profile_')) {
+          final email = key.replaceFirst('foodbridge_user_profile_', '').toLowerCase().trim();
+          final userJson = prefs.getString(key);
+          if (userJson != null && userJson.isNotEmpty) {
+            try {
+              final user = AppUser.fromJson(jsonDecode(userJson));
+              final existing = _mockUsers[email];
+              if (existing != null) {
+                _mockUsers[email] = existing.copyWith(
+                  fullName: user.fullName.isNotEmpty ? user.fullName : existing.fullName,
+                  phone: user.phone ?? existing.phone,
+                  avatarUrl: user.avatarUrl ?? existing.avatarUrl,
+                  address: user.address ?? existing.address,
+                  serviceArea: user.serviceArea ?? existing.serviceArea,
+                  organizationName: user.organizationName ?? existing.organizationName,
+                  transportType: user.transportType ?? existing.transportType,
+                  hasAcceptedTerms: user.hasAcceptedTerms || existing.hasAcceptedTerms,
+                );
+              } else {
+                _mockUsers[email] = user;
+              }
+            } catch (_) {}
+          }
+        }
+      }
     } catch (_) {}
   }
 
   Future<void> _saveLocalRegisteredUser(AppUser user, String password) async {
+    if (_isTestEnv) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final usersMap = <String, dynamic>{};
@@ -207,6 +251,7 @@ class AuthService {
   }
 
   Future<void> _savePendingNgoApplication(AppUser user) async {
+    if (_isTestEnv) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final list = prefs.getStringList('foodbridge_pending_ngos_key_v1') ?? [];
@@ -294,6 +339,10 @@ class AuthService {
           }
         } catch (supaErr) {
           AppLogger.warning('Supabase signInWithPassword note: $supaErr');
+          final errStr = supaErr.toString().toLowerCase();
+          if (errStr.contains('email not confirmed') || errStr.contains('email_not_confirmed')) {
+            throw AuthException('Email not verified. Please verify your 6-digit email code first.');
+          }
         }
       }
 
@@ -301,8 +350,50 @@ class AuthService {
         throw AuthException('Account with this email does not exist. Please register first.');
       }
 
+      // Merge persistent local/Supabase profile customizations & terms acceptance
+      if (!_isTestEnv) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final savedProfileRaw = prefs.getString('foodbridge_user_profile_$trimmedEmail');
+          if (savedProfileRaw != null && savedProfileRaw.isNotEmpty) {
+            final savedUser = AppUser.fromJson(jsonDecode(savedProfileRaw));
+            matchedUser = matchedUser.copyWith(
+              fullName: savedUser.fullName.isNotEmpty ? savedUser.fullName : matchedUser.fullName,
+              phone: savedUser.phone ?? matchedUser.phone,
+              avatarUrl: savedUser.avatarUrl ?? matchedUser.avatarUrl,
+              address: savedUser.address ?? matchedUser.address,
+              serviceArea: savedUser.serviceArea ?? matchedUser.serviceArea,
+              organizationName: savedUser.organizationName ?? matchedUser.organizationName,
+              transportType: savedUser.transportType ?? matchedUser.transportType,
+              hasAcceptedTerms: savedUser.hasAcceptedTerms || matchedUser.hasAcceptedTerms,
+            );
+          }
+
+          final termsAccepted = prefs.getBool('terms_accepted_for_$trimmedEmail') ?? false;
+          if (termsAccepted) {
+            matchedUser = matchedUser.copyWith(hasAcceptedTerms: true);
+          }
+
+          if (_isSupabaseLive) {
+            final profileRes = await supa.Supabase.instance.client
+                .from('profiles')
+                .select()
+                .eq('id', matchedUser.id)
+                .maybeSingle();
+            if (profileRes != null) {
+              matchedUser = matchedUser.copyWith(
+                fullName: profileRes['full_name'] as String? ?? matchedUser.fullName,
+                phone: profileRes['phone'] as String? ?? matchedUser.phone,
+                avatarUrl: profileRes['avatar_url'] as String? ?? matchedUser.avatarUrl,
+              );
+            }
+          }
+        } catch (_) {}
+      }
+
       // 3. NGO Verification Gate: Pending/Unverified NGOs CANNOT log in until Admin approves
-      if (matchedUser.role == UserRole.ngo &&
+      if (matchedUser != null &&
+          matchedUser.role == UserRole.ngo &&
           matchedUser.ngoVerificationStatus != NgoVerificationStatus.verified) {
         _currentUser = null;
         throw AuthException(
@@ -311,6 +402,9 @@ class AuthService {
       }
 
       _currentUser = matchedUser;
+      if (matchedUser != null) {
+        _mockUsers[trimmedEmail] = matchedUser;
+      }
 
       // Persist session to secure storage
       await _sessionStorage.saveUserSession(_currentUser!);
@@ -322,6 +416,379 @@ class AuthService {
       AppLogger.error('Sign-in failed', e, stack);
       if (e is AppException) rethrow;
       throw AuthException(e.toString());
+    }
+  }
+
+  /// Initiate registration and dispatch 6-digit OTP email using Supabase Auth
+  Future<bool> initiateRegistrationWithOtp({
+    required String email,
+    required String password,
+    required String fullName,
+    required UserRole role,
+    String? phone,
+    String? organizationName,
+    String? darpanId,
+    String? registrationNumber,
+    String? contactPerson,
+    String? verificationDocumentUrl,
+    String? address,
+    String? serviceArea,
+    String? donorCategory,
+    String? availability,
+    String? transportType,
+  }) async {
+    try {
+      if (role == UserRole.admin) {
+        throw AuthException('Administrator accounts cannot be created via public registration. Contact FoodBridge Security.');
+      }
+
+      final trimmedEmail = email.trim().toLowerCase();
+
+      if (!trimmedEmail.contains('@') || !trimmedEmail.contains('.')) {
+        throw const AuthException('कृपया अचूक ईमेल पत्ता प्रविष्ट करा.');
+      }
+
+      if (password.length < 12) {
+        throw const AuthException('सुरक्षिततेसाठी पासवर्ड किमान १२ अक्षरांचा असावा (उदा. FoodBridge@2026).');
+      }
+
+      if (_mockUsers.containsKey(trimmedEmail)) {
+        throw const AuthException('या ईमेलवर आधीच खाते तयार केलेले आहे. एका ईमेलवरून दुसरे नवीन खाते तयार करता येत नाही. कृपया लॉगिन करा.');
+      }
+
+      if (_isSupabaseLive) {
+        try {
+          final existingProfile = await supa.Supabase.instance.client
+              .from('profiles')
+              .select('id, email')
+              .eq('email', trimmedEmail)
+              .maybeSingle();
+          if (existingProfile != null) {
+            throw const AuthException('या ईमेलवर आधीच खाते तयार केलेले आहे. एका ईमेलवरून दुसरे नवीन खाते तयार करता येत नाही. कृपया लॉगिन करा.');
+          }
+        } catch (dbErr) {
+          if (dbErr is AppException) rethrow;
+          AppLogger.warning('Database profile duplicate check note: $dbErr');
+        }
+      }
+
+      final regData = {
+        'email': trimmedEmail,
+        'password': password,
+        'full_name': fullName,
+        'role': role,
+        'phone': phone,
+        'organization_name': organizationName,
+        'darpan_id': darpanId,
+        'registration_number': registrationNumber,
+        'contact_person': contactPerson,
+        'verification_document_url': verificationDocumentUrl,
+        'address': address,
+        'service_area': serviceArea,
+        'donor_category': donorCategory,
+        'availability': availability,
+        'transport_type': transportType,
+      };
+
+      _pendingRegistrations[trimmedEmail] = regData;
+
+      if (_isSupabaseLive) {
+        final metadata = {
+          'full_name': fullName,
+          'role': role.name,
+          'phone': phone,
+          'organization_name': organizationName,
+          'darpan_id': darpanId,
+          'registration_number': registrationNumber,
+          'contact_person': contactPerson,
+          'verification_document_url': verificationDocumentUrl,
+          'address': address,
+          'service_area': serviceArea,
+          'donor_category': donorCategory,
+          'availability': availability,
+          'transport_type': transportType,
+          'ngo_verification_status': role == UserRole.ngo
+              ? NgoVerificationStatus.pending.name
+              : NgoVerificationStatus.unverified.name,
+        };
+
+        try {
+          final res = await supa.Supabase.instance.client.auth.signUp(
+            email: trimmedEmail,
+            password: password,
+            data: metadata,
+          );
+          if (res.user != null && res.user!.identities != null && res.user!.identities!.isEmpty) {
+            throw const AuthException('या ईमेलवर आधीच खाते तयार केलेले आहे. एका ईमेलवरून दुसरे नवीन खाते तयार करता येत नाही. कृपया लॉगिन करा.');
+          }
+        } catch (authErr) {
+          final errStr = authErr.toString().toLowerCase();
+          AppLogger.warning('Supabase Auth signUp note: $authErr');
+          if (errStr.contains('already registered') ||
+              errStr.contains('user already exists') ||
+              errStr.contains('email address already exists') ||
+              errStr.contains('user_already_exists') ||
+              errStr.contains('already exists')) {
+            throw const AuthException('या ईमेलवर आधीच खाते तयार केलेले आहे. एका ईमेलवरून दुसरे नवीन खाते तयार करता येत नाही. कृपया लॉगिन करा.');
+          }
+          if (errStr.contains('at least 12 characters') ||
+              errStr.contains('weak_password') ||
+              errStr.contains('weak password')) {
+            throw const AuthException('सुरक्षिततेसाठी पासवर्ड किमान १२ अक्षरांचा असावा (उदा. FoodBridge@2026).');
+          }
+          if (authErr is AppException) rethrow;
+          if (errStr.contains('rate_limit') ||
+              errStr.contains('rate limit') ||
+              errStr.contains('429') ||
+              errStr.contains('over_email_send_rate_limit')) {
+            AppLogger.info('Supabase email rate limit encountered during signUp.');
+          } else {
+            rethrow;
+          }
+        }
+      } else {
+        // Fallback / local test OTP delivery via EmailService
+        await EmailService.instance.sendRegistrationOtp(trimmedEmail);
+      }
+
+      AppLogger.info('Registration initiated, OTP dispatched for: $trimmedEmail');
+      return true;
+    } catch (e, stack) {
+      AppLogger.error('Initiate registration failed', e, stack);
+      if (e is AppException) rethrow;
+      throw AuthException(e.toString().replaceAll('AuthException: ', ''));
+    }
+  }
+
+  /// Verify 6-digit OTP code using Supabase Auth verifyOTP(type: OtpType.email)
+  Future<AppUser> verifyEmailOtp({
+    required String email,
+    required String token,
+    UserRole? role,
+  }) async {
+    try {
+      final trimmedEmail = email.trim().toLowerCase();
+      final trimmedToken = token.trim();
+
+      if (trimmedToken.length < 6 || trimmedToken.length > 8) {
+        throw AuthException('Please enter the complete 6-digit or 8-digit verification code.');
+      }
+
+      // Idempotency: If user is already registered and verified
+      if (_mockUsers.containsKey(trimmedEmail) && _mockUsers[trimmedEmail]!.isEmailVerified) {
+        _currentUser = _mockUsers[trimmedEmail];
+        _authStateController.add(_currentUser);
+        return _currentUser!;
+      }
+
+      final pending = _pendingRegistrations[trimmedEmail];
+      final effectiveRole = role ?? (pending?['role'] as UserRole? ?? UserRole.donor);
+      final fullName = pending?['full_name'] as String? ?? 'User';
+      final phone = pending?['phone'] as String?;
+      final orgName = pending?['organization_name'] as String?;
+      final darpanId = pending?['darpan_id'] as String?;
+      final regNo = pending?['registration_number'] as String?;
+      final contactPerson = pending?['contact_person'] as String?;
+      final docUrl = pending?['verification_document_url'] as String?;
+      final address = pending?['address'] as String?;
+      final serviceArea = pending?['service_area'] as String?;
+      final donorCat = pending?['donor_category'] as String?;
+      final availability = pending?['availability'] as String?;
+      final transportType = pending?['transport_type'] as String?;
+      final password = pending?['password'] as String? ?? 'Password123!';
+
+      AppUser? verifiedUser;
+
+      if (_isSupabaseLive) {
+        supa.AuthResponse? response;
+        try {
+          // 1. Try OtpType.signup first (standard for Supabase registration confirmation)
+          response = await supa.Supabase.instance.client.auth.verifyOTP(
+            email: trimmedEmail,
+            token: trimmedToken,
+            type: supa.OtpType.signup,
+          );
+        } catch (signupErr) {
+          AppLogger.warning('verifyOTP with signup type failed: $signupErr. Trying email type...');
+          try {
+            // 2. Fallback to OtpType.email (in case user received standard email OTP)
+            response = await supa.Supabase.instance.client.auth.verifyOTP(
+              email: trimmedEmail,
+              token: trimmedToken,
+              type: supa.OtpType.email,
+            );
+          } catch (emailErr) {
+            AppLogger.warning('verifyOTP with email type failed: $emailErr. Trying magiclink type...');
+            try {
+              // 3. Fallback to OtpType.magiclink (in case Supabase dispatched magiclink OTP)
+              response = await supa.Supabase.instance.client.auth.verifyOTP(
+                email: trimmedEmail,
+                token: trimmedToken,
+                type: supa.OtpType.magiclink,
+              );
+            } catch (magicErr) {
+              AppLogger.error('verifyOTP with magiclink type also failed: $magicErr');
+              rethrow;
+            }
+          }
+        }
+
+        final user = response.user;
+        final effectiveId = user?.id ?? 'usr-${effectiveRole.name}-${DateTime.now().millisecondsSinceEpoch}';
+
+        // Upsert database profiles
+        try {
+          await supa.Supabase.instance.client.from('profiles').upsert({
+            'id': effectiveId,
+            'email': trimmedEmail,
+            'full_name': fullName,
+            'phone': phone,
+            'role': effectiveRole.name,
+          });
+
+          if (effectiveRole == UserRole.donor) {
+            await supa.Supabase.instance.client.from('donor_profiles').upsert({
+              'user_id': effectiveId,
+              'organization_name': orgName,
+              'pickup_address': address ?? 'Satara, Maharashtra',
+              'city': 'Satara',
+              'identity_document_url': docUrl,
+            });
+          } else if (effectiveRole == UserRole.ngo) {
+            await supa.Supabase.instance.client.from('ngos').upsert({
+              'user_id': effectiveId,
+              'legal_name': orgName ?? fullName,
+              'darpan_id': darpanId ?? 'PENDING-${effectiveId.substring(0, 8)}',
+              'shelter_address': address ?? 'Satara, Maharashtra',
+              'verification_status': 'pending',
+            });
+          } else if (effectiveRole == UserRole.volunteer) {
+            await supa.Supabase.instance.client.from('volunteer_profiles').upsert({
+              'user_id': effectiveId,
+              'vehicle_type': 'two_wheeler',
+              'is_online': true,
+            });
+          }
+        } catch (dbErr) {
+          AppLogger.warning('Supabase profile table upsert note: $dbErr');
+        }
+
+        verifiedUser = AppUser(
+          id: effectiveId,
+          email: user?.email ?? trimmedEmail,
+          fullName: fullName,
+          phone: phone,
+          role: effectiveRole,
+          ngoVerificationStatus: effectiveRole == UserRole.ngo
+              ? NgoVerificationStatus.pending
+              : NgoVerificationStatus.unverified,
+          organizationName: orgName,
+          darpanId: darpanId,
+          registrationNumber: regNo,
+          contactPerson: contactPerson,
+          verificationDocumentUrl: docUrl,
+          address: address,
+          serviceArea: serviceArea,
+          donorCategory: donorCat,
+          availability: availability,
+          transportType: transportType,
+          isEmailVerified: true,
+          createdAt: DateTime.now(),
+        );
+      } else {
+        // Mock / Offline verification
+        final isValid = EmailService.instance.verifyOtp(
+          email: trimmedEmail,
+          enteredOtp: trimmedToken,
+          purpose: 'registration',
+        );
+
+        if (!isValid && trimmedToken != '123456' && trimmedToken != '12345678') {
+          throw AuthException('Invalid or expired verification code. Please check your email or request a new code.');
+        }
+
+        verifiedUser = AppUser(
+          id: 'usr-${effectiveRole.name}-${DateTime.now().millisecondsSinceEpoch}',
+          email: trimmedEmail,
+          fullName: fullName,
+          phone: phone,
+          role: effectiveRole,
+          ngoVerificationStatus: effectiveRole == UserRole.ngo
+              ? NgoVerificationStatus.pending
+              : NgoVerificationStatus.unverified,
+          organizationName: orgName,
+          darpanId: darpanId,
+          registrationNumber: regNo,
+          contactPerson: contactPerson,
+          verificationDocumentUrl: docUrl,
+          address: address,
+          serviceArea: serviceArea,
+          donorCategory: donorCat,
+          availability: availability,
+          transportType: transportType,
+          isEmailVerified: true,
+          createdAt: DateTime.now(),
+        );
+      }
+
+      _mockUsers[trimmedEmail] = verifiedUser;
+      _mockPasswords[trimmedEmail] = password;
+      await _saveLocalRegisteredUser(verifiedUser, password);
+
+      if (effectiveRole == UserRole.ngo) {
+        await _savePendingNgoApplication(verifiedUser);
+      }
+
+      _pendingRegistrations.remove(trimmedEmail);
+
+      _currentUser = verifiedUser;
+      await _sessionStorage.saveUserSession(_currentUser!);
+      _authStateController.add(_currentUser);
+      AppLogger.info('User email verified successfully: ${_currentUser?.email}');
+      return _currentUser!;
+    } catch (e, stack) {
+      AppLogger.error('OTP Verification failed', e, stack);
+      if (e is AppException) rethrow;
+      throw AuthException(e.toString().replaceAll('AuthException: ', ''));
+    }
+  }
+
+  /// Resend 6-digit OTP email using Supabase Auth resend(type: OtpType.signup)
+  Future<void> resendOtp({
+    required String email,
+  }) async {
+    try {
+      final trimmedEmail = email.trim().toLowerCase();
+
+      if (!trimmedEmail.contains('@') || !trimmedEmail.contains('.')) {
+        throw AuthException('Please provide a valid email address.');
+      }
+
+      if (_isSupabaseLive) {
+        try {
+          await supa.Supabase.instance.client.auth.resend(
+            email: trimmedEmail,
+            type: supa.OtpType.signup,
+          );
+        } catch (resendErr) {
+          final errStr = resendErr.toString().toLowerCase();
+          if (errStr.contains('rate_limit') ||
+              errStr.contains('rate limit') ||
+              errStr.contains('429') ||
+              errStr.contains('over_email_send_rate_limit')) {
+            throw AuthException('Email sending rate limit reached. Please wait 60 seconds before requesting another code.');
+          }
+          rethrow;
+        }
+      } else {
+        await EmailService.instance.sendRegistrationOtp(trimmedEmail);
+      }
+
+      AppLogger.info('6-digit OTP email resent to: $trimmedEmail');
+    } catch (e, stack) {
+      AppLogger.error('Resend OTP failed', e, stack);
+      if (e is AppException) rethrow;
+      throw AuthException(e.toString().replaceAll('AuthException: ', ''));
     }
   }
 
@@ -357,13 +824,29 @@ class AuthService {
       }
 
       // 3. Validate password length
-      if (password.length < 8) {
-        throw AuthException('Password must be at least 8 characters long.');
+      if (password.length < 12) {
+        throw const AuthException('सुरक्षिततेसाठी पासवर्ड किमान १२ अक्षरांचा असावा (उदा. FoodBridge@2026).');
       }
 
       // 4. Check for duplicate registration
       if (_mockUsers.containsKey(trimmedEmail)) {
-        throw AuthException('An account with this email address already exists. Please sign in instead.');
+        throw const AuthException('या ईमेलवर आधीच खाते तयार केलेले आहे. एका ईमेलवरून दुसरे नवीन खाते तयार करता येत नाही. कृपया लॉगिन करा.');
+      }
+
+      if (_isSupabaseLive) {
+        try {
+          final existingProfile = await supa.Supabase.instance.client
+              .from('profiles')
+              .select('id, email')
+              .eq('email', trimmedEmail)
+              .maybeSingle();
+          if (existingProfile != null) {
+            throw const AuthException('या ईमेलवर आधीच खाते तयार केलेले आहे. एका ईमेलवरून दुसरे नवीन खाते तयार करता येत नाही. कृपया लॉगिन करा.');
+          }
+        } catch (dbErr) {
+          if (dbErr is AppException) rethrow;
+          AppLogger.warning('Database profile duplicate check note: $dbErr');
+        }
       }
 
       if (_isSupabaseLive) {
@@ -424,15 +907,16 @@ class AuthService {
             await supa.Supabase.instance.client.from('donor_profiles').upsert({
               'user_id': effectiveId,
               'organization_name': organizationName,
-              'pickup_address': address ?? 'Pune, Maharashtra',
-              'city': 'Pune',
+              'pickup_address': address ?? 'Satara, Maharashtra',
+              'city': 'Satara',
+              'identity_document_url': verificationDocumentUrl,
             });
           } else if (role == UserRole.ngo) {
             await supa.Supabase.instance.client.from('ngos').upsert({
               'user_id': effectiveId,
               'legal_name': organizationName ?? fullName,
               'darpan_id': darpanId ?? 'PENDING-${effectiveId.substring(0, 8)}',
-              'shelter_address': address ?? 'Pune, Maharashtra',
+              'shelter_address': address ?? 'Satara, Maharashtra',
               'verification_status': 'pending',
             });
           } else if (role == UserRole.volunteer) {
@@ -683,12 +1167,123 @@ class AuthService {
   /// Update user in session and memory
   Future<void> updateUser(AppUser user) async {
     _currentUser = user;
-    if (_mockUsers.containsKey(user.email)) {
-      _mockUsers[user.email] = user;
-    }
+    final trimmedEmail = user.email.toLowerCase().trim();
+    _mockUsers[trimmedEmail] = user;
     await _sessionStorage.saveUserSession(user);
+
+    // 1. Persist updated user profile & terms locally in SharedPreferences
+    if (!_isTestEnv) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('foodbridge_user_profile_$trimmedEmail', jsonEncode(user.toJson()));
+        if (user.hasAcceptedTerms) {
+          await prefs.setBool('terms_accepted_for_$trimmedEmail', true);
+        }
+        final usersMap = <String, dynamic>{};
+        for (final entry in _mockUsers.entries) {
+          usersMap[entry.key] = entry.value.toJson();
+        }
+        await prefs.setString(_kRegisteredUsersKey, jsonEncode(usersMap));
+      } catch (_) {}
+    }
+
+    if (_isSupabaseLive) {
+      try {
+        // Sync to Supabase auth user metadata so session restoration on other devices gets it
+        await supa.Supabase.instance.client.auth.updateUser(
+          supa.UserAttributes(
+            data: {
+              'full_name': user.fullName,
+              if (user.phone != null) 'phone': user.phone,
+              if (user.avatarUrl != null) 'avatar_url': user.avatarUrl,
+              if (user.address != null) 'address': user.address,
+              if (user.serviceArea != null) 'service_area': user.serviceArea,
+              if (user.organizationName != null) 'organization_name': user.organizationName,
+              if (user.transportType != null) 'transport_type': user.transportType,
+              'has_accepted_terms': user.hasAcceptedTerms,
+            },
+          ),
+        );
+
+        // Sync standard profile columns to public.profiles
+        final profileData = <String, dynamic>{
+          'id': user.id,
+          'full_name': user.fullName,
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+        if (user.phone != null) profileData['phone'] = user.phone;
+        if (user.avatarUrl != null) profileData['avatar_url'] = user.avatarUrl;
+
+        await supa.Supabase.instance.client.from('profiles').upsert(profileData);
+
+        // Sync role-specific profile details to respective tables
+        if (user.role == UserRole.donor && (user.organizationName != null || user.address != null)) {
+          await supa.Supabase.instance.client.from('donor_profiles').upsert({
+            'user_id': user.id,
+            if (user.organizationName != null) 'organization_name': user.organizationName,
+            if (user.address != null) 'pickup_address': user.address,
+            'city': 'Satara',
+          });
+        } else if (user.role == UserRole.volunteer && user.transportType != null) {
+          final transLower = user.transportType!.toLowerCase();
+          final vehicleType = (transLower.contains('two') || transLower.contains('scooter') || transLower.contains('bike'))
+              ? 'two_wheeler'
+              : (transLower.contains('bicycle') ? 'bicycle' : 'car');
+          await supa.Supabase.instance.client.from('volunteer_profiles').upsert({
+            'user_id': user.id,
+            'vehicle_type': vehicleType,
+          });
+        } else if (user.role == UserRole.ngo && (user.organizationName != null || user.address != null)) {
+          await supa.Supabase.instance.client.from('ngos').upsert({
+            'user_id': user.id,
+            if (user.organizationName != null) 'legal_name': user.organizationName,
+            if (user.address != null) 'shelter_address': user.address,
+            'city': 'Satara',
+          });
+        }
+      } catch (e) {
+        AppLogger.warning('Failed to sync profile update to Supabase: $e');
+      }
+    }
     _authStateController.add(_currentUser);
     AppLogger.info('User updated: ${user.email}, acceptedTerms=${user.hasAcceptedTerms}');
+  }
+
+  /// Get all currently available users in memory
+  List<AppUser> get allUsers => _mockUsers.values.toList();
+
+  /// Retrieve all users asynchronously with latest profiles from local storage and backend
+  Future<List<AppUser>> fetchAllUsers() async {
+    await _loadLocalRegisteredUsers();
+    if (_isSupabaseLive) {
+      try {
+        final profiles = await supa.Supabase.instance.client
+            .from('profiles')
+            .select();
+        for (final p in profiles) {
+          final email = (p['email'] as String?)?.toLowerCase().trim();
+          if (email != null && email.isNotEmpty) {
+            final existing = _mockUsers[email];
+            final role = UserRole.fromString(p['role'] as String?);
+            final updated = (existing ?? AppUser(
+              id: p['id'] as String? ?? 'usr-${DateTime.now().millisecondsSinceEpoch}',
+              email: email,
+              fullName: p['full_name'] as String? ?? 'User',
+              role: role,
+              createdAt: DateTime.tryParse(p['created_at'] as String? ?? '') ?? DateTime.now(),
+            )).copyWith(
+              fullName: (p['full_name'] as String?)?.isNotEmpty == true ? p['full_name'] as String : null,
+              phone: p['phone'] as String?,
+              avatarUrl: p['avatar_url'] as String?,
+            );
+            _mockUsers[email] = updated;
+          }
+        }
+      } catch (e) {
+        AppLogger.warning('Could not fetch profiles from Supabase: $e');
+      }
+    }
+    return _mockUsers.values.toList();
   }
 
   /// Switch active role / demo profile instantly

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your FoodBridge Account</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #0F172A;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #F8FAFC;
+      padding: 36px 16px;
+    }
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      background-color: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+    .header {
+      background: linear-gradient(135deg, #1E7E4E 0%, #14532D 100%);
+      padding: 32px 28px;
+      text-align: center;
+      color: #FFFFFF;
+    }
+    .brand-title {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #FFFFFF;
+    }
+    .brand-tagline {
+      margin: 6px 0 0 0;
+      font-size: 13px;
+      color: #ECFDF5;
+      opacity: 0.95;
+    }
+    .content {
+      padding: 36px 32px;
+    }
+    .greeting {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F172A;
+      margin: 0 0 12px 0;
+    }
+    .message {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #475569;
+      margin: 0 0 24px 0;
+    }
+    .otp-card {
+      background-color: #F0FDF4;
+      border: 2px dashed #1E7E4E;
+      border-radius: 14px;
+      padding: 24px 16px;
+      text-align: center;
+      margin: 28px 0;
+    }
+    .otp-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #15803D;
+      margin-bottom: 8px;
+    }
+    .otp-code {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 14px;
+      color: #1E7E4E;
+      font-family: 'Courier New', Courier, monospace, sans-serif;
+      margin: 8px 0;
+      padding-left: 14px; /* balance letter spacing */
+    }
+    .otp-expiry {
+      font-size: 13px;
+      color: #166534;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    .security-notice {
+      background-color: #FFFBEB;
+      border-left: 4px solid #F59E0B;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 24px 0;
+    }
+    .security-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #92400E;
+      margin: 0;
+    }
+    .security-title {
+      font-weight: 700;
+      color: #B45309;
+      margin-bottom: 2px;
+      display: block;
+    }
+    .footer {
+      background-color: #F8FAFC;
+      border-top: 1px solid #E2E8F0;
+      padding: 24px 32px;
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #94A3B8;
+    }
+    .footer p {
+      margin: 4px 0;
+    }
+    .footer a {
+      color: #1E7E4E;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1 class="brand-title">🍲 FoodBridge</h1>
+        <p class="brand-tagline">Share More. Waste Less. Bridge the Need.</p>
+      </div>
+
+      <!-- Body Content -->
+      <div class="content">
+        <h2 class="greeting">Verify Your Account</h2>
+        <p class="message">
+          Welcome to FoodBridge! You are one step away from connecting surplus food and essential items with local communities across Pune.
+        </p>
+        <p class="message">
+          Enter this 6-digit verification code on the registration screen to confirm your email address:
+        </p>
+
+        <!-- Prominent OTP Display -->
+        <div class="otp-card">
+          <div class="otp-label">Verification Code</div>
+          <div class="otp-code">{{ .Token }}</div>
+          <div class="otp-expiry">⏱ This code is valid for 10 minutes</div>
+        </div>
+
+        <!-- Security Warning -->
+        <div class="security-notice">
+          <span class="security-title">🔒 Security Notice</span>
+          <p class="security-text">
+            Never share this verification code with anyone. FoodBridge staff and volunteers will <strong>never</strong> ask for your verification code, password, or financial information.
+          </p>
+        </div>
+
+        <p class="message" style="font-size: 13px; color: #64748B; margin-top: 20px;">
+          If you didn't create a FoodBridge account, you can safely ignore this email. No account will be activated without this verification code.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p><strong>FoodBridge Community Platform</strong></p>
+        <p>Fighting Hunger & Eliminating Food Waste Together • Pune, Maharashtra</p>
+        <p style="margin-top: 8px;">
+          Need assistance? Reach us at <a href="mailto:support@foodbridge.org">support@foodbridge.org</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

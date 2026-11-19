@@ -99,16 +99,18 @@ class _VolunteerMissionScreenState extends State<VolunteerMissionScreen> {
             barrierDismissible: false,
             builder: (ctx) => AlertDialog(
               title: const Text('Mission Accomplished! 🎉'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.verified, color: AppColors.primaryGreen, size: 56),
-                  const SizedBox(height: 12),
-                  Text(
-                    'You successfully redistributed ${donation.quantity.toStringAsFixed(0)} ${donation.unit} of surplus to ${donation.claimedByNgoName ?? "the shelter"}.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.verified, color: AppColors.primaryGreen, size: 56),
+                    const SizedBox(height: 12),
+                    Text(
+                      'You successfully redistributed ${donation.quantity.toStringAsFixed(0)} ${donation.unit} of surplus to ${donation.claimedByNgoName ?? "the shelter"}.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 ElevatedButton(
@@ -152,37 +154,39 @@ class _VolunteerMissionScreenState extends State<VolunteerMissionScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: Text(title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(description, style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey)),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(description, style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Demo Hint Code: $expectedCodeDemo',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.deepGreen),
+                      ),
                     ),
-                    child: Text(
-                      'Demo Hint Code: $expectedCodeDemo',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.deepGreen),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      maxLength: 4,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        hintText: '••••',
+                        errorText: localError,
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    maxLength: 4,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
-                    decoration: InputDecoration(
-                      hintText: '••••',
-                      errorText: localError,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -487,9 +491,13 @@ class _VolunteerMissionScreenState extends State<VolunteerMissionScreen> {
                       children: [
                         const Icon(Icons.auto_awesome, color: AppColors.primaryGreen, size: 18),
                         const SizedBox(width: 8),
-                        Text(
-                          AIService().getSafeHandlingAdvisory(donation).title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepGreen),
+                        Expanded(
+                          child: Text(
+                            AIService().getSafeHandlingAdvisory(donation).title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.deepGreen),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                       ],
                     ),

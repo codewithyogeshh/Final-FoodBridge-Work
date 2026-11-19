@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/donation_image_widget.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../../core/widgets/fb_status_chip.dart';
 import '../../authentication/presentation/auth_provider.dart';
@@ -48,19 +49,18 @@ class NgoClaimsScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: d.isFood
-                                      ? AppColors.primaryGreen.withOpacity(0.12)
-                                      : AppColors.warningOrange.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  d.isFood ? Icons.restaurant : Icons.checkroom,
-                                  color: d.isFood ? AppColors.primaryGreen : AppColors.warningOrange,
-                                  size: 24,
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: DonationImageWidget(
+                                    imageUrl: d.imageUrl,
+                                    isFood: d.isFood,
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -89,12 +89,17 @@ class NgoClaimsScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               FBStatusChip(status: d.status.name),
-                              Text(
-                                'Must collect by ${DateFormat('hh:mm a').format(d.pickupDeadline)}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.orange,
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Must collect by ${DateFormat('hh:mm a').format(d.pickupDeadline)}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.orange,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                             ],
@@ -118,6 +123,21 @@ class NgoClaimsScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.map_outlined, size: 16),
+                                label: const Text('कूरियर थेट ट्रॅकिंग पहा (Live Courier Track)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primaryGreen,
+                                  side: const BorderSide(color: AppColors.primaryGreen),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                                onPressed: () => context.push('/tracking/${d.id}'),
                               ),
                             ),
                           ],

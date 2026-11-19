@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/localization/locale_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/avatar_image_helper.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_button.dart';
@@ -58,36 +59,64 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: AppColors.primaryGreen.withOpacity(0.15),
-                  child: const Icon(Icons.person, color: AppColors.primaryGreen, size: 36),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: AppColors.primaryGreen.withOpacity(0.15),
+                      backgroundImage: _resolveAvatar(user?.avatarUrl),
+                      child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
+                          ? const Icon(Icons.person, color: AppColors.primaryGreen, size: 36)
+                          : null,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.fullName ?? 'FoodBridge Member',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
+                                ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${user?.role.displayName ?? "Donor"} ${user?.organizationName != null ? "• ${user!.organizationName}" : ""}',
+                            style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            user?.phone ?? user?.email ?? 'contact@foodbridge.org',
+                            style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.fullName ?? 'FoodBridge Member',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                            ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  height: 38,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/profile/edit'),
+                    icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primaryGreen),
+                    label: const Text(
+                      'Edit Profile (प्रोफाइल संपादित करा)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGreen,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${user?.role.displayName ?? "Donor"} ${user?.organizationName != null ? "• ${user!.organizationName}" : ""}',
-                        style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        user?.phone ?? user?.email ?? 'contact@foodbridge.org',
-                        style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
-                      ),
-                    ],
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
               ],
@@ -99,15 +128,20 @@ class ProfileScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${tr.appearance.toUpperCase()} (LIGHT / DARK / SYSTEM)',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.mutedGrey,
-                  letterSpacing: 0.6,
+              Expanded(
+                child: Text(
+                  '${tr.appearance.toUpperCase()} (LIGHT / DARK / SYSTEM)',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.mutedGrey,
+                    letterSpacing: 0.6,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -275,5 +309,9 @@ class ProfileScreen extends StatelessWidget {
         localeProvider.setLanguageCode(code, userEmail: auth.user?.email);
       },
     );
+  }
+
+  static ImageProvider? _resolveAvatar(String? url) {
+    return AvatarImageHelper.resolve(url);
   }
 }

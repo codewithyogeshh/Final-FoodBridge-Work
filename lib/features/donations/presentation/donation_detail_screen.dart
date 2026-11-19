@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/donation_image_widget.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_status_chip.dart';
 import '../../authentication/domain/models/app_user.dart';
@@ -55,6 +56,115 @@ class DonationDetailScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Hero Donation Banner (Visible to everyone in app)
+              Container(
+                height: 220,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DonationImageWidget(
+                        imageUrl: donation.imageUrl,
+                        isFood: donation.isFood,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        enableFullScreenOnTap: true,
+                        title: donation.title,
+                        heroTag: 'donation-hero-${donation.id}',
+                      ),
+                      // Gradient overlay for contrast
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 70,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.65),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Top Badges
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                donation.isFood ? Icons.restaurant_menu : Icons.checkroom,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                donation.isFood
+                                    ? (donation.isVeg ? 'Veg Food' : 'Non-Veg Food')
+                                    : (donation.clothingCategory ?? 'Clothing'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Tap to Enlarge Indicator
+                      Positioned(
+                        bottom: 10,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.zoom_in_rounded, size: 14, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'Tap to enlarge',
+                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               // Header Card
               Container(
                 padding: const EdgeInsets.all(18),
@@ -111,7 +221,9 @@ class DonationDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -128,7 +240,6 @@ class DonationDetailScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
                         if (donation.isFood)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -139,6 +250,7 @@ class DonationDetailScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.circle,
@@ -331,26 +443,29 @@ class DonationDetailScreen extends StatelessWidget {
                 builder: (context, setModalState) {
                   return AlertDialog(
                     title: const Text('Claim Donation for Shelter'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Your shelter commits to collecting this surplus before ${DateFormat('hh:mm a').format(donation.pickupDeadline)}.',
-                          style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: qtyController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: InputDecoration(
-                            labelText: 'Quantity to Claim (${donation.unit})',
-                            errorText: errorText,
-                            helperText: 'Available: ${donation.quantity.toStringAsFixed(0)} ${donation.unit}',
-                            border: const OutlineInputBorder(),
+                    actionsOverflowButtonSpacing: 8,
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Your shelter commits to collecting this surplus before ${DateFormat('hh:mm a').format(donation.pickupDeadline)}.',
+                            style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: qtyController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: 'Quantity to Claim (${donation.unit})',
+                              errorText: errorText,
+                              helperText: 'Available: ${donation.quantity.toStringAsFixed(0)} ${donation.unit}',
+                              border: const OutlineInputBorder(),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     actions: [
                       TextButton(

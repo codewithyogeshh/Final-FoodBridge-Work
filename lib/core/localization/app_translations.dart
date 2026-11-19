@@ -7,8 +7,14 @@ class AppTranslations {
 
   const AppTranslations(this.locale);
 
-  static AppTranslations of(BuildContext context) {
-    final localeProvider = Provider.of<LocaleProvider>(context);
+  static AppTranslations of(BuildContext context, {bool? listen}) {
+    bool shouldListen = listen ?? true;
+    try {
+      if (listen == null && !context.owner!.debugBuilding) {
+        shouldListen = false;
+      }
+    } catch (_) {}
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: shouldListen);
     return AppTranslations(localeProvider.locale);
   }
 
@@ -60,6 +66,24 @@ class AppTranslations {
   String get volunteerDispatch => get('volunteer_dispatch');
   String get adminConsole => get('admin_console');
   String get profileAndSettings => get('profile_and_settings');
+
+  // NGO & Donation getters
+  String get claims => get('claims');
+  String get distributions => get('distributions');
+  String get verification => get('verification');
+  String get activeStatus => get('active_status');
+  String get pendingStatus => get('pending_status');
+  String get allDonations => get('all_donations');
+  String get filterFood => get('filter_food');
+  String get filterClothing => get('filter_clothing');
+  String get filterUrgent => get('filter_urgent');
+  String get listings => get('listings');
+  String get ourActiveClaims => get('our_active_claims');
+  String get viewAll => get('view_all');
+  String get awaitingVolunteerPickup => get('awaiting_volunteer_pickup');
+  String get tapToViewVerification => get('tap_to_view_verification');
+  String get localityMasked => get('locality_masked');
+  String get deadline => get('deadline');
 
   static const Map<String, Map<String, String>> _strings = {
     // ENGLISH
@@ -175,6 +199,11 @@ class AppTranslations {
       'clothing_category': 'Clothing Category',
       'clothing_condition': 'Clothing Condition',
       'publish_clothes': 'Publish Clothing Donation',
+      'camera': 'Camera',
+      'gallery': 'Gallery',
+      'photo_clothes_packaging': 'Photo of Clothing / Packaging:',
+      'select_or_snap': 'Select / Snap:',
+      'photo_attached': 'Photo Attached',
       'all_tab': 'All',
       'active_tab': 'Active',
       'completed_tab': 'Completed',
@@ -195,6 +224,21 @@ class AppTranslations {
       'official_phone': 'Official Phone Number',
       'service_area': 'Primary Service Area & City',
       'account_password': 'Account Password',
+      'claims': 'Claims',
+      'distributions': 'Distributions',
+      'verification': 'Verification',
+      'active_status': 'Active',
+      'pending_status': 'Pending',
+      'all_donations': 'All Donations',
+      'listings': 'listings',
+      'no_donations_matching': 'No Donations Matching Filter',
+      'no_donations_matching_desc': 'Check back soon or select "All Donations" to see new listings.',
+      'our_active_claims': 'Our Active Claims',
+      'view_all': 'View All',
+      'awaiting_volunteer_pickup': 'Status: Awaiting Volunteer Pickup',
+      'tap_to_view_verification': 'Tap to view verification',
+      'locality_masked': 'Locality masked',
+      'deadline': 'Deadline',
     },
 
     // HINDI (हिंदी)
@@ -310,6 +354,11 @@ class AppTranslations {
       'clothing_category': 'कपड़ों की श्रेणी',
       'clothing_condition': 'कपड़ों की स्थिति',
       'publish_clothes': 'कपड़े दान प्रकाशित करें',
+      'camera': 'कैमरा',
+      'gallery': 'गैलरी',
+      'photo_clothes_packaging': 'कपड़ों / पैकेजिंग की तस्वीर:',
+      'select_or_snap': 'तस्वीर लें / चुनें:',
+      'photo_attached': 'तस्वीर जोड़ी गई',
       'all_tab': 'सभी',
       'active_tab': 'सक्रिय',
       'completed_tab': 'पूर्ण',
@@ -330,6 +379,21 @@ class AppTranslations {
       'official_phone': 'आधिकारिक फोन नंबर',
       'service_area': 'प्राथमिक सेवा क्षेत्र और शहर',
       'account_password': 'खाता पासवर्ड',
+      'claims': 'दावे (Claims)',
+      'distributions': 'वितरण',
+      'verification': 'सत्यापन',
+      'active_status': 'सक्रिय',
+      'pending_status': 'लंबित',
+      'all_donations': 'सभी दान',
+      'listings': 'सूचियां',
+      'no_donations_matching': 'फ़िल्टर से मेल खाता कोई दान नहीं',
+      'no_donations_matching_desc': 'जल्द ही पुनः जांचें या नई सूचियां देखने के लिए "सभी दान" चुनें।',
+      'our_active_claims': 'हमारे सक्रिय दावे',
+      'view_all': 'सभी देखें',
+      'awaiting_volunteer_pickup': 'स्थिति: स्वयंसेवक पिकअप की प्रतीक्षा',
+      'tap_to_view_verification': 'सत्यापन देखने के लिए टैप करें',
+      'locality_masked': 'इलाका सुरक्षित',
+      'deadline': 'अंतिम समय',
     },
 
     // MARATHI (मराठी)
@@ -445,6 +509,11 @@ class AppTranslations {
       'clothing_category': 'कपड्यांचा प्रकार',
       'clothing_condition': 'कपड्यांचा दर्जा / स्थिती',
       'publish_clothes': 'कपडे दान पोस्ट करा',
+      'camera': 'कॅमेरा',
+      'gallery': 'गॅलरी',
+      'photo_clothes_packaging': 'कपडे / पॅकेजिंगचा फोटो:',
+      'select_or_snap': 'फोटो काढा / निवडा:',
+      'photo_attached': 'फोटो जोडला गेला',
       'all_tab': 'सर्व',
       'active_tab': 'सक्रिय',
       'completed_tab': 'पूर्ण झालेले',
@@ -465,6 +534,21 @@ class AppTranslations {
       'official_phone': 'अधिकृत फोन नंबर',
       'service_area': 'कार्यक्षेत्र आणि शहर',
       'account_password': 'खात्याचा पासवर्ड',
+      'claims': 'दावे (Claims)',
+      'distributions': 'वाटप',
+      'verification': 'पडताळणी',
+      'active_status': 'सक्रिय',
+      'pending_status': 'प्रलंबित',
+      'all_donations': 'सर्व दाने',
+      'listings': 'नोंदी',
+      'no_donations_matching': 'या फिल्टरशी जुळणारे कोणतेही दान उपलब्ध नाही',
+      'no_donations_matching_desc': 'कृपया थोड्या वेळाने तपासा किंवा नवीन दाने पाहण्यासाठी "सर्व दाने" निवडा.',
+      'our_active_claims': 'आमचे सक्रिय दावे',
+      'view_all': 'सर्व पहा',
+      'awaiting_volunteer_pickup': 'स्थिती: स्वयंसेवक घेऊन जाण्याची वाट पाहत आहे',
+      'tap_to_view_verification': 'पडताळणी पाहण्यासाठी टॅप करा',
+      'locality_masked': 'परिसर सुरक्षित',
+      'deadline': 'अंतिम मुदत',
     },
   };
 }

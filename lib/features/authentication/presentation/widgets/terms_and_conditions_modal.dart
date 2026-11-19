@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/localization/app_translations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/fb_button.dart';
@@ -16,7 +17,24 @@ class TermsAndConditionsModal extends StatefulWidget {
 
   static Future<bool> showIfNeeded(BuildContext context) async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    if (auth.isAuthenticated && !auth.hasAcceptedTerms) {
+    if (!auth.isAuthenticated) return true;
+
+    final email = auth.user?.email.toLowerCase().trim();
+    if (email != null && email.isNotEmpty) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final alreadyAccepted = prefs.getBool('terms_accepted_for_$email') ?? false;
+        if (alreadyAccepted) {
+          if (!auth.hasAcceptedTerms) {
+            auth.acceptTerms();
+          }
+          return true;
+        }
+      } catch (_) {}
+    }
+
+    if (!context.mounted) return true;
+    if (!auth.hasAcceptedTerms) {
       final accepted = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
@@ -239,6 +257,13 @@ class _TermsAndConditionsModalState extends State<TermsAndConditionsModal> {
                           setState(() => _isSubmitting = true);
                           final auth = Provider.of<AuthProvider>(context, listen: false);
                           await auth.acceptTerms();
+                          final email = auth.user?.email.toLowerCase().trim();
+                          if (email != null && email.isNotEmpty) {
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setBool('terms_accepted_for_$email', true);
+                            } catch (_) {}
+                          }
                           if (mounted) {
                             setState(() => _isSubmitting = false);
                             nav.pop(true);

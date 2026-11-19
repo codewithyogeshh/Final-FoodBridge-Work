@@ -31,7 +31,7 @@ class _NgoVerificationScreenState extends State<NgoVerificationScreen> {
     if (user != null) {
       _legalNameController.text = user.organizationName ?? user.fullName;
       _darpanIdController.text = user.darpanId ?? 'MH/2023/DARPAN-4412';
-      _addressController.text = user.address ?? 'Swargate, Pune, Maharashtra';
+      _addressController.text = user.address ?? 'Sadar Bazar, Satara, Maharashtra';
       _uploadedDocName = '12A_80G_Certificate.pdf';
     }
   }
@@ -89,6 +89,7 @@ class _NgoVerificationScreenState extends State<NgoVerificationScreen> {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
     final status = user?.ngoVerificationStatus ?? NgoVerificationStatus.verified;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -180,7 +181,7 @@ class _NgoVerificationScreenState extends State<NgoVerificationScreen> {
 
               FBTextField(
                 label: 'Physical Shelter / Distribution Address',
-                hint: 'Plot 12, Swargate, Pune',
+                hint: 'Plot 12, Sadar Bazar, Satara',
                 controller: _addressController,
                 maxLines: 2,
                 validator: (val) => val == null || val.isEmpty ? 'Required' : null,
@@ -199,8 +200,8 @@ class _NgoVerificationScreenState extends State<NgoVerificationScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: AppColors.borderLight),
+                    color: isDark ? AppColors.surfaceDark : Colors.white,
+                    border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(

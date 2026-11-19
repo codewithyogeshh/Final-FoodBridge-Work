@@ -58,7 +58,9 @@ class _VolunteerTaskDetailSheetState extends State<VolunteerTaskDetailSheet> {
     final authProvider = context.read<AuthProvider>();
     final currentUser = authProvider.user;
     final volunteerId = currentUser?.id ?? 'usr-vol-303';
-    final volunteerName = currentUser?.fullName ?? 'Rohit Kulkarni';
+    final volunteerName = (currentUser?.fullName != null && currentUser!.fullName.isNotEmpty)
+        ? currentUser.fullName
+        : 'Volunteer';
     final phone = currentUser?.phone ?? '+91 97654 99887';
 
     setState(() => _isAccepting = true);
@@ -302,9 +304,13 @@ class _VolunteerTaskDetailSheetState extends State<VolunteerTaskDetailSheet> {
                     children: [
                       const Icon(Icons.health_and_safety_outlined, color: AppColors.primaryGreen, size: 20),
                       const SizedBox(width: 8),
-                      Text(
-                        advisory.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.charcoal),
+                      Expanded(
+                        child: Text(
+                          advisory.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.charcoal),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),

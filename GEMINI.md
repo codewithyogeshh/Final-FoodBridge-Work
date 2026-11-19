@@ -22,6 +22,13 @@ These rules apply globally across all projects and development workflows.
 - For any user interface (web, 3D overlays, or mobile app screens):
   - Always activate and adhere to **`taste-skill`** (refined typography, spacing consistency, modern restraint, anti-slop visual standard).
   - Always consult **`ui-ux-pro-max`** (design system tokens, accessible color palettes, responsive layouts, micro-interactions, WCAG AA compliance).
+  - **Design Skills Suite**:
+    - **`hallmark`**: Layouts & visual direction, anti-AI-slop hard floor, job-driven layout.
+    - **`anatomy`**: Interactive SVG + WebGL mechanical/isometric explainers.
+    - **`react-bits`**: Ready-made animated components, canvas backdrops, text animations.
+    - **`animate`**: Purposeful UI motion (Emil Kowalski's rules, spring physics).
+    - **`impeccable`**: Critique, polish, design system docs, a11y & hardening.
+  - **MCP & Catalogs**: Use the **`21st` MCP server** (`search`, `get_component`, `get_theme`) and leverage 21st.dev, designeer.xyz, reactbits.dev, magicui.design, uiverse.io, and creative-tim.com/ui.
 
 ## 4. Empirical Evidence Before Assertions
 - **Never claim work is complete, fixed, or passing without fresh empirical evidence**.

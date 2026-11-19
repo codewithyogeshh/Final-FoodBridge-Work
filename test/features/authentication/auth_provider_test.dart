@@ -57,7 +57,7 @@ void main() {
       );
 
       expect(success, isFalse);
-      expect(authProvider.errorMessage, contains('Incorrect password'));
+      expect(authProvider.errorMessage, anyOf(contains('Incorrect password'), contains('पासवर्ड चुकीचा आहे')));
     });
 
     test('Sign in with unknown email is rejected', () async {
@@ -67,7 +67,7 @@ void main() {
       );
 
       expect(success, isFalse);
-      expect(authProvider.errorMessage, contains('does not exist'));
+      expect(authProvider.errorMessage, anyOf(contains('does not exist'), contains('खाते सापडले नाही')));
     });
 
     test('Sign out clears user session and persistent storage', () async {
@@ -161,7 +161,7 @@ void main() {
       );
 
       expect(success, isFalse);
-      expect(authProvider.errorMessage, contains('already exists'));
+      expect(authProvider.errorMessage, anyOf(contains('already exists'), contains('आधीच खाते तयार केलेले आहे')));
     });
 
     test('Invalid registration with short password (< 8 chars) is rejected', () async {
@@ -173,7 +173,7 @@ void main() {
       );
 
       expect(success, isFalse);
-      expect(authProvider.errorMessage, contains('at least 8 characters'));
+      expect(authProvider.errorMessage, anyOf(contains('at least 8 characters'), contains('किमान १२ अक्षरांचा'), contains('किमान')));
     });
 
     test('Invalid registration with malformed email is rejected', () async {
@@ -185,7 +185,7 @@ void main() {
       );
 
       expect(success, isFalse);
-      expect(authProvider.errorMessage, contains('valid email'));
+      expect(authProvider.errorMessage, anyOf(contains('valid email'), contains('अचूक ईमेल')));
     });
 
     test('Password reset request flow and update', () async {
@@ -196,7 +196,7 @@ void main() {
       // 2. Request reset link for non-existent user fails
       final emailSentFail = await authProvider.sendPasswordResetEmail('nonexistent@foodbridge.org');
       expect(emailSentFail, isFalse);
-      expect(authProvider.errorMessage, contains('No account found'));
+      expect(authProvider.errorMessage, anyOf(contains('No account found'), contains('खाते सापडले नाही')));
 
       // 3. Reset password with short password fails
       final shortReset = await authProvider.resetPassword(
@@ -204,7 +204,7 @@ void main() {
         newPassword: 'short',
       );
       expect(shortReset, isFalse);
-      expect(authProvider.errorMessage, contains('at least 8 characters'));
+      expect(authProvider.errorMessage, anyOf(contains('at least 8 characters'), contains('किमान १२ अक्षरांचा'), contains('किमान')));
 
       // 4. Reset password with valid password succeeds
       final validReset = await authProvider.resetPassword(

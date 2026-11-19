@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/donation_image_widget.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_card.dart';
 import '../../donations/domain/models/donation.dart';
@@ -92,6 +93,7 @@ class _DonationPreviewScreenState extends State<DonationPreviewScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actionsOverflowButtonSpacing: 8,
         title: Row(
           children: [
             Icon(
@@ -100,10 +102,17 @@ class _DonationPreviewScreenState extends State<DonationPreviewScreen> {
               size: 28,
             ),
             const SizedBox(width: 10),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
           ],
         ),
-        content: Text(message),
+        content: SingleChildScrollView(child: Text(message)),
         actions: [
           TextButton(
             onPressed: () {
@@ -178,31 +187,15 @@ class _DonationPreviewScreenState extends State<DonationPreviewScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                        child: d.imageUrl != null
-                            ? Image.network(
-                                d.imageUrl!,
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  height: 160,
-                                  color: Colors.grey[200],
-                                  child: Icon(
-                                    d.isFood ? Icons.restaurant : Icons.checkroom,
-                                    size: 48,
-                                    color: AppColors.mutedGrey,
-                                  ),
-                                ),
-                              )
-                            : Container(
-                                height: 160,
-                                color: Colors.grey[200],
-                                child: Icon(
-                                  d.isFood ? Icons.restaurant : Icons.checkroom,
-                                  size: 48,
-                                  color: AppColors.mutedGrey,
-                                ),
-                              ),
+                        child: DonationImageWidget(
+                          imageUrl: d.imageUrl,
+                          isFood: d.isFood,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          enableFullScreenOnTap: true,
+                          title: d.title,
+                        ),
                       ),
                       Positioned(
                         top: 12,

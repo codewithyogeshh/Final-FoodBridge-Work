@@ -3,15 +3,19 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/route_map_view.dart';
+import '../../authentication/domain/models/app_user.dart';
+import '../../authentication/presentation/auth_provider.dart';
+import '../domain/models/donation.dart';
 import 'donation_provider.dart';
 
-/// The official FoodBridge Real-Time Tracking Screen (Matching Image 3 Screen 9).
+/// The official FoodBridge Real-Time Tracking Screen (Matching Blinkit & Rapido standard).
 /// Features:
-/// - Stylized interactive route map
-/// - Live courier callout: "Pickup in 24 min"
-/// - "Your donation is on the way! Arriving by 8:45 PM"
-/// - 3-step delivery progress stepper: Picked Up -> In Transit -> Delivered
-/// - Courier contact & Emergency Task Release
+/// - Real-time OpenStreetMap route connecting Donor -> Courier -> NGO Shelter
+/// - Exact Donor Pickup Location with contact & address
+/// - Exact NGO Shelter Drop-off Location with contact & address
+/// - Live moving courier marker with distance & ETA
+/// - Dynamic 3-step delivery progress stepper
+/// - Two-Way Handover Verification OTP (Donor Pickup Code & NGO Receipt Code)
 class TrackingScreen extends StatefulWidget {
   final String donationId;
 
@@ -29,12 +33,64 @@ class _TrackingScreenState extends State<TrackingScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final donationProvider = context.watch<DonationProvider>();
-    final donation = donationProvider.getDonationById(widget.donationId);
-    final volunteerName = donation?.assignedVolunteerName ?? 'Volunteer Hero';
+    final auth = context.watch<AuthProvider>();
+    final currentUser = auth.user;
+
+    final donation = donationProvider.getDonationById(widget.donationId) ??
+        donationProvider.allDonations.firstWhere(
+          (d) => d.id == widget.donationId,
+          orElse: () => donationProvider.allDonations.isNotEmpty
+              ? donationProvider.allDonations.first
+              : Donation(
+                  id: widget.donationId,
+                  donorId: 'usr-donor-101',
+                  donorName: 'The Green Leaf Bistro',
+                  title: 'Fresh Surplus Meals',
+                  description: 'Hygienically prepared meals',
+                  quantity: 20,
+                  unit: 'meals',
+                  type: DonationType.food,
+                  pickupAddress: 'Shop 4, Powai Naka, Satara',
+                  city: 'Satara',
+                  createdAt: DateTime.now(),
+                  pickupDeadline: DateTime.now().add(const Duration(hours: 3)),
+                ),
+        );
+
+    final volunteerName = (donation.assignedVolunteerName != null && donation.assignedVolunteerName!.isNotEmpty)
+        ? donation.assignedVolunteerName!
+        : (currentUser?.isVolunteer == true ? (currentUser?.fullName ?? 'Volunteer') : 'Volunteer');
+    final volunteerPhone = donation.assignedVolunteerPhone ?? '+91 97654 99887';
+    final donorName = donation.donorName;
+    final donorPhone = donation.donorPhone ?? '+91 98200 12345';
+    final ngoName = donation.claimedByNgoName ?? 'Asha Children Foundation';
+    final isNgo = currentUser?.role == UserRole.ngo;
+
+    String statusTitle;
+    String statusSubtitle;
+    if (donation.status == DonationStatus.delivered ||
+        donation.status == DonationStatus.deliveredToNgo ||
+        donation.status == DonationStatus.completed) {
+      statusTitle = 'Donation Delivered! 🎉 (वितरण पूर्ण)';
+      statusSubtitle = 'Delivered safely to $ngoName';
+    } else if (donation.status == DonationStatus.pickedUp) {
+      statusTitle = 'On the Way to Shelter 🛵 (शेल्टरकडे वाटेत)';
+      statusSubtitle = 'Cargo picked up • Delivering to $ngoName';
+    } else if (donation.assignedVolunteerId != null) {
+      statusTitle = 'Volunteer Assigned (स्वयंसेवक पिकअपसाठी निघाले)';
+      statusSubtitle = '$volunteerName is heading to $donorName';
+    } else {
+      statusTitle = 'Claimed by Shelter (शेल्टरने स्वीकारले)';
+      statusSubtitle = 'Awaiting volunteer courier assignment';
+    }
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.backgroundDark : const Color(0xFFF8FAF9),
       appBar: AppBar(
-        title: const Text('Tracking'),
+        title: const Text(
+          'Live Tracking (थेट ट्रॅकिंग)',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -46,7 +102,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Courier location updated in real-time.'),
+                  content: Text('Courier live location refreshed.'),
+                  backgroundColor: AppColors.primaryGreen,
                   duration: Duration(seconds: 1),
                 ),
               );
@@ -55,21 +112,26 @@ class _TrackingScreenState extends State<TrackingScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Interactive Map View
+            // 1. Full Interactive Route Map View (OSM + Road Route + Moving Marker)
             RouteMapView(
-              height: 280,
-              etaText: 'Pickup in 24 min',
+              height: 290,
+              pickupAddress: donation.pickupAddress,
+              destinationAddress: donation.dropoffAddress,
+              pickupLocation: donation.pickupLatLng,
+              destinationLocation: donation.dropoffLatLng,
+              courierLocation: donation.liveCourierLatLng,
+              etaText: 'ETA: ${donation.estimatedMinutes} min • ${donation.estimatedDistanceKm} km',
               onRefresh: () => setState(() {}),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Status Card
+            // 2. Realtime Status & Progress Stepper Card (Blinkit style)
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.cardDark : AppColors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -78,7 +140,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -87,38 +149,40 @@ class _TrackingScreenState extends State<TrackingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Your donation is on the way!',
-                    style: TextStyle(
-                      fontSize: 18,
+                  Text(
+                    statusTitle,
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: AppColors.deepGreen,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Arriving by 8:45 PM',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                  Text(
+                    statusSubtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.mutedGrey,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
 
-                  // 3-Step Horizontal Stepper
-                  _buildStepper(),
+                  // 3-Step Live Delivery Progress Stepper
+                  _buildStepper(donation),
 
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
+                  const Divider(height: 1),
+                  const SizedBox(height: 14),
 
-                  // Assigned Volunteer Card
+                  // Assigned Volunteer Courier Info Row
                   Row(
                     children: [
                       Container(
-                        width: 48,
-                        height: 48,
+                        width: 46,
+                        height: 46,
                         decoration: const BoxDecoration(
                           color: Color(0xFFEAF8F0),
                           shape: BoxShape.circle,
@@ -126,25 +190,46 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         child: const Icon(
                           Icons.sports_motorsports,
                           color: AppColors.primaryGreen,
-                          size: 28,
+                          size: 26,
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              volunteerName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  volunteerName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryGreen.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'Courier 🛵',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              'Honda Activa • MH 12 FB 2026',
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Two-Wheeler • Live GPS Enabled',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11.5,
                                 color: AppColors.mutedGrey,
                               ),
                             ),
@@ -156,7 +241,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         tooltip: 'Call Volunteer',
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Calling volunteer: +91 97654 99887')),
+                            SnackBar(
+                              content: Text('Calling volunteer $volunteerName: $volunteerPhone'),
+                              backgroundColor: AppColors.primaryGreen,
+                            ),
                           );
                         },
                       ),
@@ -165,10 +253,255 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
 
+            // 3. Rapido/Blinkit Route Nodes Card (Where to pick up & Where to deliver)
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardDark : AppColors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'DISPATCH ROUTE DETAILS (मार्गाचा तपशील)',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.6,
+                      color: AppColors.mutedGrey,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Node 1: Pickup Location (Donor)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFEBEE),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.storefront, color: AppColors.errorRed, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'PICKUP FROM (येथून घ्या):',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.errorRed,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFEBEE),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'दात्याचे स्थान',
+                                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.errorRed),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              donorName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
+                            Text(
+                              donation.pickupAddress,
+                              style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.phone_outlined, size: 20, color: AppColors.errorRed),
+                        tooltip: 'Call Donor',
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Calling donor $donorName: $donorPhone'),
+                              backgroundColor: AppColors.errorRed,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  // Connecting Route Line
+                  Padding(
+                    padding: const EdgeInsets.only(left: 14, top: 4, bottom: 4),
+                    child: Container(
+                      width: 2,
+                      height: 24,
+                      color: AppColors.primaryGreen.withOpacity(0.35),
+                    ),
+                  ),
+
+                  // Node 2: Drop-off Location (NGO / Shelter)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEDF7EE),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.home_work, color: AppColors.primaryGreen, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'DELIVER TO (येथे पोहोचवा):',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEDF7EE),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'संस्थेचे स्थान',
+                                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              ngoName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
+                            Text(
+                              donation.dropoffAddress,
+                              style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.phone_outlined, size: 20, color: AppColors.primaryGreen),
+                        tooltip: 'Call Shelter',
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Calling shelter $ngoName: +91 94220 88776'),
+                              backgroundColor: AppColors.primaryGreen,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 4. Two-Way Verification Code Card (Blinkit style Handover OTP)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.mintLight,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryGreen,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.lock_outline, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isNgo
+                              ? 'NGO Delivery Receipt Code'
+                              : 'Handover Pickup Code (पिकअप कोड)',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.deepGreen,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isNgo
+                              ? 'Provide to volunteer upon receiving cargo'
+                              : 'Share with volunteer $volunteerName upon pickup',
+                          style: const TextStyle(fontSize: 11.5, color: AppColors.mutedGrey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.cardDark : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryGreen, width: 1.5),
+                    ),
+                    child: Text(
+                      isNgo ? donation.deliveryOtp : donation.pickupOtp,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
 
-            // Emergency Task Release (Robin Hood Army / Safety protocol)
+            // 5. Emergency Task Release & Support
             OutlinedButton.icon(
               icon: const Icon(Icons.report_problem_outlined, color: AppColors.errorRed, size: 18),
               label: const Text('Emergency Re-Dispatch / Support'),
@@ -186,7 +519,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   builder: (ctx) => AlertDialog(
                     title: const Text('Emergency Assistance'),
                     content: const Text(
-                      'If the volunteer encounters vehicle breakdown or food safety expiry, tap confirm to return this mission to the community rescue queue.',
+                      'If the courier encounters vehicle breakdown, bad weather, or delay, tap confirm to alert community backup riders.',
                     ),
                     actions: [
                       TextButton(
@@ -199,38 +532,67 @@ class _TrackingScreenState extends State<TrackingScreen> {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Dispatched alert to nearby volunteers.'),
+                              content: Text('Dispatched backup alert to nearby volunteers.'),
                               backgroundColor: AppColors.errorRed,
                             ),
                           );
                         },
-                        child: const Text('Re-dispatch Task', style: TextStyle(color: Colors.white)),
+                        child: const Text('Request Backup', style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),
                 );
               },
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStepper() {
+  Widget _buildStepper(Donation donation) {
+    final status = donation.status;
+    final bool isPickedUp = status == DonationStatus.pickedUp ||
+        status == DonationStatus.delivered ||
+        status == DonationStatus.deliveredToNgo ||
+        status == DonationStatus.distributed ||
+        status == DonationStatus.completed;
+    final bool isInTransit = status == DonationStatus.pickedUp;
+    final bool isDelivered = status == DonationStatus.delivered ||
+        status == DonationStatus.deliveredToNgo ||
+        status == DonationStatus.distributed ||
+        status == DonationStatus.completed;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _stepNode(label: 'Picked Up', isDone: true, isActive: false),
-        _stepLine(isDone: true),
-        _stepNode(label: 'In Transit', isDone: false, isActive: true),
-        _stepLine(isDone: false),
-        _stepNode(label: 'Delivered', isDone: false, isActive: false),
+        _stepNode(
+          label: 'Picked Up\n(पिकअप)',
+          isDone: isPickedUp,
+          isActive: !isPickedUp && donation.assignedVolunteerId != null,
+        ),
+        _stepLine(isDone: isPickedUp),
+        _stepNode(
+          label: 'In Transit\n(वाटेत)',
+          isDone: isDelivered,
+          isActive: isInTransit,
+        ),
+        _stepLine(isDone: isDelivered),
+        _stepNode(
+          label: 'Delivered\n(पोहोचवले)',
+          isDone: isDelivered,
+          isActive: false,
+        ),
       ],
     );
   }
 
-  Widget _stepNode({required String label, required bool isDone, required bool isActive}) {
+  Widget _stepNode({
+    required String label,
+    required bool isDone,
+    required bool isActive,
+  }) {
     Color color;
     IconData icon;
     if (isDone) {
@@ -263,8 +625,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
         const SizedBox(height: 6),
         Text(
           label,
+          textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: isActive || isDone ? FontWeight.bold : FontWeight.w500,
             color: isActive ? AppColors.charcoal : AppColors.mutedGrey,
           ),
@@ -275,9 +638,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   Widget _stepLine({required bool isDone}) {
     return Container(
-      width: 48,
+      width: 44,
       height: 2.5,
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 24),
       color: isDone ? AppColors.primaryGreen : Colors.grey.shade300,
     );
   }

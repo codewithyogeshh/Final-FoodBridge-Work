@@ -1,0 +1,890 @@
+\documentclass[12pt,a4paper]{article}
+
+% ==============================================================================
+% PAGE MARGINS & GEOMETRY
+% ==============================================================================
+\usepackage[
+    top=0.9in,
+    bottom=0.9in,
+    left=1.1in,
+    right=1.0in,
+    headheight=15pt
+]{geometry}
+
+% ==============================================================================
+% PACKAGES & TYPOGRAPHY
+% ==============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}           % Times New Roman font standard matching referenced PDF
+\usepackage{setspace}
+\onehalfspacing                 % 1.5 line spacing
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds, shadows}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{microtype}
+\usepackage[dvipsnames,x11names]{xcolor}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}
+
+% Table of Contents dots
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+% Page Border (Exact outer rectangle matching referenced DBATU report format)
+\usepackage{eso-pic}
+\AddToShipoutPictureBG{%
+    \begin{tikzpicture}[remember picture, overlay]
+        \draw[line width=0.8pt, black] 
+            ([xshift=0.55in, yshift=-0.55in]current page.north west) 
+            rectangle 
+            ([xshift=-0.55in, yshift=0.55in]current page.south east);
+    \end{tikzpicture}%
+}
+
+% Heading formatting matching referenced report
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{\MakeUppercase}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Custom Checkmark for Gantt Chart
+\newcommand{\cmark}{\textbf{\checkmark}}
+
+% Prevent orphan and widow lines (examiner requirement)
+\widowpenalty=10000
+\clubpenalty=10000
+
+\begin{document}
+
+% ==============================================================================
+% PAGE 1: TITLE PAGE
+% ==============================================================================
+\begin{titlepage}
+    \centering
+    \vspace*{-0.4cm}
+    
+    % College Banner Image directly from KBPCOES reference
+    \includegraphics[width=\textwidth]{figures/college_banner.jpg}\\[0.6cm]
+
+    {\large \textbf{Department of Computer Science and Engineering}}\\[1.1cm]
+    
+    {\Large \textbf{A Project Design Report Phase I}}\\[0.4cm]
+    {\large \textbf{On}}\\[0.6cm]
+    
+    {\LARGE \textbf{“FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine”}}\\[1.0cm]
+    
+    {\large \textbf{By}}\\[0.5cm]
+    
+    \begin{tabular}{ll}
+        1) & \textbf{Yogesh Gurunath Chavan} \quad [22111317I] \\[0.15cm]
+        2) & \textbf{Samruddhi Pramod Sawant} \quad [23062701242018] \\[0.15cm]
+        3) & \textbf{Omkar Nilesh Shinde} \quad [23062701242019] \\[0.15cm]
+        4) & \textbf{Shivraj Rajendra Yadav} \quad [23062701242020] \\
+    \end{tabular}\\[0.8cm]
+    
+    {\large \textbf{Of}}\\[0.3cm]
+    {\large Final Year B. Tech Computer Science \& Engineering}\\[0.8cm]
+    
+    {\large Under the guidance of}\\[0.2cm]
+    {\large \textbf{Prof. Uma Bhokare}}\\[0.2cm]
+    {\normalsize (Department of Computer Science \& Engineering.)}\\[0.8cm]
+    
+    {\large \textbf{Academic Year 2026-27}}
+    \vfill
+\end{titlepage}
+
+% ==============================================================================
+% PAGE 2: CERTIFICATE
+% ==============================================================================
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{-0.4cm}
+    \includegraphics[width=\textwidth]{figures/college_banner.jpg}\\[0.6cm]
+
+    {\large \textbf{Department of Computer Science and Engineering}}\\[1.2cm]
+    
+    {\Huge \textit{\textbf{Certificate}}}\\[1.2cm]
+\end{center}
+
+\noindent
+This is to certify that the part of the work of the project entitled, \textbf{“FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine”} is submitted by ,
+
+\vspace{0.6cm}
+\begin{center}
+    \begin{tabular}{ll}
+        1) & \textbf{Yogesh Gurunath Chavan} \quad [22111317I] \\[0.15cm]
+        2) & \textbf{Samruddhi Pramod Sawant} \quad [23062701242018] \\[0.15cm]
+        3) & \textbf{Omkar Nilesh Shinde} \quad [23062701242019] \\[0.15cm]
+        4) & \textbf{Shivraj Rajendra Yadav} \quad [23062701242020] \\
+    \end{tabular}
+\end{center}
+
+\vspace{0.6cm}
+\noindent
+As prescribed by the \textbf{DR. BABASAHEB AMBEDKAR TECHNOLOGICAL UNIVERSITY} for the subject \textbf{“Project Phase – I”} of Final Year B.Tech. Computer Science \& Engineering. The work is done by them under my supervision.
+
+\vspace{2.8cm}
+\noindent
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}cc}
+    \textbf{Prof. Uma Bhokare} & \textbf{Dr. Shabina Modi} \\[0.2cm]
+    Project Guide & Head of the department \\
+\end{tabular*}
+
+% ==============================================================================
+% PAGE 3: ACKNOWLEDGMENT
+% ==============================================================================
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{0.5cm}
+    {\Large \textbf{ACKNOWLEDGMENT}}\\[1.0cm]
+\end{center}
+
+\noindent
+We take this opportunity to express our gratitude to \textbf{“Karmaveer Bhaurao Patil College of Engineering, Satara”} and the Computer Science \& Engineering Department for sanctioning us the project topic \textbf{“FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine”} \& for allowing access to various facilities.
+
+\vspace{0.4cm}
+\noindent
+We sincerely wish to express hearty thanks to our Project Guide \textbf{Prof. Uma Bhokare} for her encouraging \& inspiring guidance. Her valuable suggestions were a constant source of inspiration for us.
+
+\vspace{0.4cm}
+\noindent
+We wish to express our thanks to our Head of Department \textbf{Dr. Shabina Modi} for encouragement \& providing us with the best facilities for our project work. We would also like to thank the other teaching \& non-teaching staff.
+
+\vspace{0.4cm}
+\noindent
+Last but not the least we would like to thank all our friends, who helped us directly or indirectly. Helpful hand rendered by all of them will remain for a long time in our memory. Finally we admit that cooperation, coordination \& hard work are our keywords for success.
+
+\vspace{2.0cm}
+\begin{flushright}
+    \textbf{Thanking,}\\[0.3cm]
+    1) Yogesh Gurunath Chavan\\[0.1cm]
+    2) Samruddhi Pramod Sawant\\[0.1cm]
+    3) Omkar Nilesh Shinde\\[0.1cm]
+    4) Shivraj Rajendra Yadav\\
+\end{flushright}
+
+% ==============================================================================
+% PAGE 4: ABSTRACT
+% ==============================================================================
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{0.5cm}
+    {\Large \textbf{ABSTRACT}}\\[1.0cm]
+\end{center}
+
+\noindent
+Large-scale commercial catering organizations, college hostels, banquet halls, and restaurants discard substantial volumes of hygienically prepared surplus meals every day. In the traditional food relief process, surplus meals pass through unorganized manual communication and telephone chains. This makes the recovery process difficult to monitor, increases coordination delays, and leads to food spoilage before it reaches hungry individuals in charitable shelters.
+
+\vspace{0.4cm}
+\noindent
+To address these challenges, this report presents the Phase I design of \textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine}, a centralized cross-platform mobile and web-based system designed to make surplus food recovery transparent, accountable, and instantaneous. The system covers the complete process, starting from donation listing, proximity-based real-time broadcasting, shelter claim reservation, volunteer courier assignment, cryptographic dual-OTP verification, and administrative monitoring.
+
+\vspace{0.4cm}
+\noindent
+FoodBridge uses multiple security measures to protect donation integrity and verify legitimate beneficiaries. These include Role-Based Access Control (RBAC), multi-device profile synchronization, and mandatory NGO Darpan and 80G tax accreditation verification to ensure that only authorized charitable foundations can claim surplus food. A cryptographic Two-Stage One-Time PIN protocol (Pickup OTP with the Donor, Delivery OTP with the Shelter) ensures that volunteers cannot falsify deliveries. Real-time WebSocket broadcasting built upon Supabase PostgreSQL ensures sub-100ms state updates across distributed mobile clients, while an immutable audit trail maintains a record of important activities for complete institutional accountability.
+
+\vspace{0.8cm}
+\noindent
+\textbf{Keywords:} Food redistribution, Real-time logistics, RBAC, Dual-OTP, NGO Darpan, 80G verification, Flutter, Supabase, Optimistic synchronization, Immutable audit trail.
+
+% ==============================================================================
+% PAGE 5: LIST OF TABLES
+% ==============================================================================
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{0.5cm}
+    {\Large \textbf{LIST OF TABLES}}\\[1.0cm]
+\end{center}
+
+\noindent
+\begin{tabular}{p{0.08\textwidth} p{0.72\textwidth} r}
+    2 & Software Requirements \dotfill & 11 \\[0.4cm]
+    3 & Project Scheduling (Gantt Chart) \dotfill & 16 \\[0.4cm]
+    4 & Weekly Milestones \dotfill & 16 \\[0.4cm]
+    5 & Cost Estimation \dotfill & 17 \\[0.4cm]
+    6 & Work Distribution \dotfill & 17 \\[0.4cm]
+    7 & Risk Analysis \dotfill & 18 \\
+\end{tabular}
+
+% ==============================================================================
+% PAGE 6: LIST OF FIGURES
+% ==============================================================================
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{0.5cm}
+    {\Large \textbf{LIST OF FIGURES}}\\[1.0cm]
+\end{center}
+
+\noindent
+\begin{tabular}{p{0.08\textwidth} p{0.72\textwidth} r}
+    1 & FOODBRIDGE SYSTEM ARCHITECTURE \dotfill & 8 \\[0.4cm]
+    2 & ARCHITECTURE DIAGRAM \dotfill & 13 \\[0.4cm]
+    3 & SEQUENCE DIAGRAM \dotfill & 14 \\
+\end{tabular}
+
+% ==============================================================================
+% PAGES 7 & 8: INDEX (TABLE OF CONTENTS)
+% ==============================================================================
+\newpage
+\thispagestyle{empty}
+\begin{center}
+    \vspace*{0.5cm}
+    {\Large \textbf{INDEX}}\\[1.0cm]
+\end{center}
+
+\noindent
+\begin{tabularx}{\textwidth}{p{0.12\textwidth} X r}
+    \hline
+    \textbf{Sr. No.} & \textbf{Name of the Chapter} & \textbf{Page No.} \\
+    \hline
+    \textbf{1} & \textbf{Introduction} & \textbf{1} \\
+    1.1 & Overview & 1 \\
+    1.2 & Literature Review & 2 \\
+    1.3 & Existing System & 4 \\[0.15cm]
+    \textbf{2} & \textbf{Objectives} & \textbf{5} \\
+    2.1 & Problem Statement & 5 \\
+    2.2 & Objectives & 5 \\
+    2.2.1 & Project Objectives & 5 \\
+    2.2.2 & Academic Objectives & 6 \\[0.15cm]
+    \textbf{3} & \textbf{Project Overview} & \textbf{7} \\
+    3.1 & Scope & 7 \\
+    3.2 & Architecture & 7 \\
+    3.3 & Project Modules & 9 \\
+    3.4 & Novelty of the Proposed System & 9 \\[0.15cm]
+    \textbf{4} & \textbf{Requirement Analysis} & \textbf{11} \\
+    4.1 & Hardware Requirements & 11 \\
+    4.2 & Software Requirements & 11 \\
+    4.3 & Operating System Requirements & 12 \\[0.15cm]
+    \textbf{5} & \textbf{Application Design} & \textbf{13} \\
+    5.1 & Architecture Diagram & 13 \\
+    5.2 & Sequence Diagram & 14 \\[0.15cm]
+    \textbf{6} & \textbf{Implementation} & \textbf{15} \\
+    6.1 & Technology & 15 \\
+    6.2 & Steps to be Taken Towards Project Completion & 15 \\
+    6.3 & Project Scheduling & 16 \\
+    6.3.1 & Plan of Action & 16 \\
+    6.4 & Cost Estimation & 17 \\
+    6.5 & Team Structure & 17 \\
+    6.6 & Risk Analysis & 18 \\[0.15cm]
+    \textbf{7} & \textbf{Advantages \& Limitations} & \textbf{19} \\
+    7.1 & Advantages & 19 \\
+    \hline
+\end{tabularx}
+\begin{flushright}
+    \textit{Continued on next page}
+\end{flushright}
+
+\newpage
+\thispagestyle{empty}
+\noindent
+\begin{tabularx}{\textwidth}{p{0.12\textwidth} X r}
+    \hline
+    \textbf{Sr. No.} & \textbf{Name of the Chapter} & \textbf{Page No.} \\
+    \hline
+    7.2 & Limitations & 19 \\[0.15cm]
+    \textbf{8} & \textbf{Applications} & \textbf{21} \\[0.15cm]
+    \textbf{9} & \textbf{Future Scope} & \textbf{22} \\[0.15cm]
+    \textbf{10} & \textbf{Conclusion} & \textbf{23} \\[0.15cm]
+    & \textbf{References} & \textbf{24} \\
+    \hline
+\end{tabularx}
+
+% ==============================================================================
+% CHAPTER 1: INTRODUCTION
+% ==============================================================================
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\section{INTRODUCTION}
+
+\subsection{Overview}
+Large-scale commercial establishments such as banquet halls, college hostels, catering companies and restaurants generate substantial volumes of edible surplus food on a daily basis. In the traditional food relief process, surplus food items are handled through multiple manual, unverified telephone calls and word-of-mouth communication. This creates critical delays that increase the chances of prepared food spoiling, while exposing donations to unauthorized diversion, lack of hygiene accountability and loss of donor trust.
+
+\textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine} is a centralized mobile and web-based system designed to provide secure, rapid and transparent redistribution of perishable meals and winter wear. It manages the complete lifecycle of a donation, starting from surplus food listing and proximity-based broadcast to verified shelter claim, courier dispatch, physical handover verification and administrative audit logging.
+
+The system uses Role-Based Access Control (RBAC) to ensure that users access only the functions assigned to their roles: Donors, Verified Shelters (NGOs), Delivery Volunteers, and System Administrators. To safeguard beneficiaries, non-governmental organizations must undergo strict accreditation verification (such as NGO Darpan ID and 80G tax exemption certificates) before claiming permissions are granted.
+
+FoodBridge provides a cryptographic two-stage One-Time Password (OTP) verification protocol. A pickup OTP must be entered at the donor's premises before goods are marked as in-transit, and a secret delivery OTP known exclusively to the recipient shelter must be validated before the task is closed. All important activities such as donation creation, shelter claim, volunteer dispatch, courier location updates and distribution completions are recorded through an immutable audit trail. This provides superior monitoring and accountability throughout the relief lifecycle.
+
+The system is designed to support multiple urban zones, large donor networks and emergency relief operations through centralized cloud orchestration. By combining reactive mobile applications, real-time database synchronization, controlled access, geographic routing, and double-blind verification, FoodBridge aims to eliminate commercial food waste and strengthen nutritional support for charitable shelters.
+
+\subsection{Literature Review}
+The increasing digitization of humanitarian relief and urban logistics has created a need for secure mechanisms to prevent unauthorized claims, delivery failure, tampering and uncoordinated distribution. Recent research has explored technologies such as multi-factor authentication, encryption, distributed ledgers, digital watermarking, audit trails, and real-time state synchronization to improve logistics security and reliability:
+
+\begin{enumerate}
+    \item \textbf{United Nations Environment Programme (UNEP) (2024)} published the global Food Waste Index, highlighting that over 1.05 billion tonnes of food are wasted annually across commercial and household sectors. The study demonstrates the urgent necessity for decentralized, local-level digital dispatch platforms to salvage prepared food within hours of production.
+    \item \textbf{Shewale et al. (2023)} proposed a Multi-Factor Authentication and Location-Restricted delivery system for sensitive logistics in Indian universities. Their work establishes the vital importance of restricting access to verified users and locations, which FoodBridge adapts into the physical realm via the Dual-OTP (Pickup and Delivery PIN) handover protocol.
+    \item \textbf{Patil, Deshmukh, and Kulkarni (2023)} investigated real-time volunteer routing and assignment models in urban distribution networks. Their research emphasizes that dispatching couriers without live state synchronization causes duplicate task claims and high drop-off rates, justifying FoodBridge's optimistic distributed state mesh.
+    \item \textbf{Nagarajan et al. (2023)} investigated secure document and asset sharing using cryptographic protection and distributed verification. The study supports the use of encryption and distributed technologies for protecting sensitive handover data.
+    \item \textbf{Kamble and Kamble (2024)} proposed a tamper-evident system for competitive examination logistics in India. The research utilizes immutable records to prevent unauthorized modifications, providing a foundation for incorporating tamper-evident audit logs into FoodBridge.
+    \item \textbf{Vécsi and Pethő (2024)} presented an auditable framework that emphasizes auditability and verified user integrity. The study demonstrates the importance of maintaining verifiable records so that administrators can inspect and validate activities, a principle applied in FoodBridge's NGO Darpan accreditation checks.
+    \item \textbf{Singh and Kasana (2024)} reviewed digital verification techniques for document and entity authentication. FoodBridge extends this concept to verify official 80G tax exemption and Darpan certificates before unlocking shelter claim privileges.
+\end{enumerate}
+
+\subsection{Existing System}
+The existing food relief and surplus redistribution process generally depends on manual telephone communication, informal messaging groups, conventional storage methods and uncoordinated physical transport. These processes involve multiple disjointed stages and people, which creates difficulties in maintaining food safety, preventing duplicate claims, tracking driver movement and monitoring relief activities. The major limitations of the existing system are:
+
+\begin{enumerate}
+    \item \textbf{Limited Access Control:} Existing systems do not provide detailed access control according to the responsibilities of different users, increasing the possibility of unauthorized access to food donations.
+    \item \textbf{Risk of Unauthorized Claims:} Food donations may be claimed by unverified parties or commercial re-sellers who divert relief items away from genuine charitable beneficiaries.
+    \item \textbf{Lack of End-to-End Security:} Traditional processes do not provide continuous cryptographic protection and verification from food preparation and listing to final shelter handover.
+    \item \textbf{Manual Dispatch Selection:} Volunteers and drivers are often coordinated manually via telephone calls, making it difficult to efficiently manage routes, vehicle capacities, and pickup deadlines.
+    \item \textbf{Duplicate Claim Risk:} Existing messaging groups cannot prevent race conditions where multiple couriers show up simultaneously for the same pickup, wasting volunteer fuel and time.
+    \item \textbf{Limited Traceability and Monitoring:} It is difficult to identify the exact courier responsible for lost or spoiled food, or centrally monitor activities related to pickup, transit and final distribution.
+    \item \textbf{Distribution and Spoiling Risk:} Physical movement of perishable hot meals without time-window locking increases the risk of microbial degradation and food spoilage during transportation.
+\end{enumerate}
+
+% ==============================================================================
+% CHAPTER 2: OBJECTIVES
+% ==============================================================================
+\newpage
+\section{OBJECTIVES}
+
+\subsection{Problem Statement}
+The current process of managing surplus food redistribution has several security, logistical and management-related problems. Food donations pass through different people and manual stages during listing, pickup, transport and distribution. This makes it difficult to control access and increases the risk of food spoilage, unverified claims and unauthorized diversion. Coordinating volunteers manually also leads to duplicate dispatches and makes it difficult to maintain required dietary types (Veg/Non-Veg) and hygiene declarations.
+
+To address these problems, \textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine} is proposed as a centralized mobile and web-based platform that brings all surplus food activities together in one place. It allows authorized donors to declare surplus meals, enables certified shelters to reserve claims based on headcount, automatically dispatches available couriers, and confirms deliveries through cryptographic OTP handovers.
+
+\subsection{Objectives}
+The main objective of FoodBridge is to develop a mobile and web-based system for handling surplus food redistribution in a more secure, automated and organized way. It focuses on controlling user access, eliminating food spoilage, verifying charitable shelters and making courier distribution transparent to monitor.
+
+\subsubsection{Project Objectives}
+\begin{enumerate}
+    \item \textbf{Secure Redistribution Management:} To bring food listing, capacity reservation, volunteer dispatch, and distribution records under one unified platform.
+    \item \textbf{Controlled User Access:} To use secure login, Role-Based Access Control (RBAC) and Two-Factor Authentication (2FA) so that users can access only the functions related to their assigned roles.
+    \item \textbf{Government Accreditation Verification:} To inspect and verify NGO Darpan ID and 80G tax exemption certificates before granting claim privileges to charitable shelters.
+    \item \textbf{Dual-OTP Cryptographic Handover:} To enforce a double-blind PIN protocol (Pickup OTP with Donor, Delivery OTP with Shelter) ensuring physical proof of delivery.
+    \item \textbf{Real-Time State Synchronization:} To distribute live donation status changes across all connected devices in under 100 milliseconds using optimistic state reconciliation.
+    \item \textbf{Centralized Monitoring and Audit Trail:} To maintain immutable audit records of all listings, claims, dispatches, deliveries and administrative actions for accountability.
+\end{enumerate}
+
+\subsubsection{Academic Objectives}
+\begin{enumerate}
+    \item \textbf{Mobile Application Development:} To learn how a cross-platform mobile application is designed and developed using Flutter and Dart, with reactive UI components and state providers.
+    \item \textbf{Database Management:} To understand how modern PostgreSQL databases are designed in Supabase to store, organize and retrieve donations, user profiles, verification records and audit logs.
+    \item \textbf{Application Security:} To learn how authentication, Role-Based Access Control (RBAC), Two-Factor Authentication (2FA), Row Level Security (RLS) and cryptographic OTPs protect system integrity.
+    \item \textbf{Real-Time Distributed Synchronization:} To understand how WebSocket channels, broadcast events and optimistic local caching function together across distributed mobile clients.
+    \item \textbf{System Integration:} To understand how frontend interfaces, cloud databases, location services, OTP handlers and administrative tools work together as parts of one application.
+    \item \textbf{Software Testing and Validation:} To learn how to execute unit test suites, resolve runtime errors, verify user permissions and validate application performance on physical mobile hardware.
+\end{enumerate}
+
+% ==============================================================================
+% CHAPTER 3: PROJECT OVERVIEW
+% ==============================================================================
+\newpage
+\section{PROJECT OVERVIEW}
+
+\subsection{Scope}
+FoodBridge is planned to handle the different stages of surplus food and clothing redistribution through a single platform. Its scope includes the following activities:
+
+\begin{itemize}
+    \item Collecting food surplus details from commercial donors (caterers, restaurants, hostels) with meal quantity, preparation time, and dietary classification (Veg/Non-Veg).
+    \item Supporting warm wear and winter clothing donations alongside food relief.
+    \item Maintaining separate verified registries for donors, shelters, couriers and administrators.
+    \item Validating NGO credentials (Darpan ID and 80G certificate) before permitting shelter claims.
+    \item Broadcasting available donations in real time to accredited shelters within geographic proximity.
+    \item Enabling shelters to claim full or partial quantities based on verified beneficiary headcounts.
+    \item Dispatching delivery notifications to nearby volunteers and enforcing a 2-task concurrent limit.
+    \item Verifying physical donor pickup via a 4-digit Pickup OTP and shelter delivery via a 4-digit Delivery OTP.
+    \item Keeping track of all critical actions through an immutable audit trail and supporting operations across multiple city zones.
+\end{itemize}
+
+\subsection{Architecture}
+The FoodBridge architecture is divided into different layers, as shown in the block diagram. Each layer handles a specific part of the system, from user access and application functions to secure storage and monitoring.
+
+\begin{itemize}
+    \item \textbf{Users:} The system is accessed by four main user types: Donors, Verified Shelters (NGOs), Delivery Volunteers, and System Administrators.
+    \item \textbf{Frontend Portals:} Separate portals and dashboard views are provided for each stakeholder role, with access restricted to the functions required for their respective duties.
+    \item \textbf{Backend / Core Services:} This layer handles the main system operations, including authentication, real-time state broadcasting, donation lifecycle management, task allocation, double-blind OTP generation, and accreditation enforcement.
+    \item \textbf{Secure Storage:} This layer stores donation listings, user profiles, encrypted credentials, verification documents, and immutable audit logs.
+    \item \textbf{Security \& Monitoring (Cross-Cutting):} Security features are used across the system to control access and monitor activities. These include RBAC, 2FA, Row Level Security, OTP validation and audit monitoring.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.1cm, auto,
+    block/.style={rectangle, draw=black, fill=white, text width=2.4cm, text centered, rounded corners=2pt, minimum height=0.9cm, font=\footnotesize\bfseries},
+    wideblock/.style={rectangle, draw=black, fill=white, text width=11.5cm, text centered, rounded corners=2pt, minimum height=0.8cm, font=\small\bfseries},
+    line/.style={draw, -latex', thick}]
+
+    % Users
+    \node [wideblock] (users) {Users: Donors $\bullet$ Shelters (NGOs) $\bullet$ Volunteers $\bullet$ System Admin};
+    
+    % Portals
+    \node [wideblock, below of=users, yshift=-0.25cm] (portals) {Frontend Portals: Donor Console $\bullet$ Shelter Hub $\bullet$ Courier App $\bullet$ Admin Console (Flutter)};
+    
+    % Core Services
+    \node [wideblock, below of=portals, yshift=-0.25cm] (services) {Backend / Core Services: Real-Time Sync $\bullet$ Task Dispatch $\bullet$ Dual-OTP $\bullet$ NGO Verifier};
+    
+    % Storage
+    \node [wideblock, below of=services, yshift=-0.25cm] (storage) {Secure Storage: Supabase PostgreSQL $\bullet$ Offline Storage $\bullet$ Media Cache $\bullet$ Audit Logs};
+    
+    % Security
+    \node [wideblock, below of=storage, yshift=-0.25cm] (sec) {Security \& Monitoring (Cross-Cutting): RBAC $\bullet$ RLS $\bullet$ Dual-OTP Gate $\bullet$ Darpan Review};
+
+    \path [line] (users) -- (portals);
+    \path [line] (portals) -- (services);
+    \path [line] (services) -- (storage);
+    \path [line] (storage) -- (sec);
+\end{tikzpicture}
+\caption{FOODBRIDGE SYSTEM ARCHITECTURE}
+\label{fig:sys_arch}
+\end{figure}
+
+The \textbf{donation lifecycle} followed by the system is: (1) Donation Listing, (2) Proximity Broadcast, (3) Shelter Claim Reservation, (4) Courier Task Dispatch, (5) Volunteer Task Acceptance, (6) Donor Pickup Verification via Pickup OTP, (7) Status Transition to In-Transit, (8) Real-Time Route Navigation, (9) Shelter Arrival, (10) Shelter Delivery Verification via Delivery OTP, (11) Distribution Record Logging, and (12) Audit Trail Archival.
+
+\subsection{Project Modules}
+\begin{enumerate}
+    \item \textbf{Admin Module:} The Admin handles user accounts, roles and permissions through secure login and authentication. The module also inspects submitted NGO Darpan certificates, approves or rejects applications, suspends non-compliant accounts, and monitors live system KPIs.
+    \item \textbf{Donor Module:} Donors can log in, declare surplus food or clothing, specify quantity, preparation time and dietary type, agree to the Food Safety Charter, and track the donation's live journey.
+    \item \textbf{Shelter (NGO) Module:} Allows accredited charitable shelters to browse available food within their delivery perimeter, filter by dietary requirements, reserve claims based on headcount, and provide the final delivery OTP.
+    \item \textbf{Volunteer Courier Module:} Equips couriers to view available pickup dispatches, claim tasks within a concurrent limit of two assignments, enter the donor's pickup OTP to initiate transit, and complete handover at the shelter.
+\end{enumerate}
+
+\subsection{Novelty of the Proposed System}
+FoodBridge brings different security, logistical and management features together in one platform for handling surplus food redistribution. Rather than depending on manual phone calls or unverified chat boards, the system covers every stage from kitchen surplus to beneficiary distribution:
+
+\begin{enumerate}
+    \item \textbf{Optimistic Multi-Device Synchronization:} UI state updates instantly on user action while synchronizing across Supabase WebSockets in under 100 milliseconds.
+    \item \textbf{Double-Blind Dual-OTP Protocol:} The pickup OTP is known only to the donor, and the delivery OTP is known only to the shelter, mathematically eliminating falsified delivery claims.
+    \item \textbf{Mandatory Government Accreditation Gate:} Shelters cannot claim any food relief until their NGO Darpan and 80G tax exemption certificates have been physically inspected and approved by an administrator.
+    \item \textbf{Dynamic Volunteer Profile Resolution:} Admin consoles resolve volunteer identities dynamically in real time from live user registries, preventing stale name display following profile edits.
+    \item \textbf{Courier Task Hoarding Protection:} Volunteers are strictly limited to two active dispatches at any time to prevent courier overcommitment and vehicle overload.
+    \item \textbf{Dual Surplus Support (Food \& Wearable Clothing):} Accommodates both prepared hot meals and clean winter wear within a single unified relief pipeline.
+    \item \textbf{Emergency Task Re-Pooling:} If a volunteer encounters vehicle breakdown, the task is released immediately back into the unassigned dispatch pool without canceling the donation.
+    \item \textbf{Offline Resilience:} Client devices cache active dispatches locally using encrypted preferences, continuing operations even during cellular dropouts.
+    \item \textbf{Centralized Monitoring and Immutable Audit Trail:} Every donation status change, user suspension, and approval action is permanently logged for regulatory compliance.
+\end{enumerate}
+
+% ==============================================================================
+% CHAPTER 4: REQUIREMENT ANALYSIS
+% ==============================================================================
+\newpage
+\section{REQUIREMENT ANALYSIS}
+
+\subsection{Hardware Requirements}
+\textbf{Minimum Requirements:}
+\begin{itemize}
+    \item \textbf{Processor:} Intel Core i3 / equivalent.
+    \item \textbf{RAM:} 8 GB.
+    \item \textbf{Storage:} 256 GB SSD.
+    \item \textbf{Mobile Test Device:} Android 8.0+ with 2 GB RAM.
+    \item \textbf{Network:} Stable Internet connection.
+\end{itemize}
+
+\noindent
+\textbf{Recommended Requirements:}
+\begin{itemize}
+    \item \textbf{Processor:} Intel Core i5 / AMD Ryzen 5 or higher.
+    \item \textbf{RAM:} 16 GB.
+    \item \textbf{Storage:} 512 GB SSD.
+    \item \textbf{Mobile Test Device:} Android 12+ (e.g. Xiaomi HyperOS / Samsung One UI) with 8 GB RAM.
+    \item \textbf{Network:} High-speed and reliable 4G/5G Internet connection.
+\end{itemize}
+
+\subsection{Software Requirements}
+\begin{table}[H]
+\centering
+\caption{Software Requirements}
+\label{tab:software_req}
+\begin{tabularx}{\textwidth}{|l|X|}
+    \hline
+    \textbf{Software / Technology} & \textbf{Requirement} \\
+    \hline
+    Frontend & Flutter SDK 3.24+, Dart 3.5+ \\
+    \hline
+    State Management & Provider \& ChangeNotifier Architecture \\
+    \hline
+    Backend / Database & Supabase PostgreSQL with Realtime Engine \\
+    \hline
+    Authentication & JWT, RBAC, 2FA, Supabase Auth \\
+    \hline
+    Security & AES-256 Local Encryption, SHA-256 Hashing, Dual-OTP \\
+    \hline
+    Local Storage & SharedPreferences with JSON Serialization \\
+    \hline
+    Development IDE & Visual Studio Code / Android Studio \\
+    \hline
+    Version Control & Git and GitHub \\
+    \hline
+    Browser & Google Chrome / Microsoft Edge \\
+    \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Operating System Requirements}
+\begin{itemize}
+    \item \textbf{Development:} Windows 10/11, Linux (Ubuntu), or macOS.
+    \item \textbf{Client Runtime Target:} Android 8.0 (API Level 26) through Android 14 (API Level 34) and Web.
+\end{itemize}
+
+% ==============================================================================
+% CHAPTER 5: APPLICATION DESIGN
+% ==============================================================================
+\newpage
+\section{APPLICATION DESIGN}
+
+\subsection{Architecture Diagram}
+The architecture diagram illustrates the overall structure of the FoodBridge system, showing how different modules and components are connected. It explains the flow of information between users, core services, and secure storage, providing a clear understanding of how the system operates.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.3cm, auto,
+    layer/.style={rectangle, draw=black, fill=white, text width=11.5cm, rounded corners=3pt, inner sep=6pt},
+    header/.style={font=\bfseries\small},
+    content/.style={font=\footnotesize}]
+
+    % Presentation Layer
+    \node [layer] (pres) {
+        \textbf{Presentation Layer (Flutter 3.x)}\\
+        \begin{tabular}{p{2.6cm} p{2.6cm} p{2.6cm} p{2.6cm}}
+            $\bullet$ Donor Portal & $\bullet$ Shelter Hub & $\bullet$ Courier App & $\bullet$ Admin Console \\
+        \end{tabular}
+    };
+
+    % Domain / State Layer
+    \node [layer, below of=pres, yshift=-0.4cm] (state) {
+        \textbf{Domain \& State Management Layer}\\
+        \begin{tabular}{p{2.6cm} p{2.6cm} p{2.6cm} p{2.6cm}}
+            $\bullet$ AuthProvider & $\bullet$ DonationProvider & $\bullet$ AdminProvider & $\bullet$ NotificationProv. \\
+        \end{tabular}
+    };
+
+    % Data Access Layer
+    \node [layer, below of=state, yshift=-0.4cm] (data) {
+        \textbf{Data Access Layer (Repository Pattern)}\\
+        \begin{tabular}{p{3.6cm} p{3.6cm} p{3.6cm}}
+            $\bullet$ AuthService & $\bullet$ DonationRepository & $\bullet$ MediaService \\
+        \end{tabular}
+    };
+
+    % Cloud Backend Layer
+    \node [layer, below of=data, yshift=-0.4cm] (backend) {
+        \textbf{Cloud Persistence \& Security Layer (Supabase)}\\
+        \begin{tabular}{p{3.6cm} p{3.6cm} p{3.6cm}}
+            $\bullet$ PostgreSQL Schema & $\bullet$ WebSocket Realtime & $\bullet$ Row Level Security \\
+        \end{tabular}
+    };
+
+    \draw[-latex', thick] (pres) -- (state);
+    \draw[-latex', thick] (state) -- (data);
+    \draw[-latex', thick] (data) -- (backend);
+\end{tikzpicture}
+\caption{ARCHITECTURE DIAGRAM}
+\label{fig:layered_arch}
+\end{figure}
+
+\subsection{Sequence Diagram}
+This sequence diagram demonstrates how different operations are carried out in a specific order within the FoodBridge system. It highlights the step-by-step communication between users and system components, showing how requests are handled and responses are exchanged during the surplus redistribution lifecycle.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.88, every node/.style={transform shape}]
+    % Lifelines
+    \node (d) at (0,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Donor};
+    \node (s) at (3.5,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {FoodBridge};
+    \node (sh) at (7.0,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Shelter};
+    \node (v) at (10.5,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Volunteer};
+    \node (a) at (14.0,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Admin};
+
+    \draw [dashed] (d) -- (0,-9);
+    \draw [dashed] (s) -- (3.5,-9);
+    \draw [dashed] (sh) -- (7.0,-9);
+    \draw [dashed] (v) -- (10.5,-9);
+    \draw [dashed] (a) -- (14.0,-9);
+
+    % Sequence Messages
+    \draw [-latex', thick] (d) ++(0,-1.0) -- node[above, font=\scriptsize] {1. List Surplus Meals} (3.5,-1.0);
+    \draw [-latex', thick] (3.5,-1.5) -- node[above, font=\scriptsize] {2. Return Pickup OTP} (0,-1.5);
+    \draw [-latex', thick] (3.5,-2.2) -- node[above, font=\scriptsize] {3. Broadcast Available Listing} (7.0,-2.2);
+    \draw [-latex', thick] (sh) ++(0,-3.0) -- node[above, font=\scriptsize] {4. Reserve Claim (Darpan Check)} (3.5,-3.0);
+    \draw [-latex', thick] (3.5,-3.5) -- node[above, font=\scriptsize] {5. Return Delivery OTP} (7.0,-3.5);
+    \draw [-latex', thick] (3.5,-4.3) -- node[above, font=\scriptsize] {6. Dispatch Courier Notification} (10.5,-4.3);
+    \draw [-latex', thick] (v) ++(0,-5.0) -- node[above, font=\scriptsize] {7. Accept Dispatch Task} (3.5,-5.0);
+    \draw [-latex', thick] (v) ++(0,-5.8) -- node[above, font=\scriptsize] {8. Submit Pickup OTP} (3.5,-5.8);
+    \draw [-latex', thick] (3.5,-6.3) -- node[above, font=\scriptsize] {9. Update Status: In-Transit} (10.5,-6.3);
+    \draw [-latex', thick] (v) ++(0,-7.1) -- node[above, font=\scriptsize] {10. Submit Delivery OTP} (3.5,-7.1);
+    \draw [-latex', thick] (3.5,-7.8) -- node[above, font=\scriptsize] {11. Mark Completed \& Closed} (7.0,-7.8);
+    \draw [-latex', thick] (3.5,-8.4) -- node[above, font=\scriptsize] {12. Log to Immutable Audit Trail} (14.0,-8.4);
+\end{tikzpicture}
+\caption{SEQUENCE DIAGRAM}
+\label{fig:seq_diagram}
+\end{figure}
+
+% ==============================================================================
+% CHAPTER 6: IMPLEMENTATION
+% ==============================================================================
+\newpage
+\section{IMPLEMENTATION}
+
+\subsection{Technology}
+\begin{itemize}
+    \item \textbf{Frontend:} Flutter SDK (Dart) and Material Design 3.
+    \item \textbf{Backend:} Supabase BaaS (PostgreSQL).
+    \item \textbf{Database:} PostgreSQL with Row Level Security (RLS) policies.
+    \item \textbf{Authentication and access control:} JWT, RBAC and 2FA.
+    \item \textbf{Security:} AES-256 encryption, SHA-256 hashing and Dual-OTP verification.
+    \item \textbf{Tools:} Visual Studio Code, Android Studio, Git and GitHub; Google Chrome / Android Device for testing.
+\end{itemize}
+
+\subsection{Steps to be Taken Towards Project Completion}
+\begin{enumerate}
+    \item Finalize the problem statement and project objectives.
+    \item Complete the literature survey and requirement collection.
+    \item Finalize the system architecture, technologies and database design.
+    \item Complete the UI design and start the Admin module.
+    \item Implement the Admin module and authentication.
+    \item Implement the Donor module and food safety declaration.
+    \item Implement the Shelter (NGO) module and Darpan accreditation check.
+    \item Implement volunteer task dispatch and dual-OTP verification.
+    \item Integrate AES-256, SHA-256, RBAC, JWT and real-time WebSockets.
+    \item Implement multi-device dynamic profile synchronization and offline caching.
+    \item System integration, testing on physical mobile hardware and bug fixing.
+    \item Final documentation, project demonstration and presentation.
+\end{enumerate}
+
+\subsection{Project Scheduling}
+\begin{table}[H]
+\centering
+\caption{Project Scheduling (Gantt Chart)}
+\label{tab:gantt_chart}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|c|c|}
+    \hline
+    \textbf{Activities} & \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} & \textbf{W5} & \textbf{W6} & \textbf{W7} & \textbf{W8} & \textbf{W9} & \textbf{W10} & \textbf{W11} & \textbf{W12} \\
+    \hline
+    Problem Identification \& Study & \cmark & \cmark & & & & & & & & & & \\
+    \hline
+    Literature Review & \cmark & \cmark & \cmark & & & & & & & & & \\
+    \hline
+    Requirement Analysis & & \cmark & \cmark & & & & & & & & & \\
+    \hline
+    System Architecture \& UI Design & & & \cmark & \cmark & & & & & & & & \\
+    \hline
+    Admin Module \& Auth & & & & \cmark & \cmark & & & & & & & \\
+    \hline
+    Donor Listing Module & & & & & \cmark & \cmark & & & & & & \\
+    \hline
+    Shelter (NGO) Module & & & & & & \cmark & \cmark & \cmark & & & & \\
+    \hline
+    Volunteer Dispatch \& Dual OTP & & & & & & & \cmark & \cmark & & & & \\
+    \hline
+    Security \& Realtime Mesh & & & & & & & & \cmark & \cmark & & & \\
+    \hline
+    Multi-Device Sync Testing & & & & & & & & & \cmark & \cmark & & \\
+    \hline
+    Testing \& Bug Fixing & & & & & & & & & & \cmark & \cmark & \\
+    \hline
+    Documentation \& Final Presentation & & & & & & & & & & & \cmark & \cmark \\
+    \hline
+\end{tabular}
+}
+\end{table}
+
+\subsubsection{Plan of Action}
+\begin{table}[H]
+\centering
+\caption{Weekly Milestones}
+\label{tab:weekly_milestones}
+\begin{tabularx}{\textwidth}{|l|X|}
+    \hline
+    \textbf{Week} & \textbf{Milestone} \\
+    \hline
+    Week 1 & Finalize problem statement and project objectives. \\
+    \hline
+    Week 2 & Complete literature survey and requirement collection. \\
+    \hline
+    Week 3 & Finalize system architecture, technologies and database design. \\
+    \hline
+    Week 4 & Complete UI design and start Admin module. \\
+    \hline
+    Week 5 & Implement Admin module and authentication. \\
+    \hline
+    Week 6 & Implement Donor module and dietary safety charter. \\
+    \hline
+    Week 7 & Implement Shelter (NGO) claim and headcount reservation. \\
+    \hline
+    Week 8 & Implement volunteer task dispatch and dual-OTP verification. \\
+    \hline
+    Week 9 & Integrate AES-256, SHA-256, RBAC, JWT and real-time WebSockets. \\
+    \hline
+    Week 10 & Implement multi-device dynamic profile synchronization and offline caching. \\
+    \hline
+    Week 11 & System integration, testing on physical mobile hardware and bug fixing. \\
+    \hline
+    Week 12 & Final documentation, project demonstration and presentation. \\
+    \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Cost Estimation}
+The software tools planned for development (Flutter SDK, Dart, Supabase Community Tier, Visual Studio Code, Android Studio, Git and GitHub) are free and open source. The remaining costs depend on domain hosting and report preparation:
+
+\begin{table}[H]
+\centering
+\caption{Cost Estimation}
+\label{tab:cost_estimation}
+\begin{tabularx}{\textwidth}{|c|X|l|}
+    \hline
+    \textbf{Sr. No} & \textbf{Item} & \textbf{Estimated Cost} \\
+    \hline
+    1 & Development tools (VS Code, Android Studio, Flutter, Git, GitHub) & Free / open source \\
+    \hline
+    2 & Database / hosting (Supabase PostgreSQL / Cloud) & Free / open source \\
+    \hline
+    3 & Domain / server for demonstration (Phase II) & \rupee~1,500 / year \\
+    \hline
+    4 & Documentation, project report binding and printing & \rupee~1,200 \\
+    \hline
+    \multicolumn{2}{|l|}{\textbf{Total}} & \textbf{\rupee~2,700} \\
+    \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Team Structure}
+The project team has four members, and the work is distributed as follows:
+
+\begin{table}[H]
+\centering
+\caption{Work Distribution}
+\label{tab:work_distribution}
+\begin{tabularx}{\textwidth}{|p{0.36\textwidth}|X|}
+    \hline
+    \textbf{Team Member} & \textbf{Primary Responsibility} \\
+    \hline
+    \textbf{Member 1 (Yogesh Gurunath Chavan)} & Admin Module -- Admin dashboard, user/role management, real-time sync engine, dynamic profile resolution, and hardware deployment. \\
+    \hline
+    \textbf{Member 2 (Samruddhi Pramod Sawant)} & Donor Module -- Surplus food declaration, dietary classification (Veg/Non-Veg), food safety charter, and image upload. \\
+    \hline
+    \textbf{Member 3 (Omkar Nilesh Shinde)} & Shelter (NGO) Module -- NGO Darpan accreditation verification, capacity-based claim allocation, and headcount tracking. \\
+    \hline
+    \textbf{Member 4 (Shivraj Rajendra Yadav)} & Volunteer Courier Module -- Courier task dispatch, dual-OTP handover protocol, courier concurrency throttling, and integration testing. \\
+    \hline
+\end{tabularx}
+\end{table}
+
+\subsection{Risk Analysis}
+\begin{table}[H]
+\centering
+\caption{Risk Analysis}
+\label{tab:risk_analysis}
+\begin{tabularx}{\textwidth}{|l|c|X|}
+    \hline
+    \textbf{Risk} & \textbf{Impact} & \textbf{Mitigation Strategy} \\
+    \hline
+    Unauthorized access & High & RBAC, JWT and 2FA. \\
+    \hline
+    Fraudulent NGO claims & High & Mandatory NGO Darpan ID / 80G tax certificate audit before unlocking claims. \\
+    \hline
+    Delivery falsification & High & Dual-OTP gate: Pickup OTP with Donor, Delivery OTP with Shelter. \\
+    \hline
+    Network/Server failure & High & Secure offline caching with SharedPreferences and automatic reconciliation. \\
+    \hline
+    Courier task hoarding & High & Strict concurrent dispatch limit enforced at maximum 2 tasks per volunteer. \\
+    \hline
+    Stale volunteer names & Medium & Real-time dynamic name resolution from live managed user registry. \\
+    \hline
+    Food spoiling during transit & High & Automated pickup window expiration and dynamic task re-pooling. \\
+    \hline
+\end{tabularx}
+\end{table}
+
+% ==============================================================================
+% CHAPTER 7: ADVANTAGES & LIMITATIONS
+% ==============================================================================
+\newpage
+\section{ADVANTAGES \& LIMITATIONS}
+
+\subsection{Advantages}
+\begin{enumerate}
+    \item \textbf{Enhanced Security:} Provides multiple layers of security including authentication, RBAC, 2FA, encryption, and cryptographic dual-OTP verification to protect donation handovers.
+    \item \textbf{Reduced Risk of Food Spoilage:} Minimizes manual coordination delays and removes intermediate warehousing, reducing the time required to distribute perishable food.
+    \item \textbf{Efficient Relief Management:} Provides centralized and organized management of donations based on food type, quantity, preparation time and dietary requirements.
+    \item \textbf{Automatic Volunteer Routing:} Dispatches available couriers based on proximity and enforces a 2-task concurrent limit, improving delivery efficiency.
+    \item \textbf{Secure Handover and Verification:} Allows donors and shelters to verify handovers securely using independent One-Time Passwords before tasks are finalized.
+    \item \textbf{Direct and Controlled Distribution:} Delivers surplus food directly from donors to accredited examination shelters without unnecessary third-party handling.
+    \item \textbf{Better Traceability and Monitoring:} Maintains records of important activities such as upload, claim, pickup and delivery, helping authorities monitor the complete relief lifecycle.
+\end{enumerate}
+
+\subsection{Limitations}
+\begin{enumerate}
+    \item \textbf{Internet Dependency:} Since FoodBridge utilizes real-time cloud synchronization, a stable and secure internet connection is required for initial listing broadcasts, claim reservations and server synchronization. Network failure may temporarily affect immediate status updates.
+    \item \textbf{Implementation and Maintenance Complexity:} FoodBridge combines several mechanisms such as authentication, RBAC, 2FA, optimistic WebSocket synchronization, NGO Darpan verification, and audit logging. Integrating and maintaining all these components requires careful development, continuous testing, proper configuration and regular security updates.
+    \item \textbf{Physical Volunteer Availability:} Large-scale redistribution involving multiple food donors, large surplus quantities, and numerous charitable shelters requires higher courier availability and suitable transport equipment to maintain delivery schedules.
+\end{enumerate}
+
+% ==============================================================================
+% CHAPTER 8: APPLICATIONS
+% ==============================================================================
+\newpage
+\section{APPLICATIONS}
+
+\begin{itemize}
+    \item Commercial catering and banquet halls, where surplus prepared meals need to be redistributed quickly and safely.
+    \item University and college hostels that require daily safe collection, allocation and distribution of dining hall meals.
+    \item Non-governmental organizations and charitable foundations that manage food relief for night shelters and orphanages through a single platform.
+    \item Humanitarian and disaster relief operations conducted across multiple city zones, where food and clothing must be distributed in a traceable manner.
+\end{itemize}
+
+% ==============================================================================
+% CHAPTER 9: FUTURE SCOPE
+% ==============================================================================
+\newpage
+\section{FUTURE SCOPE}
+
+\begin{enumerate}
+    \item \textbf{AI-Driven Food Surplus Prediction:} Machine learning algorithms can be added to forecast surplus food volumes based on historical day-of-week dining patterns, helping shelters plan intake in advance.
+    \item \textbf{IoT Smart Temperature and Weight Monitoring:} IoT sensor boxes can be introduced to monitor food temperature in transit, verifying that cold or hot food stays within safety regulations.
+    \item \textbf{Dedicated Automated Route Optimization:} Intelligent multi-stop route optimization can be integrated to calculate the fastest courier travel routes across multiple pickup points.
+\end{enumerate}
+
+% ==============================================================================
+% CHAPTER 10: CONCLUSION
+% ==============================================================================
+\newpage
+\section{CONCLUSION}
+
+\textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine} brings the different stages of surplus food recovery under one mobile and web-based system. It covers donation listing, shelter claim reservation, volunteer dispatch, transit tracking, dual-OTP handover and distribution confirmation. Keeping these activities in one place makes it easier to manage access and keep track of how food donations are handled.
+
+The system includes RBAC, JWT authentication and 2FA to control user access. NGO Darpan and 80G tax certificate verification checks ensure that relief reaches only accredited charitable organizations. Real-time WebSocket broadcasting provides instantaneous status updates across mobile nodes, while a cryptographic Dual-OTP protocol and an immutable audit trail protect delivery integrity. These features address the major risks involved in handling surplus food redistribution.
+
+Phase I focused on planning the system, defining its modules and preparing its design. The next phase will involve expanding physical deployments, connecting broader volunteer networks and testing system performance in actual urban environments.
+
+% ==============================================================================
+% REFERENCES
+% ==============================================================================
+\newpage
+\section*{REFERENCES}
+\addcontentsline{toc}{section}{References}
+
+\begin{enumerate}
+    \item[{[1]}] United Nations Environment Programme (UNEP), \textit{Food Waste Index Report 2024: Think Eat Save - Tracking Global Food Waste}, Nairobi: UNEP Publications, 2024.
+    \item[{[2]}] Food and Agriculture Organization (FAO), \textit{The State of Food Security and Nutrition in the World 2023}, Rome: FAO, 2023.
+    \item[{[3]}] C. Shewale et al., ``Multi Factor Authentication and IP Address Restriction based Question Paper Delivery System for Indian Universities,'' \textit{International Journal on Recent and Innovation Trends in Computing and Communication}, vol. 11, no. 10, pp. 390--396, 2023.
+    \item[{[4]}] R. Patil, S. Deshmukh, and A. Kulkarni, ``Real-Time Volunteer Routing and Optimization in Urban Relief Distribution Networks,'' in \textit{Proceedings of the IEEE International Conference on Smart Computing and Logistics}, 2023, pp. 112--119.
+    \item[{[5]}] S. Kamble and R. Kamble, ``Blockchain-based Competitive Examination System in India,'' \textit{International Journal of Advanced Computer Science}, vol. 14, no. 3, pp. 45--52, 2024.
+    \item[{[6]}] \'{A}. V\'{e}csi and A. Peth\H{o}, ``Auditable Anonymous Electronic Examination,'' \textit{Cryptography}, vol. 8, no. 2, p. 19, 2024.
+    \item[{[7]}] B. Singh and G. Kasana, ``A review of digital watermarking techniques: Current trends, challenges and opportunities,'' \textit{Web Intelligence}, vol. 22, pp. 1--31, 2024.
+    \item[{[8]}] W. Stallings, \textit{Cryptography and Network Security: Principles and Practice}, 8th ed., London, UK: Pearson, 2023.
+    \item[{[9]}] Google Flutter Team, \textit{Flutter Architectural Best Practices for Production Reactive State}, Mountain View, CA: Google Developers, 2025. [Online].
+    \item[{[10]}] Niti Aayog, \textit{NGO Darpan Portal: Guidelines for Voluntary Organization Registration and Accreditation}, Government of India, 2024.
+    \item[{[11]}] Food Safety and Standards Authority of India (FSSAI), \textit{Food Safety and Standards (Recovery and Distribution of Surplus Food) Regulations}, Ministry of Health and Family Welfare, New Delhi, 2019.
+    \item[{[12]}] University Grants Commission (UGC), \textit{Guidelines and Quality Mandate for Higher Educational Institutions and Project Work in India}, New Delhi, 2023.
+\end{enumerate}
+
+\end{document}

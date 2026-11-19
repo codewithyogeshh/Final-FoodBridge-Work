@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../core/errors/app_exception.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
@@ -106,10 +107,26 @@ class _LoginScreenState extends State<LoginScreen> {
             break;
         }
       } else {
+        final rawMsg = auth.errorMessage ?? 'Login failed. Please check your credentials.';
+        final humanMsg = AppException.humanize(rawMsg);
+        final isEmailNotConfirmed = rawMsg.toLowerCase().contains('email not verified') ||
+            rawMsg.toLowerCase().contains('email_not_confirmed') ||
+            rawMsg.toLowerCase().contains('email not confirmed');
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(auth.errorMessage ?? 'Login failed. Please check your credentials.'),
+            content: Text(humanMsg),
             backgroundColor: AppColors.errorRed,
+            duration: const Duration(seconds: 6),
+            action: isEmailNotConfirmed
+                ? SnackBarAction(
+                    label: 'Verify OTP',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      context.push('/verify-otp?email=${Uri.encodeComponent(email)}&role=${_selectedRole.name}');
+                    },
+                  )
+                : null,
           ),
         );
       }

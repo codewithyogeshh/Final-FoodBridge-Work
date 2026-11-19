@@ -2,11 +2,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../core/errors/app_exception.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../../core/widgets/fb_text_field.dart';
-import '../../admin/presentation/admin_provider.dart';
 import '../domain/models/app_user.dart';
 import 'auth_provider.dart';
 
@@ -137,6 +137,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (_passwordController.text.trim().length < 12) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('सुरक्षिततेसाठी पासवर्ड किमान १२ अक्षरांचा असावा (उदा. FoodBridge@2026).'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedRole == UserRole.donor && (_uploadedDocumentName == null || _uploadedDocumentName!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('कृपया दात्याचे ओळखपत्र (Aadhaar किंवा PAN Card) जोडा. अन्नाच्या सुरक्षिततेसाठी आणि विश्वासासाठी हे आवश्यक आहे.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
     if (_selectedRole == UserRole.ngo && (_uploadedDocumentName == null || _uploadedDocumentName!.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -148,8 +168,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     final auth = context.read<AuthProvider>();
+    final email = _emailController.text.trim().toLowerCase();
 
-    final success = await auth.register(
+    // Create account in Supabase & dispatch 6-digit OTP immediately
+    final success = await auth.initiateRegistration(
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
       fullName: _nameController.text.trim(),
@@ -169,79 +191,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (mounted) {
       if (success) {
-        if (_selectedRole == UserRole.ngo) {
-          // 1. Submit application into Admin review queue
-          final adminProvider = context.read<AdminProvider>();
-          final ngoOrgName = _orgController.text.trim().isNotEmpty ? _orgController.text.trim() : _nameController.text.trim();
-          adminProvider.addPendingNgoApplication(
-            PendingNgoApplication(
-              id: auth.user?.id ?? 'ngo-app-${DateTime.now().millisecondsSinceEpoch}',
-              name: ngoOrgName,
-              regNo: _darpanController.text.trim(),
-              darpanId: _darpanController.text.trim(),
-              contactPerson: _contactPersonController.text.trim().isNotEmpty ? _contactPersonController.text.trim() : _nameController.text.trim(),
-              phone: _phoneController.text.trim(),
-              documentName: _uploadedDocumentName ?? '12A_80G_Certificate.pdf',
-              documentPath: _uploadedDocumentPath,
-              email: _emailController.text.trim().toLowerCase(),
-              appliedAt: DateTime.now(),
-            ),
-          );
-
-          // 2. Clear current session since unverified NGO cannot login immediately
-          await auth.logout();
-
-          if (mounted) {
-            await showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (ctx) => AlertDialog(
-                icon: const Icon(Icons.verified_user_outlined, color: AppColors.warningOrange, size: 48),
-                title: const Text('पडताळणी प्रलंबित (Pending Review)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18), textAlign: TextAlign.center),
-                content: const Text(
-                  'संस्थेची नोंदणी यशस्वीरित्या सबमिट झाली आहे!\n\nतुमचे अधिकृत 12A/80G डॉक्युमेंट फूडब्रिज ॲडमिन पडताळणीसाठी (Review) पाठवले आहे. ॲडमिनने मंजुरी (Approve) दिल्यानंतरच तुमचे लॉगिन सुरू होईल.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14),
-                ),
-                actionsAlignment: MainAxisAlignment.center,
-                actions: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      context.go('/login');
-                    },
-                    child: const Text('समजले (लॉगिनवर जा)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            );
-          }
-        } else if (_selectedRole == UserRole.volunteer) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome Rider ${auth.user?.fullName}! Ready to bridge the need.'),
-              backgroundColor: AppColors.primaryGreen,
-            ),
-          );
-          context.go('/volunteer');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome to FoodBridge, ${auth.user?.fullName}!'),
-              backgroundColor: AppColors.primaryGreen,
-            ),
-          );
-          context.go('/donor');
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('पडताळणी कोड (OTP) तुमच्या $email वर पाठवला आहे. कृपया तपासा.'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+        );
+        // Navigate to dedicated 6-digit OTP verification screen
+        context.go('/verify-otp?email=${Uri.encodeComponent(email)}&role=${_selectedRole.name}');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(auth.errorMessage ?? 'Registration failed. Please check the form.'),
+            content: Text(AppException.humanize(auth.errorMessage ?? 'नोंदणी अयशस्वी झाली. कृपया माहिती तपासा.')),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -306,8 +267,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 // Password with Visibility Toggle
                 FBTextField(
-                  label: 'Account Password',
-                  hint: 'Min 8 characters with numbers',
+                  label: 'Account Password (किमान १२ अक्षरे)',
+                  hint: 'उदा. FoodBridge@2026',
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   prefixIcon: const Icon(Icons.lock_outline, color: AppColors.mutedGrey),
@@ -322,8 +283,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Password is required';
                     }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters long';
+                    if (value.length < 12) {
+                      return 'सुरक्षिततेसाठी पासवर्ड किमान १२ अक्षरांचा असावा (उदा. FoodBridge@2026)';
                     }
                     return null;
                   },
@@ -458,10 +419,94 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 16),
         FBTextField(
           label: 'Pickup Address & Locality',
-          hint: 'Shop 4, MG Road, Camp, Pune',
+          hint: 'Shop 4, Powai Naka, Satara',
           controller: _addressController,
           prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.mutedGrey),
           validator: (v) => v == null || v.trim().isEmpty ? 'Address is required for pickups' : null,
+        ),
+        const SizedBox(height: 16),
+        // Donor Identity Proof Upload (Aadhaar / PAN Card / FSSAI)
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'दात्याचे ओळखपत्र (Aadhaar / PAN Card / FSSAI) *',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.charcoal),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'विश्वास & सुरक्षा',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.deepGreen),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'अन्नाच्या गुणवत्तेची व सुरक्षिततेची खात्री आणि दात्याबद्दल विश्वास वाढवण्यासाठी ओळखपत्र अनिवार्य आहे.',
+          style: TextStyle(fontSize: 11, color: AppColors.mutedGrey, height: 1.3),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _pickDocument,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _uploadedDocumentName != null ? AppColors.primaryGreen : AppColors.borderLight,
+                width: _uploadedDocumentName != null ? 1.6 : 1.0,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _uploadedDocumentName != null ? Icons.verified_user : Icons.badge_outlined,
+                  color: _uploadedDocumentName != null ? AppColors.primaryGreen : AppColors.mutedGrey,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _uploadedDocumentName ?? 'ओळखपत्र निवडा (Aadhaar / PAN Card / FSSAI - PDF/JPG)',
+                        style: TextStyle(
+                          color: _uploadedDocumentName != null ? AppColors.deepGreen : AppColors.mutedGrey,
+                          fontWeight: _uploadedDocumentName != null ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_uploadedDocumentPath != null)
+                        Text(
+                          _uploadedDocumentPath!,
+                          style: const TextStyle(fontSize: 10, color: AppColors.mutedGrey),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                if (_uploadedDocumentName != null)
+                  IconButton(
+                    icon: const Icon(Icons.change_circle_outlined, color: AppColors.primaryGreen, size: 20),
+                    tooltip: 'Change Document',
+                    onPressed: _pickDocument,
+                  ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -502,7 +547,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           keyboardType: TextInputType.emailAddress,
           prefixIcon: const Icon(Icons.email_outlined, color: AppColors.mutedGrey),
           validator: (v) {
-            if (v == null || v.trim().isEmpty) return 'Email is required';
+            if (v == null || v.trim().isEmpty) return 'Official email is required';
             if (!v.contains('@') || !v.contains('.')) return 'Enter a valid email address';
             return null;
           },
@@ -519,7 +564,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 16),
         FBTextField(
           label: 'Primary Service Area & City',
-          hint: 'e.g. Swargate, Hadapsar, Pune',
+          hint: 'e.g. Sadar Bazar, Powai Naka, Satara',
           controller: _serviceAreaController,
           prefixIcon: const Icon(Icons.map_outlined, color: AppColors.mutedGrey),
           validator: (v) => v == null || v.trim().isEmpty ? 'Service area is required' : null,
@@ -645,7 +690,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 16),
         FBTextField(
           label: 'Preferred Operating Area / Locality',
-          hint: 'e.g. Kothrud, Deccan, Pune',
+          hint: 'e.g. Powai Naka, Godoli, Satara',
           controller: _serviceAreaController,
           prefixIcon: const Icon(Icons.near_me_outlined, color: AppColors.mutedGrey),
           validator: (v) => v == null || v.trim().isEmpty ? 'Service area is required' : null,

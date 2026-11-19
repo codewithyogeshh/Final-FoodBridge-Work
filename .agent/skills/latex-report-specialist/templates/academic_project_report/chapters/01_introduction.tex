@@ -1,0 +1,32 @@
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Background and Motivation}
+Food waste is a severe global dilemma with catastrophic environmental, economic, and humanitarian ramifications. According to the United Nations Environment Programme \cite{unep2024foodwaste}, over one billion meals are wasted globally every single day in commercial kitchens, educational campuses, and household dining, while approximately 783 million individuals suffer from chronic hunger \cite{fao2023state}.
+
+In developing urban ecosystems, the breakdown in redistribution is primarily logistical rather than infrastructural. Commercial dining facilities produce hygienically sound, edible surplus meals in predictable intervals (e.g., following banquets, lunch buffets, and college mess schedules). However, finding nearby certified charities, arranging rapid courier pickups within the critical 3-to-4 hour safety window, and securely verifying physical handovers has historically relied on fragile manual phone calls and uncoordinated volunteer efforts.
+
+\section{Problem Statement}
+Current surplus food redistribution models suffer from three structural bottlenecks:
+\begin{enumerate}
+    \item \textbf{High Latency in Discovery:} Donors take between 45 to 90 minutes to connect with an operational shelter that can accept perishable items before microbial spoiling occurs.
+    \item \textbf{Lack of Rigorous Trust \& Verification:} Unverified individuals can intercept food relief deliveries, leading to hygiene liabilities or black-market diversion without audit trails.
+    \item \textbf{Disconnected Dispatch Routing:} Volunteer dispatchers lack real-time peer-to-peer tracking and dynamic status handoffs between donor locations and community shelters \cite{patil2023realtime}.
+\end{enumerate}
+
+\section{Project Objectives}
+The primary objective of the FoodBridge project is to engineer an enterprise-grade, mobile-first logistics and dispatch engine. Key functional milestones include:
+\begin{itemize}
+    \item Implementing an optimistic multi-device synchronization architecture with real-time WebSocket state distribution.
+    \item Establishing a two-tier cryptographic OTP gate (Pickup OTP and Delivery OTP) ensuring non-repudiable physical handovers.
+    \item Providing automated accreditation enforcement using official NGO Darpan / 80G tax certificate verification gates.
+    \item Engineering responsive, role-based interfaces for Donors, Shelters, Volunteers, and System Administrators.
+\end{itemize}
+
+\section{Organization of the Report}
+This report is organized into six comprehensive chapters:
+\begin{itemize}
+    \item \textbf{Chapter \ref{ch:literature_survey}} reviews academic literature, existing NGO networks, and distributed synchronization patterns.
+    \item \textbf{Chapter \ref{ch:system_architecture}} details the high-level system architecture, database contracts, and role-based access control.
+    \item \textbf{Chapter \ref{ch:results}} evaluates empirical performance benchmarks, user latency measurements, and physical test deployments.
+\end{itemize}

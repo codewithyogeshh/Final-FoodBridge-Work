@@ -132,6 +132,7 @@ void showAppearanceBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
+    isScrollControlled: true,
     builder: (ctx) => SafeArea(
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -139,53 +140,62 @@ void showAppearanceBottomSheet(BuildContext context) {
           color: Theme.of(ctx).scaffoldBackgroundColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.palette_outlined,
-                        color: AppColors.primaryGreen,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      ctx.tr.appearance,
-                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
+                          child: const Icon(
+                            Icons.palette_outlined,
+                            color: AppColors.primaryGreen,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            ctx.tr.appearance,
+                            style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Choose your preferred visual appearance mode (Light, Dark, or System default).',
-              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.mutedGrey,
                   ),
-            ),
-            const SizedBox(height: 20),
-            const FBAppearanceSelector(),
-            const SizedBox(height: 16),
-          ],
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Choose your preferred visual appearance mode (Light, Dark, or System default).',
+                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.mutedGrey,
+                    ),
+              ),
+              const SizedBox(height: 20),
+              const FBAppearanceSelector(),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     ),
@@ -195,103 +205,118 @@ void showAppearanceBottomSheet(BuildContext context) {
 /// Helper function to open Language Sheet anywhere in the app
 void showLanguageBottomSheet(BuildContext context) {
   final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
-  final tr = context.tr;
 
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
-    builder: (ctx) => SafeArea(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(ctx).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    isScrollControlled: true,
+    builder: (ctx) {
+      final currentLocale = Provider.of<LocaleProvider>(ctx);
+      final tr = ctx.tr;
+      final currentCode = currentLocale.locale.languageCode;
+
+      return SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.deepGreen.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.translate,
-                        color: AppColors.deepGreen,
-                        size: 22,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.deepGreen.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.translate,
+                              color: AppColors.deepGreen,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              tr.language,
+                              style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      tr.language,
-                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Select language / भाषा निवडा / भाषा चुनें',
-              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.mutedGrey,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            _LanguageTile(
-              code: 'en',
-              title: 'English',
-              subtitle: 'Primary Language',
-              isSelected: localeProvider.locale.languageCode == 'en',
-              onTap: () async {
-                final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
-                await localeProvider.setLanguageCode('en', userEmail: userEmail);
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-            const SizedBox(height: 8),
-            _LanguageTile(
-              code: 'hi',
-              title: 'हिंदी (Hindi)',
-              subtitle: 'राष्ट्रभाषा • Hindi Translation',
-              isSelected: localeProvider.locale.languageCode == 'hi',
-              onTap: () async {
-                final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
-                await localeProvider.setLanguageCode('hi', userEmail: userEmail);
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-            const SizedBox(height: 8),
-            _LanguageTile(
-              code: 'mr',
-              title: 'मराठी (Marathi)',
-              subtitle: 'महाराष्ट्र राज्य • Marathi Translation',
-              isSelected: localeProvider.locale.languageCode == 'mr',
-              onTap: () async {
-                final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
-                await localeProvider.setLanguageCode('mr', userEmail: userEmail);
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'Select language / भाषा निवडा / भाषा चुनें',
+                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.mutedGrey,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              _LanguageTile(
+                code: 'en',
+                title: 'English',
+                subtitle: 'Primary Language',
+                isSelected: currentCode == 'en',
+                onTap: () async {
+                  final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
+                  await localeProvider.setLanguageCode('en', userEmail: userEmail);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 8),
+              _LanguageTile(
+                code: 'hi',
+                title: 'हिंदी (Hindi)',
+                subtitle: 'राष्ट्रभाषा • Hindi Translation',
+                isSelected: currentCode == 'hi',
+                onTap: () async {
+                  final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
+                  await localeProvider.setLanguageCode('hi', userEmail: userEmail);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 8),
+              _LanguageTile(
+                code: 'mr',
+                title: 'मराठी (Marathi)',
+                subtitle: 'महाराष्ट्र राज्य • Marathi Translation',
+                isSelected: currentCode == 'mr',
+                onTap: () async {
+                  final userEmail = Provider.of<AuthProvider>(context, listen: false).user?.email;
+                  await localeProvider.setLanguageCode('mr', userEmail: userEmail);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  },
+);
 }
 
 class _LanguageTile extends StatelessWidget {

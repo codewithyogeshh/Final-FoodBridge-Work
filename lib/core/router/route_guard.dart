@@ -12,6 +12,7 @@ class RouteGuard {
     '/forgot-password',
     '/reset-password',
     '/volunteer/get-started',
+    '/verify-otp',
   ];
 
   static String homeForRole(UserRole role, [String? donorCategory]) {
@@ -41,7 +42,8 @@ class RouteGuard {
       (route) =>
           location == route ||
           location.startsWith('/register') ||
-          location.startsWith('/reset-password'),
+          location.startsWith('/reset-password') ||
+          location.startsWith('/verify-otp'),
     );
 
     // 1. Unauthenticated user attempting to access private route

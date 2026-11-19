@@ -1,0 +1,109 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+% Load modular preamble
+\input{preamble.tex}
+
+\begin{document}
+
+% ==============================================================================
+% 1. COVER / TITLE PAGE
+% ==============================================================================
+\begin{titlepage}
+    \centering
+    \vspace*{0.5cm}
+    
+    {\Huge \textbf{\color{ThemeColor} FOODBRIDGE}}\\[0.4cm]
+    {\LARGE \textbf{Real-Time AI-Orchestrated Surplus Food Redistribution and Logistics Engine}}\\[1.5cm]
+    
+    \textit{A Project Report Submitted in Partial Fulfillment of the Requirements for the Degree of}\\[0.4cm]
+    \textbf{Bachelor of Technology / Engineering}\\[0.2cm]
+    \textit{in}\\[0.2cm]
+    \textbf{Computer Science and Engineering}\\[1.5cm]
+    
+    \textbf{Submitted By:}\\[0.3cm]
+    \begin{tabular}{ll}
+        \textbf{Yogesh Chavan} & (Roll No: 22111317I) \\
+        \textbf{Project Team Member} & (Roll No: 22111318J) \\
+    \end{tabular}\\[1.5cm]
+    
+    \textbf{Under the Guidance of:}\\[0.3cm]
+    \textbf{Prof. Dr. A. B. Kulkarni}\\
+    Department of Computer Science and Engineering\\[1.5cm]
+    
+    % College / University Emblem Placeholder
+    % \includegraphics[width=3cm]{figures/college_logo.png}\\[0.8cm]
+    \vfill
+    
+    \textbf{DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING}\\
+    \textbf{Karmaveer Bhaurao Patil College of Engineering, Satara}\\
+    \textbf{Academic Year 2025--2026}
+\end{titlepage}
+
+% ==============================================================================
+% 2. FRONT MATTER
+% ==============================================================================
+\pagenumbering{roman}
+\setcounter{page}{2}
+
+% Certificate
+\chapter*{Certificate}
+\addcontentsline{toc}{chapter}{Certificate}
+\thispagestyle{plain}
+This is to certify that the project entitled \textbf{``FoodBridge: Real-Time AI-Orchestrated Surplus Food Redistribution Engine''} is a bona fide work carried out by \textbf{Yogesh Chavan} and team in partial fulfillment of the requirements for the award of Bachelor of Technology in Computer Science and Engineering during the academic year 2025--2026.
+
+\vspace{2.5cm}
+\noindent
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccc}
+    \textbf{Internal Guide} & \textbf{Head of Department} & \textbf{External Examiner} \\
+    Prof. Dr. A. B. Kulkarni & Dr. S. M. Patil & Examiner Signature \\
+\end{tabular*}
+
+\clearpage
+
+% Declaration
+\chapter*{Declaration}
+\addcontentsline{toc}{chapter}{Declaration}
+\thispagestyle{plain}
+We declare that this written submission represents our original ideas in our own words and where others' ideas or words have been included, we have adequately cited and referenced the original sources. We also declare that we have adhered to all principles of academic honesty and integrity.
+
+\vspace{1.5cm}
+\noindent
+Date: \today \\
+Place: Satara \hfill \textbf{Yogesh Chavan}
+
+\clearpage
+
+% Abstract
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\thispagestyle{plain}
+Food insecurity and commercial food waste remain two of the most critical structural challenges in urban logistics. In urban and peri-urban centers, large quantities of hygienically prepared surplus meals from catering services, restaurants, and educational hostels are discarded daily, while shelters, orphanages, and community feeding programs face acute shortages. 
+
+This project introduces \textbf{FoodBridge}, a cross-platform real-time logistics and verification platform built with Flutter, Supabase, and distributed synchronization. The platform connects commercial donors, non-governmental organizations (NGOs), and community volunteers through an optimistic state engine with cryptographic two-factor handovers (Pickup and Delivery OTP verification). The system guarantees zero unauthorized claims through strict NGO Darpan accreditation gates, automated volunteer routing, and dynamic multi-device synchronization. Empirical testing confirms sub-second end-to-end status propagation and high user task efficiency.
+
+\clearpage
+
+% Table of Contents, Figures, Tables
+\tableofcontents
+\listoffigures
+\listoftables
+\clearpage
+
+% ==============================================================================
+% 3. MAIN BODY CHAPTERS
+% ==============================================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{chapters/01_introduction.tex}
+\input{chapters/02_literature_survey.tex}
+\input{chapters/03_system_architecture.tex}
+\input{chapters/04_results_and_discussion.tex}
+
+% ==============================================================================
+% 4. BIBLIOGRAPHY
+% ==============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

@@ -53,12 +53,16 @@ class _RestaurantDonorDashboardScreenState extends State<RestaurantDonorDashboar
             ),
             Row(
               children: [
-                Text(
-                  currentUser?.organizationName ?? 'Ristorante Paradise',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.deepGreen,
+                Flexible(
+                  child: Text(
+                    currentUser?.organizationName ?? 'Ristorante Paradise',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.deepGreen,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
                 const Icon(Icons.arrow_drop_down, color: AppColors.deepGreen, size: 18),
@@ -289,14 +293,19 @@ class _RestaurantDonorDashboardScreenState extends State<RestaurantDonorDashboar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Recent Activity',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.deepGreen,
+                const Expanded(
+                  child: Text(
+                    'Recent Activity',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.deepGreen,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
+                const SizedBox(width: 8),
                 TextButton(
                   onPressed: () => context.push('/donor/my-donations'),
                   child: const Row(

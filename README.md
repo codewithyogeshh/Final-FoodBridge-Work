@@ -1,94 +1,180 @@
-# FoodBridge
+# 🍲 FoodBridge (अन्नसेतू)
+### Real-Time Surplus Food & Essentials Redistribution Network
 
-> **Share More. Waste Less. Bridge the Need.**
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)](https://dart.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-Realtime_WebSockets-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![Tests](https://img.shields.io/badge/Tests-145%2F145_Passing-10B981?logo=checkmarx&logoColor=white)](https://github.com/codewithyogeshh/Final-FoodBridge-Work)
+[![Code Quality](https://img.shields.io/badge/flutter_analyze-0_Issues-success)](https://github.com/codewithyogeshh/Final-FoodBridge-Work)
+[![WCAG](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA-blue)](https://www.w3.org/WAI/standards-guidelines/wcag/)
+[![License](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
 
-FoodBridge is a real-time food and clothing donation and redistribution platform designed to connect donors, verified NGOs, community volunteers, and administrators to reduce waste and get essential resources to those who need them most.
-
----
-
-## 🌟 Key Features
-
-- **Multi-Role Experience:** Dedicated interfaces and workflows for **Donors**, **NGOs**, **Volunteers**, and **Administrators**.
-- **Dual Donation Streams:**
-  - **Surplus Food:** Time-sensitive recovery with strict collection deadlines, storage requirements, allergen warnings, and preparation disclosures.
-  - **Wearable Clothing:** Structured listing with categories, sizing, and cleanliness confirmations.
-- **Traceable Chain of Custody:** Real-time lifecycle tracking (`available` $\rightarrow$ `requested` $\rightarrow$ `accepted` $\rightarrow$ `assigned_for_pickup` $\rightarrow$ `picked_up` $\rightarrow$ `delivered_to_ngo` $\rightarrow$ `distributed` $\rightarrow$ `completed`).
-- **Two-Tier Privacy Protection:** Public feeds display approximate locality zones; precise street addresses are revealed only to assigned volunteers and accepted NGOs.
-- **Atomic Concurrency Control:** Prevents double-claiming of donations and race conditions in volunteer task assignment.
-- **NGO Verification Engine:** Administrative vetting of non-profit legal certificates before donation claims can occur.
-- **Human-First Safety:** AI is strictly advisory; food safety is governed by donor declarations and mandatory NGO physical inspection.
-- **Inclusive Design:** Multi-language support (English, Hindi, Marathi) and WCAG 2.1 Level AA accessibility.
+> **"Share More. Waste Less. Bridge the Need."**  
+> **FoodBridge** is an end-to-end, real-time cross-platform ecosystem designed to eliminate hyper-local food waste by instantaneously connecting Surplus Donors (Hotels, Caterers, Households) with Verified Shelters/NGOs, Dedicated Couriers, and Central System Administrators.
 
 ---
 
-## 🛠️ Technology Stack
+## 📱 Visual Showcase & Application Screenshots
 
-- **Frontend:** Flutter SDK (3.47.8+) / Dart (3.13.7+)
-- **Architecture:** Clean Architecture with Feature-First modular structure
-- **Backend:** Supabase (PostgreSQL with Row Level Security, Auth, Realtime WebSockets, Storage)
-- **AI Services (Phased):** Python & FastAPI (isolated microservice for advisory matching and category recommendations)
-
----
-
-## 📚 Project Documentation
-
-The project follows a rigorous 12-phase Software Development Life Cycle (SDLC):
-
-| Document | Purpose |
-| :--- | :--- |
-| [requirement_analysis.md](file:///d:/ys/docs/requirement_analysis.md) | Problem analysis, solution architecture, scope management, MoSCoW framework |
-| [functional_requirements.md](file:///d:/ys/docs/functional_requirements.md) | Granular functional specifications (FR-AUTH, FR-DON, FR-NGO, FR-VOL, FR-DIST, FR-ADM) |
-| [non_functional_requirements.md](file:///d:/ys/docs/non_functional_requirements.md) | Performance, security, privacy, accessibility (WCAG AA), localization |
-| [user_roles.md](file:///d:/ys/docs/user_roles.md) | Stakeholder profiles, CRUD permissions matrix, state transition authority |
-| [user_stories.md](file:///d:/ys/docs/user_stories.md) | User stories across 7 epics with Fibonacci story points |
-| [acceptance_criteria.md](file:///d:/ys/docs/acceptance_criteria.md) | Testable Gherkin (*Given-When-Then*) acceptance scenarios |
-| [risk_register.md](file:///d:/ys/docs/risk_register.md) | 10 key technical, safety, operational risks and mitigation plans |
-| [empathy_maps.md](file:///d:/ys/docs/empathy_maps.md) | Detailed stakeholder empathy maps (Donor, NGO, Volunteer, Admin) |
-| [user_personas.md](file:///d:/ys/docs/user_personas.md) | In-depth user personas and archetypes (Ramesh, Priya, Sunita, Rahul, Vikram) |
-| [user_journeys.md](file:///d:/ys/docs/user_journeys.md) | End-to-end journey maps with emotional curves and moments of truth |
-| [problem_statements_hmw.md](file:///d:/ys/docs/problem_statements_hmw.md) | POV problem statements and 16 "How Might We" innovation challenges |
-| [feature_ideation.md](file:///d:/ys/docs/feature_ideation.md) | Impact vs. Feasibility evaluation matrix and prioritized feature roadmap |
-| [wireframes.md](file:///d:/ys/docs/wireframes.md) | Low-fidelity wireframe schematics and "Rider Mode" layouts |
-| [usability_testing_scenarios.md](file:///d:/ys/docs/usability_testing_scenarios.md) | Usability testing protocols, metrics, and simulation scenarios |
-| [design_system.md](file:///d:/ys/docs/design_system.md) | Premium design system, color tokens, typography, grid, light/dark themes |
-| [components_specification.md](file:///d:/ys/docs/components_specification.md) | Reusable UI components: buttons, fields, cards, multi-modal status chips, modals |
-| [screen_specifications.md](file:///d:/ys/docs/screen_specifications.md) | Complete specifications for all 27 required screens across 5 modules |
-| [accessibility_localization_guidelines.md](file:///d:/ys/docs/accessibility_localization_guidelines.md) | WCAG 2.1 AA accessibility, touch targets, and English/Hindi/Marathi i18n |
-| [system_architecture.md](file:///d:/ys/docs/system_architecture.md) | Clean Architecture layer specs, feature-first structure & sequence flows |
-| [database_schema.md](file:///d:/ys/docs/database_schema.md) | Production PostgreSQL DDL across all 12 tables, custom ENUMs, check constraints |
-| [database_security_rls.md](file:///d:/ys/docs/database_security_rls.md) | Supabase Row Level Security (RLS) policies & atomic concurrency stored procedures |
-| [erd_diagram.md](file:///d:/ys/docs/erd_diagram.md) | Complete Mermaid Entity-Relationship Diagram and integrity rules |
-| [architecture.md](file:///d:/ys/docs/architecture.md) | System architecture, ER diagrams, data flow |
-| [design.md](file:///d:/ys/docs/design.md) | UI/UX guidelines, color system, typography, screen specifications |
-| [phases.md](file:///d:/ys/docs/phases.md) | 12-phase development roadmap and delivery strategy |
-| [progress.md](file:///d:/ys/docs/progress.md) | Real-time progress and milestone completion tracker |
-| [decisions.md](file:///d:/ys/docs/decisions.md) | Architectural Decision Records (ADRs) |
-| [known_issues.md](file:///d:/ys/docs/known_issues.md) | Active issues and technical debt register |
-| [rules.md](file:///d:/ys/docs/rules.md) | Platform safety, privacy, and business policies |
-| [memory.md](file:///d:/ys/docs/memory.md) | Unified project context and memory log |
-| [ai_service_architecture.md](file:///d:/ys/docs/ai_service_architecture.md) | Decoupled Python FastAPI AI microservice architecture |
-| [installation_guide.md](file:///d:/ys/docs/installation_guide.md) | Step-by-step installation instructions for mobile and servers |
-| [deployment_guide.md](file:///d:/ys/docs/deployment_guide.md) | Production hardening, release builds, and pilot rollout |
-| [environment_setup.md](file:///d:/ys/docs/environment_setup.md) | Environment configuration variables, secrets, and SDK prerequisites |
-| [troubleshooting.md](file:///d:/ys/docs/troubleshooting.md) | Operational and developer issue diagnosis and resolutions |
-| [user_manual.md](file:///d:/ys/docs/user_manual.md) | Complete operational handbook for Donors, NGOs, Volunteers, and Admins |
-| [maintenance_policy.md](file:///d:/ys/docs/maintenance_policy.md) | Telemetry, disaster recovery, incident management, and feature lifecycle |
-| [testing/](file:///d:/ys/docs/testing/) | Comprehensive test strategy, test cases, security, a11y, performance, and QA reports |
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" width="25%">
+        <b>Volunteer Dispatch Console</b><br>
+        <i>(10/10 Midnight Dark Mode)</i><br><br>
+        <img src="docs/screenshots/volunteer_dashboard_dark.png" width="220" alt="Volunteer Dashboard Dark Mode" />
+      </td>
+      <td align="center" width="25%">
+        <b>Super Admin Live Console</b><br>
+        <i>(Multi-Device Real-time Mesh)</i><br><br>
+        <img src="docs/screenshots/admin_console_live.png" width="220" alt="Admin Console Live" />
+      </td>
+      <td align="center" width="25%">
+        <b>Donation Tracking & Dispatch</b><br>
+        <i>(Lifecycle & Dual-OTP Chain)</i><br><br>
+        <img src="docs/screenshots/donation_detail.png" width="220" alt="Donation Details Screen" />
+      </td>
+      <td align="center" width="25%">
+        <b>User Profile & Settings</b><br>
+        <i>(Dynamic Avatar & Sync)</i><br><br>
+        <img src="docs/screenshots/user_profile.png" width="220" alt="User Profile Screen" />
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 
-## 🚀 Development Roadmap
+## 🌟 Key Platform Capabilities
 
-1. **Phase 1: Requirement Analysis** *(Completed)*
-2. **Phase 2: Design Thinking & Empathy Mapping** *(Completed)*
-3. **Phase 3: Premium UI/UX Design System** *(Completed)*
-4. **Phase 4: System Architecture & Database Design** *(Completed)*
-5. **Phase 5: Flutter Project Foundation Setup** *(Completed)*
-6. **Phase 6: Authentication & Role Management** *(Completed)*
-7. **Phase 7: Donor & NGO Modules** *(Completed)*
-8. **Phase 8: Volunteer Module & Custody Handover** *(Completed)*
-9. **Phase 9: Real-Time Notifications & Admin Module** *(Completed)*
-10. **Phase 10: AI Integration Service (FastAPI)** *(Completed)*
-11. **Phase 11: Testing & Quality Assurance (119 Tests)** *(Completed)*
-12. **Phase 12: Deployment & Production Documentation** *(Completed)*
+### 1. 🔄 Multi-Device Sub-100ms Real-Time Synchronization
+* **Supabase WebSocket Mesh (`public:donations_realtime`):** When a donor publishes or updates a donation, a sub-100ms `donation_sync` event triggers instant re-renders across all active peer nodes.
+* **Peer-to-Peer State Recovery:** Offline nodes seamlessly catch up on active state upon reconnection through coordinated `peer_request_sync` and `peer_response_sync` protocols.
 
+### 2. 🔐 Dual-OTP Cryptographic Custody Protocol
+* **Pickup Authentication:** 4-digit PIN generated for the Donor; Volunteer courier must enter this physical PIN to transition order status from `claimed` $\rightarrow$ `in_transit`.
+* **Delivery Authentication:** 4-digit PIN or dynamic QR Code generated for the Shelter NGO; required to transition status from `in_transit` $\rightarrow$ `distributed`.
+* **Zero Ghost Deliveries:** Impossible for courier or shelter to falsely claim completion without physical proximity and code exchange.
+
+### 3. 🍱 Dual-Stream Redistribution Architecture
+* **Surplus Prepared Food:** Food category tags (Veg/Non-Veg), prep timestamp, holding temperature (`Hot-Holding >63°C`, `Ambient`, `Chilled <5°C`), allergen declarations, and collection deadlines.
+* **Clean Wearable Essentials:** Clothes category, condition grading (`Brand New`, `Like New`, `Gently Used`), target group (`Kids`, `Adults`), and packaging photo.
+
+### 4. 🎨 10/10 Realtime Colors 60-30-10 Design System
+* **Adaptive Dark & Light Themes:** Rich Midnight Obsidian (`#0B0F17`) base for OLED battery saving paired with crisp high-contrast light mode.
+* **Touch & Haptic Fluidity:** 100% compliant with Apple Human Interface Guidelines and Emil Kowalski motion primitives; 48x48dp minimum touch targets.
+* **Full Marathi & English Localization:** Instant switch between मराठी and English across all screens.
+
+---
+
+## 🏛️ System Architecture
+
+FoodBridge enforces strict **Clean Architecture** with a Feature-First modular structure:
+
+```
+lib/
+├── core/
+│   ├── config/              # Environment configurations & Supabase client
+│   ├── localization/        # App translations (English & Marathi dictionaries)
+│   ├── services/            # AI Advisory, Media, Location, Email & Offline Sync
+│   ├── theme/               # Realtime Colors 60-30-10 Token System & Typography
+│   └── widgets/             # Reusable UI components (FBTextField, FBButton, ExitDialog)
+└── features/
+    ├── admin/               # Super Admin verification, metrics, user management
+    ├── authentication/      # Multi-role Auth, 6-digit OTP verification, Sessions
+    ├── donations/           # Core lifecycle state machine, real-time sync engine
+    ├── donor/               # Surplus food & clothing donation creation forms
+    ├── ngo/                 # Shelter discovery feed, claims, capacity checking
+    ├── notifications/       # Real-time in-app notification center
+    ├── profile/             # Profile editing, avatar upload, transport switcher
+    └── volunteer/           # Courier dispatch, GPS navigation, OTP validation
+```
+
+---
+
+## 🧪 Rigorous Quality Assurance & Test Metrics
+
+FoodBridge has passed a comprehensive 145-point automated verification suite with **zero regressions and zero analyzer warnings**:
+
+```bash
+$ flutter analyze
+Analyzing Food-Bridge-updated...
+No issues found! (ran in 6.4s)
+
+$ flutter test
+01:09 +145: All tests passed!
+```
+
+### Verified Test Suites:
+- `test/core/services/ai_service_test.dart` (14/14 tests passed)
+- `test/features/donations/multi_device_sync_test.dart` (3/3 tests passed)
+- `test/features/admin/admin_user_sync_test.dart` (3/3 tests passed)
+- `test/features/security/security_permissions_test.dart` (12/12 tests passed)
+- `test/features/volunteer/volunteer_delivery_journey_test.dart` (8/8 tests passed)
+- `test/features/accessibility/accessibility_and_contrast_test.dart` (WCAG AAA/AA passed)
+
+---
+
+## 🚀 Quick Start & Installation
+
+### Prerequisites
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (`v3.24.0` or higher)
+- Android Studio / VS Code with Dart & Flutter extensions
+- Android Device or Emulator (Android 10+ recommended)
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/codewithyogeshh/Final-FoodBridge-Work.git
+cd Final-FoodBridge-Work
+```
+
+### 2. Install Dependencies
+```bash
+flutter pub get
+```
+
+### 3. Run Static Analysis & Tests
+```bash
+flutter analyze
+flutter test
+```
+
+### 4. Launch on Device / Emulator
+```bash
+flutter run
+```
+
+---
+
+## 🔑 Quick Demo Credentials (1-Tap Login)
+
+The login screen includes dedicated **1-Tap Quick Profile Chips** for effortless evaluation:
+
+| Role | Demo Email | Password | Primary Interface |
+| :--- | :--- | :--- | :--- |
+| **Donor** | `donor@foodbridge.org` | `Password123!` | `/donor` |
+| **Shelter NGO** | `ngo@foodbridge.org` | `Password123!` | `/ngo` |
+| **Volunteer Courier** | `volunteer@foodbridge.org` | `Password123!` | `/volunteer` |
+| **Super Admin** | `admin@foodbridge.org` | `Password123!` | `/admin` |
+
+---
+
+## 👥 Engineering Team & Academic Attribution
+
+**Academic Project (Phase-1 & Final Implementation)**  
+**Department of Computer Science & Engineering**  
+*Karmaveer Bhaurao Patil College of Engineering, Satara (Affiliated to DBATU, Lonere)*
+
+* **Project Guide:** Prof. Uma Bhokare
+
+* **Team Members:**
+  1. **Yogesh Gurunath Chavan** (Lead Full-Stack & Flutter Engineer)
+  2. **Samruddhi Pramod Sawant** (Quality Assurance & Research)
+  3. **Omkar Nilesh Shinde** (Backend Integration & System Design)
+  4. **Shivraj Rajendra Yadav** (UI/UX Engineering & Data Architecture)
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

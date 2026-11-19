@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../../../core/errors/app_exception.dart';
 import '../data/auth_service.dart';
 import '../domain/models/app_user.dart';
 
@@ -56,7 +57,7 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = AppException.humanize(e);
       _setLoading(false);
       return false;
     }
@@ -102,7 +103,94 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
+      _errorMessage = AppException.humanize(e);
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Initiate registration and dispatch 6-digit OTP email
+  Future<bool> initiateRegistration({
+    required String email,
+    required String password,
+    required String fullName,
+    required UserRole role,
+    String? phone,
+    String? organizationName,
+    String? darpanId,
+    String? registrationNumber,
+    String? contactPerson,
+    String? verificationDocumentUrl,
+    String? address,
+    String? serviceArea,
+    String? donorCategory,
+    String? availability,
+    String? transportType,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      final success = await _authService.initiateRegistrationWithOtp(
+        email: email,
+        password: password,
+        fullName: fullName,
+        role: role,
+        phone: phone,
+        organizationName: organizationName,
+        darpanId: darpanId,
+        registrationNumber: registrationNumber,
+        contactPerson: contactPerson,
+        verificationDocumentUrl: verificationDocumentUrl,
+        address: address,
+        serviceArea: serviceArea,
+        donorCategory: donorCategory,
+        availability: availability,
+        transportType: transportType,
+      );
+      _setLoading(false);
+      return success;
+    } catch (e) {
+      _errorMessage = AppException.humanize(e);
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Verify 6-digit email OTP and complete authentication
+  Future<bool> verifyEmailOtp({
+    required String email,
+    required String token,
+    UserRole? role,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      _user = await _authService.verifyEmailOtp(
+        email: email,
+        token: token,
+        role: role,
+      );
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _errorMessage = AppException.humanize(e);
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Resend 6-digit OTP email
+  Future<bool> resendOtp({
+    required String email,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      await _authService.resendOtp(email: email);
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _errorMessage = AppException.humanize(e);
       _setLoading(false);
       return false;
     }
@@ -116,7 +204,7 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
+      _errorMessage = AppException.humanize(e);
       _setLoading(false);
       return false;
     }
@@ -133,7 +221,7 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '');
+      _errorMessage = AppException.humanize(e);
       _setLoading(false);
       return false;
     }
@@ -145,6 +233,42 @@ class AuthProvider extends ChangeNotifier {
       await _authService.updateUser(updated);
       _user = updated;
       notifyListeners();
+    }
+  }
+
+  Future<bool> updateUserProfile({
+    required String fullName,
+    String? phone,
+    String? address,
+    String? serviceArea,
+    String? organizationName,
+    String? transportType,
+    String? avatarUrl,
+    bool clearAvatar = false,
+  }) async {
+    if (_user == null) return false;
+    _setLoading(true);
+    try {
+      final updated = _user!.copyWith(
+        fullName: fullName.trim(),
+        phone: phone?.trim(),
+        address: address?.trim(),
+        serviceArea: serviceArea?.trim(),
+        organizationName: organizationName?.trim(),
+        transportType: transportType?.trim(),
+        avatarUrl: avatarUrl,
+        clearAvatar: clearAvatar || (avatarUrl != null && avatarUrl.isEmpty),
+      );
+      await _authService.updateUser(updated);
+      _user = updated;
+      _setLoading(false);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = AppException.humanize(e);
+      _setLoading(false);
+      notifyListeners();
+      return false;
     }
   }
 
@@ -160,7 +284,7 @@ class AuthProvider extends ChangeNotifier {
       await _authService.signOut();
       _user = null;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = AppException.humanize(e);
     } finally {
       _setLoading(false);
     }
@@ -182,4 +306,3 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 }
-

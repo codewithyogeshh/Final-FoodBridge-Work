@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/utils/avatar_image_helper.dart';
 import '../../../core/widgets/exit_confirmation_dialog.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/fb_button.dart';
@@ -34,6 +36,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     _tabController = TabController(length: 5, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       TermsAndConditionsModal.showIfNeeded(context);
+      context.read<AdminProvider>().syncUsersWithAuth();
+      context.read<DonationProvider>().syncWithUserProfiles();
     });
   }
 
@@ -52,21 +56,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Suspend ${user.fullName}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Are you sure you want to suspend account: ${user.email}?'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                labelText: 'Suspension Reason',
-                hintText: 'e.g. Non-compliance with safety charter',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Are you sure you want to suspend account: ${user.email}?'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Suspension Reason',
+                  hintText: 'e.g. Non-compliance with safety charter',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -99,6 +105,180 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
+  void _showDocumentInspectionDialog(BuildContext context, PendingNgoApplication ngo) {
+    final adminProvider = context.read<AdminProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.verified_user, color: AppColors.primaryGreen, size: 24),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'पडताळणी कागदपत्रे (Verification Docs)',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                ngo.name,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.deepGreen),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'दर्पण आयडी: ${ngo.darpanId} • नोंदणी क्र: ${ngo.regNo}',
+                style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 14),
+
+              // Certificate Preview Box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.picture_as_pdf, color: AppColors.errorRed, size: 28),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ngo.documentName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              const Text(
+                                'Govt Verified 12A/80G & Trust Deed Format',
+                                style: TextStyle(fontSize: 11, color: AppColors.mutedGrey),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'VALID',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    const Text('नोंदणीकृत तपशील (Registered Details):', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 6),
+                    _docDetailRow('संस्था नाव:', ngo.name),
+                    _docDetailRow('संपर्क व्यक्ती:', ngo.contactPerson),
+                    _docDetailRow('फोन नंबर:', ngo.phone),
+                    _docDetailRow('ईमेल:', ngo.email ?? 'ngo@foodbridge.org'),
+                    _docDetailRow('दर्पण नोंदणी:', ngo.darpanId),
+                    _docDetailRow('शासकीय नोंदणी क्र:', ngo.regNo),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.mintLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: AppColors.deepGreen),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'मंजूर (Approve) केल्यानंतर संस्थेला थेट सिस्टीम व इन-ॲप नोटीफिकेशन पाठवले जाईल.',
+                        style: TextStyle(fontSize: 11, color: AppColors.deepGreen),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('बंद करा (Close)'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final messenger = ScaffoldMessenger.of(context);
+              final success = await adminProvider.approveNgo(
+                ngoId: ngo.id,
+                adminId: authProvider.user?.id ?? 'usr-admin-001',
+              );
+              if (mounted && success) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('संस्था "${ngo.name}" पडताळणी मंजूर! NGO ला नोटीफिकेशन पाठवले आहे.'),
+                    backgroundColor: AppColors.primaryGreen,
+                  ),
+                );
+              }
+            },
+            child: const Text('मंजूर करा (Approve & Notify)'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _docDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedGrey)),
+          ),
+          Expanded(
+            child: Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showResolveComplaintDialog(BuildContext context, Complaint complaint) {
     final notesController = TextEditingController();
     final adminProvider = context.read<AdminProvider>();
@@ -108,24 +288,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Resolve Complaint #${complaint.id}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Category: ${complaint.category}'),
-            const SizedBox(height: 4),
-            Text('Issue: ${complaint.description}', style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: notesController,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Resolution Action / Notes',
-                hintText: 'e.g. Warned donor and issued packaging guidance',
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Category: ${complaint.category}'),
+              const SizedBox(height: 4),
+              Text('Issue: ${complaint.description}', style: const TextStyle(fontSize: 13, color: AppColors.mutedGrey)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Resolution Action / Notes',
+                  hintText: 'e.g. Warned donor and issued packaging guidance',
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -212,7 +394,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
         controller: _tabController,
         children: [
           // 1. Overview & Analytics Tab
-          _buildAnalyticsTab(context, analytics, donationProvider, adminProvider),
+          _buildAnalyticsTab(context, analytics, donationProvider, adminProvider, authProvider),
 
           // 2. NGO Verification Approvals Tab
           _buildNgoApprovalsTab(context, adminProvider, authProvider),
@@ -237,12 +419,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     Map<String, dynamic> analytics,
     DonationProvider donationProvider,
     AdminProvider adminProvider,
+    AuthProvider authProvider,
   ) {
-    final int total = analytics['totalDonations'] as int? ?? 0;
-    final int available = analytics['availableDonations'] as int? ?? 0;
-    final int inTransit = (analytics['inTransitDonations'] as int? ?? 0) +
-        (analytics['claimedDonations'] as int? ?? 0);
-    final int delivered = analytics['deliveredDonations'] as int? ?? 0;
+    final int total = donationProvider.allDonations.length;
+    final int available = donationProvider.totalAvailableCount;
+    final int inTransit = donationProvider.totalInTransitCount +
+        donationProvider.totalClaimedCount;
+    final int delivered = donationProvider.totalDeliveredCount;
     final double mealsRescued =
         (analytics['totalMealsRescued'] as num?)?.toDouble() ?? 0.0;
     final int clothesCount = analytics['totalClothingItems'] as int? ?? 0;
@@ -268,24 +451,94 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       return true;
     }).toList();
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      children: [
+    return RefreshIndicator(
+      onRefresh: () => donationProvider.refreshDonations(),
+      color: AppColors.primaryGreen,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        children: [
         // Top Welcome Header
-        const Text(
-          'Welcome Back, Admin!',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppColors.deepGreen,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Welcome Back, ${authProvider.user?.fullName.isNotEmpty == true ? authProvider.user!.fullName : "Admin"}!',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.deepGreen,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    "Real-time monitoring of donations, shelters, volunteers, and deliveries.",
+                    style: TextStyle(fontSize: 13, color: AppColors.mutedGrey),
+                  ),
+                ],
+              ),
+            ),
+            if (authProvider.user != null) ...[
+              const SizedBox(width: 12),
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.12),
+                backgroundImage: AvatarImageHelper.resolve(authProvider.user?.avatarUrl),
+                child: AvatarImageHelper.resolve(authProvider.user?.avatarUrl) == null
+                    ? Text(
+                        authProvider.user!.fullName.trim().isNotEmpty
+                            ? authProvider.user!.fullName.trim().substring(0, 1).toUpperCase()
+                            : 'A',
+                        style: const TextStyle(
+                          color: AppColors.deepGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      )
+                    : null,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Live Network Sync Banner
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primaryGreen.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF10B981),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Multi-Device Realtime Sync Active • All nodes connected',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.deepGreen,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 2),
-        const Text(
-          "Real-time monitoring of donations, shelters, volunteers, and deliveries.",
-          style: TextStyle(fontSize: 13, color: AppColors.mutedGrey),
-        ),
-        const SizedBox(height: 18),
 
         // 4 Primary KPI Tiles - Real Empirical Data
         Row(
@@ -393,13 +646,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Donations Tracker (सर्व दाने व स्थिती)',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.deepGreen),
+            const Expanded(
+              child: Text(
+                'Donations Tracker (सर्व दाने व स्थिती)',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.deepGreen),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
+            const SizedBox(width: 8),
             Text(
               '${displayedDonations.length} of $total',
               style: const TextStyle(
@@ -437,10 +695,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             icon: Icons.inventory_2_outlined,
           )
         else
-          ...displayedDonations.map((d) => _buildAdminDonationCard(context, d)),
+          ...displayedDonations.map((d) => _buildAdminDonationCard(context, d, adminProvider)),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDonationFilterChip(String key, String label) {
     final isSelected = _donationFilter == key;
@@ -475,7 +734,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
-  Widget _buildAdminDonationCard(BuildContext context, Donation d) {
+  Widget _buildAdminDonationCard(BuildContext context, Donation d, AdminProvider adminProvider) {
     Color badgeColor;
     Color badgeTextColor;
     String statusLabel = d.status.displayName;
@@ -599,21 +858,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               const SizedBox(height: 12),
 
               // Details Grid: Donor & Location
-              Row(
-                children: [
-                  const Icon(Icons.person_outline,
-                      size: 15, color: AppColors.mutedGrey),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Donor: ${d.donorName}${d.donorPhone != null ? " (${d.donorPhone})" : ""}',
-                      style: const TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+              Builder(
+                builder: (context) {
+                  final donorUser = adminProvider.managedUsers.where((u) {
+                    if (d.donorId.isNotEmpty && u.id == d.donorId) return true;
+                    if (u.email.toLowerCase().trim() == 'donor@foodbridge.org' && d.donorId == 'usr-donor-101') return true;
+                    return false;
+                  }).firstOrNull;
+                  final displayDonorName = donorUser?.fullName.trim().isNotEmpty == true
+                      ? donorUser!.fullName.trim()
+                      : d.donorName;
+
+                  return Row(
+                    children: [
+                      const Icon(Icons.person_outline,
+                          size: 15, color: AppColors.mutedGrey),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Donor: $displayDonorName${d.donorPhone != null ? " (${d.donorPhone})" : ""}',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 6),
               Row(
@@ -634,44 +906,90 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               ),
               const SizedBox(height: 6),
 
-              // Shelter & Volunteer
-              Row(
-                children: [
-                  const Icon(Icons.volunteer_activism_outlined,
-                      size: 15, color: AppColors.primaryGreen),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      d.claimedByNgoName != null
-                          ? 'Shelter: ${d.claimedByNgoName}'
-                          : 'Shelter: Awaiting Claim (प्रतीक्षेत)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: d.claimedByNgoName != null
-                            ? AppColors.charcoal
-                            : AppColors.mutedGrey,
-                        fontWeight: d.claimedByNgoName != null
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+              // Shelter & Volunteer details with unambiguous claim ownership
+              Builder(
+                builder: (context) {
+                  final ngoUser = adminProvider.managedUsers.where((u) {
+                    if (d.claimedByNgoId != null && u.id == d.claimedByNgoId) return true;
+                    if (u.email.toLowerCase().trim() == 'ngo@foodbridge.org' && d.claimedByNgoId == 'usr-ngo-202') return true;
+                    return false;
+                  }).firstOrNull;
+                  final displayNgoName = ngoUser?.fullName.trim().isNotEmpty == true
+                      ? ngoUser!.fullName.trim()
+                      : d.claimedByNgoName;
+
+                  final volUser = adminProvider.managedUsers.where((u) {
+                    if (d.assignedVolunteerId != null && u.id == d.assignedVolunteerId) return true;
+                    if (u.email.toLowerCase().trim() == 'volunteer@foodbridge.org') {
+                      if (d.assignedVolunteerId == 'usr-vol-303' ||
+                          d.assignedVolunteerName == 'Rohit Kulkarni' ||
+                          d.assignedVolunteerName == 'Yogesh Chavan') {
+                        return true;
+                      }
+                    }
+                    return false;
+                  }).firstOrNull;
+
+                  final hasVol = (d.assignedVolunteerName != null && d.assignedVolunteerName!.trim().isNotEmpty) ||
+                      (d.assignedVolunteerId != null && d.assignedVolunteerId!.trim().isNotEmpty);
+
+                  final displayVolName = hasVol
+                      ? (volUser?.fullName.trim().isNotEmpty == true
+                          ? volUser!.fullName.trim()
+                          : (d.assignedVolunteerName == 'Rohit Kulkarni'
+                              ? (volUser?.fullName ?? 'Volunteer')
+                              : (d.assignedVolunteerName ?? 'Volunteer')))
+                      : 'Unassigned';
+
+                  return Row(
+                    children: [
+                      Icon(
+                        displayNgoName != null
+                            ? Icons.verified
+                            : Icons.hourglass_empty,
+                        size: 15,
+                        color: displayNgoName != null
+                            ? AppColors.primaryGreen
+                            : AppColors.orange,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (d.assignedVolunteerName != null) ...[
-                    const SizedBox(width: 10),
-                    const Icon(Icons.two_wheeler_outlined,
-                        size: 15, color: AppColors.orange),
-                    const SizedBox(width: 4),
-                    Text(
-                      d.assignedVolunteerName!,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.orange),
-                    ),
-                  ],
-                ],
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          displayNgoName != null
+                              ? 'Shelter: $displayNgoName ने स्वीकारले ✓'
+                              : 'Shelter: Not yet accepted (कोणत्याही शेल्टरने अजून स्वीकारलेले नाही)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: displayNgoName != null
+                                ? AppColors.charcoal
+                                : AppColors.orange,
+                            fontWeight: displayNgoName != null
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.two_wheeler_outlined,
+                          size: 15,
+                          color: hasVol
+                              ? AppColors.orange
+                              : AppColors.mutedGrey),
+                      const SizedBox(width: 4),
+                      Text(
+                        hasVol ? 'Vol: $displayVolName' : 'Vol: Unassigned',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: hasVol
+                                ? AppColors.orange
+                                : AppColors.mutedGrey),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 10),
 
@@ -686,13 +1004,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Pickup OTP: ${d.pickupOtp} • Delivery OTP: ${d.deliveryOtp}',
-                      style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.deepGreen),
+                    Expanded(
+                      child: Text(
+                        'Pickup OTP: ${d.pickupOtp} • Delivery OTP: ${d.deliveryOtp}',
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.deepGreen),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     Text(
                       DateFormat('dd MMM, hh:mm a').format(d.pickupDeadline),
                       style: const TextStyle(
@@ -738,7 +1061,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(ngo.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Expanded(
+                      child: Text(
+                        ngo.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -753,27 +1084,54 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 Text('Darpan: ${ngo.darpanId} • Reg: ${ngo.regNo}', style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey)),
                 Text('Contact: ${ngo.contactPerson} (${ngo.phone})', style: const TextStyle(fontSize: 12, color: AppColors.charcoal)),
                 const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Icon(Icons.picture_as_pdf, color: AppColors.errorRed, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        ngo.documentName,
-                        style: const TextStyle(fontSize: 12, decoration: TextDecoration.underline, fontWeight: FontWeight.w600),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                InkWell(
+                  onTap: () => _showDocumentInspectionDialog(context, ngo),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
-                    if (ngo.documentPath != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.picture_as_pdf, color: AppColors.errorRed, size: 22),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ngo.documentName,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.charcoal),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const Text(
+                                'टॅप करून कागदपत्रे उघडा व तपासा (Tap to Inspect)',
+                                style: TextStyle(fontSize: 10.5, color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: const Text('Device File', style: TextStyle(fontSize: 10, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
-                      ),
-                  ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.visibility_outlined, size: 14, color: AppColors.primaryGreen),
+                              SizedBox(width: 4),
+                              Text('तपासा', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -839,73 +1197,209 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   ) {
     final users = adminProvider.managedUsers;
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: users.length,
-      itemBuilder: (context, idx) {
-        final u = users[idx];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  backgroundColor: u.isSuspended ? AppColors.errorRed.withValues(alpha: 0.12) : AppColors.primaryGreen.withValues(alpha: 0.12),
-                  child: Icon(
-                    u.role == UserRole.donor
-                        ? Icons.soup_kitchen
-                        : u.role == UserRole.ngo
-                            ? Icons.domain
-                            : Icons.two_wheeler,
-                    color: u.isSuspended ? AppColors.errorRed : AppColors.primaryGreen,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(u.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          const SizedBox(width: 8),
-                          if (u.isSuspended)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: AppColors.errorRed, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('SUSPENDED', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text('${u.email} • Role: ${u.role.displayName}', style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey)),
-                      if (u.isSuspended && u.suspensionReason != null) ...[
-                        const SizedBox(height: 4),
-                        Text('Reason: ${u.suspensionReason!}', style: const TextStyle(fontSize: 11, color: AppColors.errorRed, fontStyle: FontStyle.italic)),
-                      ],
-                    ],
-                  ),
-                ),
-                if (!u.isSuspended)
-                  TextButton(
-                    onPressed: () => _showSuspendUserDialog(context, u),
-                    child: const Text('Suspend', style: TextStyle(color: AppColors.errorRed)),
-                  )
-                else
-                  TextButton(
-                    onPressed: () => adminProvider.reactivateUser(
-                      userId: u.id,
-                      adminId: authProvider.user?.id ?? 'usr-admin-001',
-                    ),
-                    child: const Text('Reactivate', style: TextStyle(color: AppColors.primaryGreen)),
-                  ),
-              ],
+    return RefreshIndicator(
+      onRefresh: () => adminProvider.refreshUsers(),
+      color: AppColors.primaryGreen,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        itemCount: users.length,
+        itemBuilder: (context, idx) {
+          final u = users[idx];
+          final avatarImage = AvatarImageHelper.resolve(u.avatarUrl);
+          final Color roleBaseColor = switch (u.role) {
+            UserRole.donor => AppColors.primaryGreen,
+            UserRole.ngo => const Color(0xFF0F4D2E),
+            UserRole.volunteer => AppColors.orange,
+            UserRole.admin => const Color(0xFF6366F1),
+          };
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: u.isSuspended
+                    ? AppColors.errorRed.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.05),
+              ),
             ),
-          ),
-        );
-      },
+            elevation: 1,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: u.isSuspended
+                        ? AppColors.errorRed.withValues(alpha: 0.15)
+                        : roleBaseColor.withValues(alpha: 0.12),
+                    backgroundImage: avatarImage,
+                    child: avatarImage == null
+                        ? (u.fullName.trim().isNotEmpty
+                            ? Text(
+                                u.fullName.trim().substring(0, 1).toUpperCase(),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: u.isSuspended ? AppColors.errorRed : roleBaseColor,
+                                ),
+                              )
+                            : Icon(
+                                switch (u.role) {
+                                  UserRole.donor => Icons.soup_kitchen,
+                                  UserRole.ngo => Icons.domain,
+                                  UserRole.volunteer => Icons.two_wheeler,
+                                  UserRole.admin => Icons.admin_panel_settings,
+                                },
+                                color: u.isSuspended ? AppColors.errorRed : roleBaseColor,
+                                size: 24,
+                              ))
+                        : null,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                u.fullName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppColors.charcoal,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: roleBaseColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                u.role.displayName,
+                                style: TextStyle(
+                                  color: roleBaseColor,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            if (u.isSuspended) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorRed,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'SUSPENDED',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(Icons.email_outlined, size: 13, color: AppColors.mutedGrey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                u.email,
+                                style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (u.phone != null && u.phone!.trim().isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Icon(Icons.phone_outlined, size: 13, color: AppColors.mutedGrey),
+                              const SizedBox(width: 4),
+                              Text(
+                                u.phone!,
+                                style: const TextStyle(fontSize: 11.5, color: AppColors.mutedGrey),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (u.isSuspended && u.suspensionReason != null) ...[
+                          const SizedBox(height: 6),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorRed.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.errorRed.withValues(alpha: 0.2)),
+                            ),
+                            child: Text(
+                              'कारण: ${u.suspensionReason!}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.errorRed,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (!u.isSuspended)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _showSuspendUserDialog(context, u);
+                      },
+                      child: const Text('Suspend', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.w600)),
+                    )
+                  else
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () async {
+                        HapticFeedback.lightImpact();
+                        await adminProvider.reactivateUser(
+                          userId: u.id,
+                          adminId: authProvider.user?.id ?? 'usr-admin-001',
+                        );
+                      },
+                      child: const Text('Reactivate', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600)),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -937,7 +1431,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Complaint #${c.id} (${c.category})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Expanded(
+                      child: Text(
+                        'Complaint #${c.id} (${c.category})',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Chip(
                       label: Text(c.status.displayName, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                       backgroundColor: isOpen ? AppColors.warningOrange.withValues(alpha: 0.15) : AppColors.primaryGreen.withValues(alpha: 0.15),
@@ -1008,7 +1510,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(log.action, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.charcoal)),
+                          Expanded(
+                            child: Text(
+                              log.action,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.charcoal),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Text(dateFormat.format(log.timestamp), style: const TextStyle(fontSize: 10, color: AppColors.mutedGrey)),
                         ],
                       ),

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/donation_image_widget.dart';
 import '../../../core/widgets/fb_empty_state.dart';
 import '../../../core/widgets/fb_status_chip.dart';
 import '../../authentication/presentation/auth_provider.dart';
@@ -36,11 +37,12 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
   void _showDonationTypeSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetCtx) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -196,19 +198,18 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: d.isFood
-                              ? AppColors.primaryGreen.withOpacity(0.12)
-                              : AppColors.warningOrange.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          d.isFood ? Icons.restaurant : Icons.checkroom,
-                          color: d.isFood ? AppColors.primaryGreen : AppColors.warningOrange,
-                          size: 24,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: DonationImageWidget(
+                            imageUrl: d.imageUrl,
+                            isFood: d.isFood,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -239,9 +240,14 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       FBStatusChip(status: d.status.name),
-                      Text(
-                        dateFormat.format(d.createdAt),
-                        style: const TextStyle(fontSize: 11, color: AppColors.mutedGrey),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          dateFormat.format(d.createdAt),
+                          style: const TextStyle(fontSize: 11, color: AppColors.mutedGrey),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),

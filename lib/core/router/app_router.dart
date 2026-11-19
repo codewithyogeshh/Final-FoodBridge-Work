@@ -4,6 +4,7 @@ import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/authentication/presentation/login_screen.dart';
 import '../../features/authentication/presentation/register_screen.dart';
+import '../../features/authentication/presentation/otp_verification_screen.dart';
 import '../../features/authentication/presentation/forgot_password_screen.dart';
 import '../../features/authentication/presentation/reset_password_screen.dart';
 import '../../features/authentication/presentation/auth_provider.dart';
@@ -30,6 +31,7 @@ import '../../features/donor/presentation/restaurant_donor_dashboard_screen.dart
 import '../../features/authentication/presentation/admin_login_screen.dart';
 import '../../features/donations/presentation/tracking_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/volunteer/presentation/volunteer_get_started_screen.dart';
 import '../../features/volunteer/presentation/volunteer_available_tasks_screen.dart';
 import '../../features/volunteer/presentation/volunteer_task_tracking_screen.dart';
@@ -71,6 +73,20 @@ class AppRouter {
           builder: (context, state) {
             final role = state.uri.queryParameters['role'];
             return RegisterScreen(initialRole: role);
+          },
+        ),
+        GoRoute(
+          path: '/verify-otp',
+          builder: (context, state) {
+            final email = state.uri.queryParameters['email'] ?? '';
+            final role = state.uri.queryParameters['role'];
+            final lengthParam = state.uri.queryParameters['length'];
+            final otpLength = int.tryParse(lengthParam ?? '') ?? 8;
+            return OtpVerificationScreen(
+              email: email,
+              initialRole: role,
+              otpLength: otpLength,
+            );
           },
         ),
         GoRoute(
@@ -240,6 +256,10 @@ class AppRouter {
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/profile/edit',
+          builder: (context, state) => const EditProfileScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

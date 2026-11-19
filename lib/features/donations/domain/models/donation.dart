@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 enum DonationType {
   food,
   clothing;
@@ -179,6 +181,11 @@ class Donation {
   final String pickupOtp;
   final String deliveryOtp;
   final String dropoffAddress;
+  final double? dropoffLatitude;
+  final double? dropoffLongitude;
+  final double? courierLatitude;
+  final double? courierLongitude;
+  final double? courierHeading;
   final double estimatedDistanceKm;
   final int estimatedMinutes;
 
@@ -207,9 +214,9 @@ class Donation {
     required this.type,
     this.status = DonationStatus.available,
     required this.pickupAddress,
-    this.city = 'Pune',
-    this.latitude = 18.5204,
-    this.longitude = 73.8567,
+    this.city = 'Satara',
+    this.latitude = 17.6805,
+    this.longitude = 73.9934,
     required this.createdAt,
     required this.pickupDeadline,
     this.claimedByNgoId,
@@ -224,7 +231,12 @@ class Donation {
     this.imageUrl,
     this.pickupOtp = '4829',
     this.deliveryOtp = '9152',
-    this.dropoffAddress = 'Asha Children Shelter, Plot 12 Swargate, Pune',
+    this.dropoffAddress = 'Asha Children Shelter, Sadar Bazar, Satara',
+    this.dropoffLatitude = 17.6920,
+    this.dropoffLongitude = 74.0020,
+    this.courierLatitude,
+    this.courierLongitude,
+    this.courierHeading,
     this.estimatedDistanceKm = 3.8,
     this.estimatedMinutes = 14,
     this.isVeg = true,
@@ -241,12 +253,42 @@ class Donation {
   bool get isFood => type == DonationType.food;
   bool get isClothing => type == DonationType.clothing;
   bool get isDraft => status == DonationStatus.draft;
-  bool get isAvailable => status == DonationStatus.available;
+
+  LatLng get pickupLatLng => LatLng(latitude, longitude);
+  LatLng get dropoffLatLng => LatLng(
+        dropoffLatitude ?? (latitude + 0.0115),
+        dropoffLongitude ?? (longitude + 0.0086),
+      );
+  LatLng get liveCourierLatLng {
+    if (courierLatitude != null && courierLongitude != null) {
+      return LatLng(courierLatitude!, courierLongitude!);
+    }
+    if (status == DonationStatus.pickedUp) {
+      return LatLng(
+        (latitude + (dropoffLatitude ?? (latitude + 0.0115))) / 2,
+        (longitude + (dropoffLongitude ?? (longitude + 0.0086))) / 2,
+      );
+    }
+    return LatLng(latitude + 0.003, longitude + 0.002);
+  }
+  bool get isAvailable =>
+      (status == DonationStatus.available || status == DonationStatus.listed) &&
+      (claimedByNgoName == null || claimedByNgoName!.trim().isEmpty) &&
+      (claimedByNgoId == null || claimedByNgoId!.trim().isEmpty);
   bool get isRequested => status == DonationStatus.requested;
-  bool get isClaimed => status == DonationStatus.accepted;
-  bool get isAssigned => status == DonationStatus.assignedForPickup;
+  bool get isClaimed =>
+      status == DonationStatus.accepted ||
+      status == DonationStatus.claimed ||
+      (claimedByNgoName != null && claimedByNgoName!.trim().isNotEmpty) ||
+      (claimedByNgoId != null && claimedByNgoId!.trim().isNotEmpty);
+  bool get isAssigned =>
+      status == DonationStatus.assignedForPickup ||
+      status == DonationStatus.assigned ||
+      (assignedVolunteerId != null && assignedVolunteerId!.trim().isNotEmpty);
   bool get isInTransit => status == DonationStatus.pickedUp;
-  bool get isDelivered => status == DonationStatus.deliveredToNgo;
+  bool get isDelivered =>
+      status == DonationStatus.deliveredToNgo ||
+      status == DonationStatus.delivered;
   bool get isDistributed => status == DonationStatus.distributed;
   bool get isCompleted => status == DonationStatus.completed;
   bool get isCancelled => status == DonationStatus.cancelled;
@@ -287,6 +329,11 @@ class Donation {
     String? pickupOtp,
     String? deliveryOtp,
     String? dropoffAddress,
+    double? dropoffLatitude,
+    double? dropoffLongitude,
+    double? courierLatitude,
+    double? courierLongitude,
+    double? courierHeading,
     double? estimatedDistanceKm,
     int? estimatedMinutes,
     bool? isVeg,
@@ -337,6 +384,11 @@ class Donation {
       pickupOtp: pickupOtp ?? this.pickupOtp,
       deliveryOtp: deliveryOtp ?? this.deliveryOtp,
       dropoffAddress: dropoffAddress ?? this.dropoffAddress,
+      dropoffLatitude: dropoffLatitude ?? this.dropoffLatitude,
+      dropoffLongitude: dropoffLongitude ?? this.dropoffLongitude,
+      courierLatitude: courierLatitude ?? this.courierLatitude,
+      courierLongitude: courierLongitude ?? this.courierLongitude,
+      courierHeading: courierHeading ?? this.courierHeading,
       estimatedDistanceKm: estimatedDistanceKm ?? this.estimatedDistanceKm,
       estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       isVeg: isVeg ?? this.isVeg,
@@ -352,6 +404,41 @@ class Donation {
   }
 
   factory Donation.fromJson(Map<String, dynamic> json) {
+    final rawStatus = json['status']?.toString();
+    final claimedNgo = json['claimed_by_ngo_name']?.toString();
+    final claimedId = json['claimed_by_ngo_id']?.toString();
+    final volId = json['assigned_volunteer_id']?.toString();
+
+    DonationStatus parsedStatus = DonationStatus.fromString(rawStatus);
+
+    // If shelter/NGO claimed details are present, ensure status reflects accepted/claimed
+    if ((claimedNgo != null && claimedNgo.trim().isNotEmpty) ||
+        (claimedId != null && claimedId.trim().isNotEmpty)) {
+      if (parsedStatus == DonationStatus.available ||
+          parsedStatus == DonationStatus.draft) {
+        parsedStatus = DonationStatus.accepted;
+      }
+    }
+
+    // If volunteer is assigned, ensure status reflects volunteer assignment
+    if (volId != null && volId.trim().isNotEmpty) {
+      if (parsedStatus == DonationStatus.available ||
+          parsedStatus == DonationStatus.draft ||
+          parsedStatus == DonationStatus.accepted) {
+        parsedStatus = DonationStatus.assignedForPickup;
+      }
+    }
+
+    final rawPickupAddress = json['pickup_address']?.toString() ?? '';
+    String parsedCity = json['city']?.toString() ?? 'Satara';
+    final addrLower = rawPickupAddress.toLowerCase();
+    if (addrLower.contains('satara')) {
+      parsedCity = 'Satara';
+    } else if (parsedCity.toLowerCase() == 'pune' && !addrLower.contains('pune')) {
+      // Default hub is Satara for local addresses that do not explicitly belong to Pune
+      parsedCity = 'Satara';
+    }
+
     return Donation(
       id: json['id']?.toString() ?? '',
       donorId: json['donor_id']?.toString() ?? 'unknown-donor',
@@ -362,11 +449,11 @@ class Donation {
       quantity: (json['quantity'] as num?)?.toDouble() ?? 1.0,
       unit: json['unit']?.toString() ?? 'items',
       type: DonationType.fromString(json['type']?.toString()),
-      status: DonationStatus.fromString(json['status']?.toString()),
-      pickupAddress: json['pickup_address']?.toString() ?? '',
-      city: json['city']?.toString() ?? 'Pune',
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 18.5204,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 73.8567,
+      status: parsedStatus,
+      pickupAddress: rawPickupAddress,
+      city: parsedCity,
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 17.6805,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 73.9934,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -395,7 +482,12 @@ class Donation {
       pickupOtp: json['pickup_otp']?.toString() ?? '4829',
       deliveryOtp: json['delivery_otp']?.toString() ?? '9152',
       dropoffAddress: json['dropoff_address']?.toString() ??
-          'Asha Children Shelter, Plot 12 Swargate, Pune',
+          'Asha Children Shelter, Sadar Bazar, Satara',
+      dropoffLatitude: (json['dropoff_latitude'] as num?)?.toDouble() ?? 17.6920,
+      dropoffLongitude: (json['dropoff_longitude'] as num?)?.toDouble() ?? 74.0020,
+      courierLatitude: (json['courier_latitude'] as num?)?.toDouble(),
+      courierLongitude: (json['courier_longitude'] as num?)?.toDouble(),
+      courierHeading: (json['courier_heading'] as num?)?.toDouble(),
       estimatedDistanceKm:
           (json['estimated_distance_km'] as num?)?.toDouble() ?? 3.8,
       estimatedMinutes: (json['estimated_minutes'] as num?)?.toInt() ?? 14,
@@ -450,6 +542,11 @@ class Donation {
       'pickup_otp': pickupOtp,
       'delivery_otp': deliveryOtp,
       'dropoff_address': dropoffAddress,
+      'dropoff_latitude': dropoffLatitude,
+      'dropoff_longitude': dropoffLongitude,
+      'courier_latitude': courierLatitude,
+      'courier_longitude': courierLongitude,
+      'courier_heading': courierHeading,
       'estimated_distance_km': estimatedDistanceKm,
       'estimated_minutes': estimatedMinutes,
       'is_veg': isVeg,

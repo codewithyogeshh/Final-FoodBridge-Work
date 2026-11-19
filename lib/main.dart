@@ -12,6 +12,7 @@ import 'core/router/app_router.dart';
 import 'features/admin/presentation/admin_provider.dart';
 import 'features/authentication/presentation/auth_provider.dart';
 import 'features/donations/presentation/donation_provider.dart';
+import 'features/notifications/domain/models/app_notification.dart';
 import 'features/notifications/presentation/notification_provider.dart';
 
 void main() async {
@@ -30,14 +31,28 @@ void main() async {
     }
   }
 
+  final notificationProvider = NotificationProvider(seedInitial: false);
+  final donationProvider = DonationProvider();
+
+  // Connect real-time donation events directly to notification dispatch
+  DonationProvider.onDonationReceived = (title, body, donationId) {
+    notificationProvider.dispatchRealtimeEvent(
+      title: title,
+      message: body,
+      type: NotificationType.newDonation,
+      relatedDonationId: donationId,
+      actionRoute: donationId != null ? '/donations/detail/$donationId' : null,
+    );
+  };
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => DonationProvider()),
-        ChangeNotifierProvider(create: (_) => NotificationProvider(seedInitial: false)),
+        ChangeNotifierProvider.value(value: donationProvider),
+        ChangeNotifierProvider.value(value: notificationProvider),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
       ],
       child: const FoodBridgeApp(),

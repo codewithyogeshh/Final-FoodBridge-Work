@@ -1,16 +1,18 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/models/app_notification.dart';
 
 class NotificationProvider extends ChangeNotifier {
+  static const String _kStorageKey = 'foodbridge_persisted_notifications_v1';
   final List<AppNotification> _notifications = [];
   final Set<String> _sentEventFingerprints = {};
   NotificationPreferences _preferences = const NotificationPreferences();
   final bool _isLoading = false;
 
   NotificationProvider({bool seedInitial = true}) {
-    if (seedInitial) {
-      _seedInitialNotifications();
-    }
+    _loadPersistedNotifications(seedInitial: seedInitial);
   }
 
   List<AppNotification> get allNotifications => List.unmodifiable(_notifications);
@@ -19,6 +21,48 @@ class NotificationProvider extends ChangeNotifier {
   int get unreadCount => unreadNotifications.length;
   NotificationPreferences get preferences => _preferences;
   bool get isLoading => _isLoading;
+
+  Future<void> _loadPersistedNotifications({bool seedInitial = false}) async {
+    try {
+      if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+        if (seedInitial) _seedInitialNotifications();
+        return;
+      }
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kStorageKey);
+      if (raw != null && raw.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(raw);
+        _notifications.clear();
+        for (final item in list) {
+          if (item is Map<String, dynamic>) {
+            _notifications.add(AppNotification.fromJson(item));
+          } else if (item is Map) {
+            _notifications.add(AppNotification.fromJson(Map<String, dynamic>.from(item)));
+          }
+        }
+        for (final n in _notifications) {
+          _sentEventFingerprints.add('${n.type.name}_${n.relatedDonationId ?? ""}_${n.title}');
+        }
+        notifyListeners();
+      } else if (seedInitial) {
+        _seedInitialNotifications();
+        await _persistNotifications();
+      }
+    } catch (_) {
+      if (seedInitial && _notifications.isEmpty) {
+        _seedInitialNotifications();
+      }
+    }
+  }
+
+  Future<void> _persistNotifications() async {
+    try {
+      if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return;
+      final prefs = await SharedPreferences.getInstance();
+      final list = _notifications.map((n) => n.toJson()).toList();
+      await prefs.setString(_kStorageKey, jsonEncode(list));
+    } catch (_) {}
+  }
 
   /// Dispatch a realtime notification event with deduplication guard
   bool dispatchRealtimeEvent({
@@ -61,6 +105,7 @@ class NotificationProvider extends ChangeNotifier {
     );
 
     _notifications.insert(0, notification);
+    _persistNotifications();
     notifyListeners();
     return true;
   }
@@ -69,6 +114,7 @@ class NotificationProvider extends ChangeNotifier {
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1 && !_notifications[index].isRead) {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
+      _persistNotifications();
       notifyListeners();
     }
   }
@@ -82,18 +128,21 @@ class NotificationProvider extends ChangeNotifier {
       }
     }
     if (changed) {
+      _persistNotifications();
       notifyListeners();
     }
   }
 
   void deleteNotification(String id) {
     _notifications.removeWhere((n) => n.id == id);
+    _persistNotifications();
     notifyListeners();
   }
 
   void clearAll() {
     _notifications.clear();
     _sentEventFingerprints.clear();
+    _persistNotifications();
     notifyListeners();
   }
 
@@ -138,7 +187,7 @@ class NotificationProvider extends ChangeNotifier {
       AppNotification(
         id: 'notif-4',
         title: 'New Donation Available',
-        message: 'The Green Leaf Bistro listed 50 meal boxes in Camp, Pune.',
+        message: 'The Green Leaf Bistro listed 50 meal boxes in Powai Naka, Satara.',
         type: NotificationType.newDonation,
         timestamp: now.subtract(const Duration(hours: 1)),
         isRead: true,

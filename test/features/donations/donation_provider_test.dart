@@ -1,13 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foodbridge/features/authentication/data/auth_service.dart';
 import 'package:foodbridge/features/donations/domain/models/donation.dart';
 import 'package:foodbridge/features/donations/domain/models/distribution_record.dart';
 import 'package:foodbridge/features/donations/presentation/donation_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('DonationProvider Tests', () {
     late DonationProvider provider;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       provider = DonationProvider();
     });
 
@@ -506,6 +509,26 @@ void main() {
       expect(fromJson.targetSize, 'Adults S/M');
       expect(fromJson.conditionGrade, 'Like New');
       expect(fromJson.isWashedAndClean, isTrue);
+    });
+
+    test('syncWithUserProfiles synchronizes volunteer name to live updated profile', () async {
+      final volUser = AuthService().allUsers.where((u) => u.email == 'volunteer@foodbridge.org').first;
+      await AuthService().updateUser(
+        volUser.copyWith(
+          fullName: 'Yogesh Chavan',
+          phone: '+91 8208651560',
+        ),
+      );
+
+      await provider.syncWithUserProfiles();
+
+      final assigned = provider.allDonations.where(
+        (d) => d.assignedVolunteerId == 'usr-vol-303' || d.assignedVolunteerName == 'Yogesh Chavan',
+      );
+      expect(assigned.isNotEmpty, isTrue);
+      for (final d in assigned) {
+        expect(d.assignedVolunteerName, 'Yogesh Chavan');
+      }
     });
   });
 }

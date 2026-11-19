@@ -1,0 +1,111 @@
+% ==============================================================================
+% PREAMBLE: PACKAGES, TYPOGRAPHY & MACROS
+% ==============================================================================
+
+% Margins & Page Geometry (Standard academic binding layout)
+\usepackage[
+    top=1.0in,
+    bottom=1.0in,
+    left=1.25in,   % Binding margin
+    right=1.0in,
+    headheight=15pt
+]{geometry}
+
+% Typography & Encoding
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+% Mathematics
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{amsthm}
+
+% Graphics & Captions
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% Colors
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+\definecolor{ThemeColor}{HTML}{0F4D2E}       % Deep Forest Green
+\definecolor{SecondaryColor}{HTML}{27AE60}   % Accent Emerald
+\definecolor{TextDark}{HTML}{1E293B}         % Slate Dark
+\definecolor{SlateGrey}{HTML}{64748B}        % Muted Grey
+\definecolor{CodeBg}{HTML}{F8FAFC}           % Background for Code & Callouts
+\definecolor{BoxBorder}{HTML}{CBD5E1}        % Subtle border
+
+\usepackage[labelfont={bf,color=ThemeColor},font=small,skip=8pt]{caption}
+
+% Publication-Quality Tables
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{colortbl}
+
+% Modern Callout Boxes
+\usepackage[most]{tcolorbox}
+\newtcolorbox{summarybox}[1][Summary]{
+    enhanced,
+    colback=CodeBg,
+    colframe=ThemeColor,
+    arc=4pt,
+    boxrule=1.2pt,
+    left=12pt,
+    right=12pt,
+    top=8pt,
+    bottom=8pt,
+    title=\textbf{#1},
+    coltitle=white,
+    attach boxed title to top left={yshift=-2mm, xshift=4mm},
+    boxed title style={colback=ThemeColor, arc=3pt}
+}
+
+% Code Listings
+\usepackage{listings}
+\lstset{
+    backgroundcolor=\color{CodeBg},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{ThemeColor}\bfseries,
+    commentstyle=\color{SlateGrey}\itshape,
+    stringstyle=\color{DarkOrange3},
+    numbers=left,
+    numberstyle=\tiny\color{SlateGrey},
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+    rulecolor=\color{BoxBorder},
+    tabsize=2
+}
+
+% Headers & Footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{ThemeColor}\textbf{Project Report}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Section Heading Formatting
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{ThemeColor}}{\chaptertitlename\ \thechapter}{16pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{ThemeColor}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{TextDark}}{\thesubsection}{1em}{}
+
+% Hyperlinks (Always load last)
+\usepackage[
+    colorlinks=true,
+    linkcolor=ThemeColor,
+    citecolor=SecondaryColor,
+    urlcolor=NavyBlue
+]{hyperref}

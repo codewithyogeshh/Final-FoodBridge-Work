@@ -1,0 +1,29 @@
+\chapter{Literature Survey}
+\label{ch:literature_survey}
+
+\section{Review of Existing Food Relief Systems}
+Traditional humanitarian redistribution systems fall primarily into two architectural categories: centralized batch warehouses and ad-hoc communication networks. Centralized food banks (such as Feeding America or the Robin Hood Army) operate regional cold-storage warehouses. While effective for non-perishable canned goods, they cannot accommodate same-day hot meals due to warehousing intake latency.
+
+Ad-hoc communication networks rely on instant messaging groups (e.g. WhatsApp, Telegram) to post surplus food notifications. While low-barrier, these networks lack concurrency control: multiple shelters frequently dispatch drivers to the same donor, or donations expire unnoticed without escalation.
+
+\section{Comparative Analysis of State-of-the-Art Solutions}
+Table \ref{tab:literature_comparison} highlights key functional trade-offs across contemporary food distribution systems compared with FoodBridge.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparative Matrix of Redistribution Architectures}
+\label{tab:literature_comparison}
+\begin{tabularx}{\textwidth}{l X c c c}
+\toprule
+\textbf{System} & \textbf{Architecture} & \textbf{Real-Time Sync} & \textbf{Dual OTP Verification} & \textbf{Accreditation Gate} \\
+\midrule
+Olio Community & Peer-to-Peer Listings & Partial & No & Self-reported \\
+Too Good To Go & Commercial B2C & Yes & Single In-App Swipe & Commercial vetting \\
+Robin Hood Army & Manual Volunteer Groups & No (Chat-based) & No & Internal hierarchy \\
+\textbf{FoodBridge} & \textbf{Optimistic Event Mesh} & \textbf{Yes (<100ms)} & \textbf{Yes (Dual OTP)} & \textbf{Darpan / 80G Certified} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Summary and Research Gap}
+The comparative analysis confirms a distinct technological gap in urban food recovery: the absence of an integrated, cryptographically verified dispatch mesh that couples real-time state synchronization with regulatory compliance (such as NGO Darpan verification and food safety declarations). FoodBridge bridges this specific gap.
