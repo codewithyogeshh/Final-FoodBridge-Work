@@ -1,7 +1,7 @@
 \documentclass[12pt,a4paper]{article}
 
 % ==============================================================================
-% PAGE MARGINS & GEOMETRY (Matching Reference Report)
+% PAGE MARGINS & GEOMETRY (Professional Academic Standard)
 % ==============================================================================
 \usepackage[
     top=1.0in,
@@ -9,8 +9,8 @@
     left=1.2in,
     right=1.0in,
     headheight=15pt,
-    headsep=18pt,
-    footskip=28pt
+    headsep=15pt,
+    footskip=25pt
 ]{geometry}
 
 % ==============================================================================
@@ -56,13 +56,13 @@
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \sloppy
 
-% Running Header and Footer (Exact 1:1 match to reference report)
+% Running Header and Footer: Completely clean top (NO border text), clean college footer
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[R]{\small \textit{FoodBridge : Real-Time Surplus Food Redistribution and Logistics Engine}}
+\fancyhead{} % Completely empty header as requested (no title line at top border)
+\renewcommand{\headrulewidth}{0pt} % Zero line at top (eliminates border text collision)
 \fancyfoot[L]{\small Karmaveer Bhaurao Patil College of Engineering, Satara}
 \fancyfoot[R]{\small Page \thepage}
-\renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 
 % Custom Checkmark for Gantt Chart
@@ -250,13 +250,13 @@ FoodBridge uses multiple security measures to protect donation integrity and ver
     Figure 5.6 & Sequence Diagram for Listing, Claim and Dual-OTP Handover \dotfill & 11 \\[0.35cm]
     Figure 5.7 & Collaboration Diagram \dotfill & 12 \\[0.35cm]
     Figure 5.8 & Entity Relationship Diagram \dotfill & 12 \\[0.35cm]
-    Figure 6.1 & Admin Console – Real-Time Redistribution Overview \dotfill & 14 \\[0.35cm]
-    Figure 6.2 & Volunteer Dispatch \& Verification Screen \dotfill & 14 \\[0.35cm]
-    Figure 6.3 & Backend REST API Documentation (Swagger UI) \dotfill & 15 \\
+    Figure 6.1 & Supabase Cloud Database -- Authentication and Users Registry \dotfill & 14 \\[0.35cm]
+    Figure 6.2 & Mobile Application Interfaces (Volunteer Dispatch \& Delivery Tracking) \dotfill & 14 \\[0.35cm]
+    Figure 6.3 & Administrative Management \& Profile Configuration Console \dotfill & 15 \\
 \end{tabular*}
 
 % ==============================================================================
-% PAGE 7: INDEX (TABLE OF CONTENTS - EXACT MATCH TO REFERENCE SCREENSHOT)
+% PAGE 7: INDEX (TABLE OF CONTENTS - EXACT MATCH TO USER'S REFERENCE SCREENSHOT)
 % ==============================================================================
 \newpage
 \thispagestyle{empty}
@@ -915,7 +915,7 @@ The database has four core entities. One user submits many donations. Distributi
     \hline
     Mobile Client & Flutter 3.24+ (Dart 3.5+) & Single codebase for Android, iOS and Web; 120 FPS native performance. \\
     \hline
-    Web Dashboard & Flutter Web / React 18 & Fast responsive admin dashboard; real-time urban redistribution monitor. \\
+    State Management & Provider \& ChangeNotifier & Reactive optimistic updates and clean architectural separation. \\
     \hline
     Backend / BaaS & Supabase (PostgreSQL 15+) & Automatic REST API, integrated Auth, and real-time WebSocket broadcasting. \\
     \hline
@@ -935,24 +935,48 @@ The core architectural layers and stakeholder modules have been implemented and 
 \newpage
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.88\textwidth,height=6.2cm,keepaspectratio]{figures/admin_console.png}
-\caption{Admin Console – Real-Time Redistribution Overview (FoodBridge System Overview)}
-\label{fig:screen_admin}
+\includegraphics[width=0.92\textwidth,height=6.2cm,keepaspectratio]{figures/supabase_database.jpg}
+\caption{Supabase Cloud Database -- Authentication and Users Registry}
+\label{fig:screen_database}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.88\textwidth,height=6.2cm,keepaspectratio]{figures/volunteer_dashboard.png}
-\caption{Volunteer Dispatch \& Verification Screen}
-\label{fig:screen_volunteer}
+\begin{subfigure}[b]{0.46\textwidth}
+    \centering
+    \includegraphics[height=6.8cm,keepaspectratio]{figures/volunteer_dashboard.png}
+    \caption{Volunteer Dispatch Console}
+    \label{fig:screen_vol_dispatch}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+    \centering
+    \includegraphics[height=6.8cm,keepaspectratio]{figures/donation_detail.png}
+    \caption{Donation Delivery Tracking}
+    \label{fig:screen_donation_track}
+\end{subfigure}
+\caption{Mobile Application Interfaces (Volunteer Dispatch \& Delivery Tracking)}
+\label{fig:screen_mobile_app}
 \end{figure}
 
 \newpage
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.88\textwidth,height=6.2cm,keepaspectratio]{figures/donation_detail.png}
-\caption{Backend REST API Documentation (Swagger UI)}
-\label{fig:screen_donation}
+\begin{subfigure}[b]{0.46\textwidth}
+    \centering
+    \includegraphics[height=6.8cm,keepaspectratio]{figures/admin_console.png}
+    \caption{Super Admin Live Console}
+    \label{fig:screen_admin_console}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.46\textwidth}
+    \centering
+    \includegraphics[height=6.8cm,keepaspectratio]{figures/user_profile.png}
+    \caption{User Profile \& Role Settings}
+    \label{fig:screen_user_profile}
+\end{subfigure}
+\caption{Administrative Management \& Profile Configuration Console}
+\label{fig:screen_admin_mgmt}
 \end{figure}
 
 \subsection{Steps to be Taken Towards Project Completion}
