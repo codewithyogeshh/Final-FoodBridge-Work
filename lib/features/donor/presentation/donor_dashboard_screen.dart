@@ -403,7 +403,7 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
                               FBStatusChip(
                                 status: (donation.isDelivered || donation.deliveredAt != null)
                                     ? 'delivered_to_ngo'
-                                    : donation.status.name,
+                                    : (donation.isExpired ? 'expired' : donation.status.name),
                               ),
                             ],
                           ),

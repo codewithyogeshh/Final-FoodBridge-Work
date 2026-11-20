@@ -91,20 +91,30 @@ class NgoClaimsScreen extends StatelessWidget {
                               FBStatusChip(
                                 status: (d.isDelivered || d.deliveredAt != null)
                                     ? 'delivered_to_ngo'
-                                    : d.status.name,
+                                    : (d.isExpired
+                                        ? 'expired'
+                                        : (d.isInTransit
+                                            ? 'in_transit'
+                                            : (d.isAssigned
+                                                ? 'assigned_for_pickup'
+                                                : 'accepted'))),
                               ),
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
                                   (d.isDelivered || d.deliveredAt != null)
                                       ? 'वितरण पूर्ण (${d.deliveredAt != null ? DateFormat('hh:mm a').format(d.deliveredAt!) : "Delivered"})'
-                                      : 'Must collect by ${DateFormat('hh:mm a').format(d.pickupDeadline)}',
+                                      : (d.isExpired
+                                          ? 'कालबाह्य झाले (Expired)'
+                                          : 'Must collect by ${DateFormat('hh:mm a').format(d.pickupDeadline)}'),
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: (d.isDelivered || d.deliveredAt != null)
-                                        ? AppColors.primaryGreen
-                                        : AppColors.orange,
+                                    color: d.isExpired
+                                        ? AppColors.errorRed
+                                        : ((d.isDelivered || d.deliveredAt != null)
+                                            ? AppColors.primaryGreen
+                                            : AppColors.orange),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,

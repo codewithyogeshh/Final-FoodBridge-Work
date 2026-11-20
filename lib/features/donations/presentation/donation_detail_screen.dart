@@ -185,8 +185,12 @@ class DonationDetailScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        FBStatusChip(status: donation.status.name),
-                        if (donation.isUrgent)
+                        FBStatusChip(
+                          status: (donation.isDelivered || donation.deliveredAt != null)
+                              ? 'delivered_to_ngo'
+                              : (donation.isExpired ? 'expired' : donation.status.name),
+                        ),
+                        if (donation.isUrgent && !donation.isExpired)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
@@ -220,6 +224,33 @@ class DonationDetailScreen extends StatelessWidget {
                         color: AppColors.charcoal,
                       ),
                     ),
+                    if (donation.isExpired) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.errorRed.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.errorRed.withOpacity(0.3)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.timer_off_outlined, color: AppColors.errorRed, size: 18),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'कालबाह्य झाले (Expired) • ही नोंद कोणालाही स्वीकारता येणार नाही.',
+                                style: TextStyle(
+                                  color: AppColors.errorRed,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
@@ -428,7 +459,34 @@ class DonationDetailScreen extends StatelessWidget {
     AppUser? currentUser,
     DonationProvider donationProvider,
   ) {
-    // 1. NGO Claiming Flow (Supports Full or Partial Allocation)
+    if (donation.isExpired) {
+      return Container(
+        width: double.infinity,
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.errorRed.withOpacity(0.3)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.block, size: 18, color: AppColors.errorRed),
+            SizedBox(width: 8),
+            Text(
+              'कालबाह्य झाले (Expired - Closed)',
+              style: TextStyle(
+                color: AppColors.errorRed,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (currentUser?.role == UserRole.ngo && donation.isAvailable) {
       return FBButton(
         label: 'Claim Donation for Shelter',

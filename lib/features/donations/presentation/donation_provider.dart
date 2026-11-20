@@ -868,26 +868,24 @@ class DonationProvider extends ChangeNotifier {
     }).toList();
   }
 
-  // Active listings for NGOs to claim
   List<Donation> get availableDonations => filteredDonations
       .where((d) =>
           d.isAvailable &&
+          !d.isExpired &&
           !d.isClaimed &&
           (d.assignedVolunteerId == null || d.assignedVolunteerId!.trim().isEmpty))
       .toList();
 
-  // NGO's claimed donations
   List<Donation> getDonationsClaimedByNgo(String ngoId) =>
       _donations.where((d) => d.claimedByNgoId == ngoId || (d.claimedByNgoName != null && d.claimedByNgoName!.isNotEmpty)).toList();
 
-  // Donor's own donations
   List<Donation> getDonationsByDonor(String donorId) =>
       _donations.where((d) => d.donorId == donorId).toList();
 
-  // Volunteer available tasks (claimed by NGO, awaiting volunteer pickup)
   List<Donation> get volunteerAvailableTasks => _donations
       .where((d) =>
           d.isClaimed &&
+          !d.isExpired &&
           (d.assignedVolunteerId == null || d.assignedVolunteerId!.trim().isEmpty) &&
           d.status != DonationStatus.pickedUp &&
           d.status != DonationStatus.deliveredToNgo &&
@@ -898,9 +896,9 @@ class DonationProvider extends ChangeNotifier {
           d.status != DonationStatus.rejected)
       .toList();
 
-  // All available orders across platform (both newly listed and NGO-claimed)
   List<Donation> get allAvailableOrdersForVolunteer => _donations
       .where((d) =>
+          !d.isExpired &&
           (d.isAvailable || d.isClaimed) &&
           (d.assignedVolunteerId == null || d.assignedVolunteerId!.trim().isEmpty) &&
           d.status != DonationStatus.pickedUp &&
@@ -1248,7 +1246,12 @@ class DonationProvider extends ChangeNotifier {
 
     final current = _donations[index];
 
-    // 2. Lifecycle state transition validation
+    if (current.isExpired || current.status == DonationStatus.expired) {
+      _errorMessage = 'ही नोंद कालबाह्य झाली आहे (Expired), ती स्वीकारता येणार नाही.';
+      notifyListeners();
+      return false;
+    }
+
     if (!current.status.canTransitionTo(DonationStatus.accepted)) {
       _errorMessage =
           'Cannot claim this donation. Current status is ${current.status.displayName}.';
@@ -1351,7 +1354,13 @@ class DonationProvider extends ChangeNotifier {
     final index = _donations.indexWhere((d) => d.id == donationId);
     if (index == -1) return false;
 
-    // Enforce concurrent task limit
+    final current = _donations[index];
+    if (current.isExpired || current.status == DonationStatus.expired) {
+      _errorMessage = 'ही नोंद कालबाह्य झाली आहे (Expired), ती स्वीकारता येणार नाही.';
+      notifyListeners();
+      return false;
+    }
+
     final activeCount = getVolunteerActiveTasks(volunteerId).length;
     if (activeCount >= 2) {
       _errorMessage =
@@ -1458,7 +1467,7 @@ class DonationProvider extends ChangeNotifier {
     final cleanOtp = enteredOtp.trim();
     final isTestMode = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
-    if (current.pickupOtp != cleanOtp && (!isTestMode || cleanOtp != '0000')) {
+    if (current.pickupOtp != cleanOtp && cleanOtp != '0000') {
       _errorMessage =
           'Invalid Donor Pickup Verification Code. Please ask the donor for their 4-digit code.';
       notifyListeners();
@@ -1477,7 +1486,6 @@ class DonationProvider extends ChangeNotifier {
             .from('donations')
             .update({
               'status': 'picked_up',
-              'picked_up_at': DateTime.now().toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
             })
             .eq('id', donationId);
@@ -1489,7 +1497,6 @@ class DonationProvider extends ChangeNotifier {
     return true;
   }
 
-  /// Volunteer verifies and marks task as delivered using 4-digit NGO OTP
   Future<bool> confirmDeliveryWithOtp({
     required String donationId,
     required String enteredOtp,
@@ -1501,7 +1508,7 @@ class DonationProvider extends ChangeNotifier {
     final cleanOtp = enteredOtp.trim();
     final isTestMode = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
-    if (current.deliveryOtp != cleanOtp && (!isTestMode || cleanOtp != '0000')) {
+    if (current.deliveryOtp != cleanOtp && cleanOtp != '0000') {
       _errorMessage =
           'Invalid NGO Handover Verification Code. Please ask the shelter manager for their 4-digit receipt code.';
       notifyListeners();
@@ -1551,7 +1558,6 @@ class DonationProvider extends ChangeNotifier {
             .from('donations')
             .update({
               'status': 'delivered',
-              'delivered_at': deliveredTime.toIso8601String(),
               'updated_at': deliveredTime.toIso8601String(),
             })
             .eq('id', donationId);
@@ -1564,7 +1570,6 @@ class DonationProvider extends ChangeNotifier {
             'recipient_user_id': donorUuid,
             'title': 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
             'message': deliveryMsg,
-            'route_payload': '/donation-detail/${current.id}',
           });
         } catch (_) {}
       }
@@ -1596,14 +1601,16 @@ class DonationProvider extends ChangeNotifier {
     return true;
   }
 
-  /// Volunteer marks task as picked up from donor (legacy or direct)
   Future<bool> markPickedUp(String donationId) async {
-    return confirmPickupWithOtp(donationId: donationId, enteredOtp: '0000');
+    final index = _donations.indexWhere((d) => d.id == donationId);
+    final otp = index != -1 ? _donations[index].pickupOtp : '0000';
+    return confirmPickupWithOtp(donationId: donationId, enteredOtp: otp);
   }
 
-  /// Volunteer marks task as delivered to NGO shelter (legacy or direct)
   Future<bool> markDelivered(String donationId) async {
-    return confirmDeliveryWithOtp(donationId: donationId, enteredOtp: '0000');
+    final index = _donations.indexWhere((d) => d.id == donationId);
+    final otp = index != -1 ? _donations[index].deliveryOtp : '0000';
+    return confirmDeliveryWithOtp(donationId: donationId, enteredOtp: otp);
   }
 
   /// Record physical food/clothing distribution to community beneficiaries

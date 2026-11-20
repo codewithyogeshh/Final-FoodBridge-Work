@@ -432,11 +432,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
     final displayedDonations = donationProvider.allDonations.where((d) {
       if (_donationFilter == 'available') {
-        return d.status == DonationStatus.available ||
-            d.status == DonationStatus.listed;
+        return !d.isExpired &&
+            (d.status == DonationStatus.available || d.status == DonationStatus.listed);
       }
       if (_donationFilter == 'intransit') {
-        if (d.isDelivered || d.deliveredAt != null) return false;
+        if (d.isDelivered || d.deliveredAt != null || d.isExpired) return false;
         return d.status == DonationStatus.accepted ||
             d.status == DonationStatus.claimed ||
             d.status == DonationStatus.assigned ||
@@ -751,6 +751,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       badgeColor = const Color(0xFF27AE60).withOpacity(0.12);
       badgeTextColor = const Color(0xFF27AE60);
       statusLabel = 'Delivered & Distributed / वितरण पूर्ण ✓';
+    } else if (d.isExpired) {
+      badgeColor = AppColors.errorRed.withOpacity(0.12);
+      badgeTextColor = AppColors.errorRed;
+      statusLabel = 'Expired / कालबाह्य';
     } else if (d.status == DonationStatus.available ||
         d.status == DonationStatus.listed) {
       badgeColor = AppColors.primaryGreen.withOpacity(0.12);

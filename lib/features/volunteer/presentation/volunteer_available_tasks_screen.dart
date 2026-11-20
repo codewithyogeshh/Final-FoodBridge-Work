@@ -448,15 +448,19 @@ class _VolunteerAvailableTasksScreenState extends State<VolunteerAvailableTasksS
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      (donation?.isClaimed ?? false)
-                          ? 'Shelter: ${donation!.claimedByNgoName ?? "Shelter"} ने स्वीकारले ✓'
-                          : 'Status: उपलब्ध (शेल्टरच्या क्लेमची प्रतीक्षा)',
+                      (donation?.isExpired == true)
+                          ? 'कालबाह्य झाले (Expired) • बंद'
+                          : ((donation?.isClaimed ?? false)
+                              ? 'Shelter: ${donation!.claimedByNgoName ?? "Shelter"} ने स्वीकारले ✓'
+                              : 'Status: उपलब्ध (शेल्टरच्या क्लेमची प्रतीक्षा)'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: (donation?.isClaimed ?? false)
-                            ? AppColors.primaryGreen
-                            : AppColors.orange,
+                        color: (donation?.isExpired == true)
+                            ? AppColors.errorRed
+                            : ((donation?.isClaimed ?? false)
+                                ? AppColors.primaryGreen
+                                : AppColors.orange),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -465,7 +469,24 @@ class _VolunteerAvailableTasksScreenState extends State<VolunteerAvailableTasksS
                 ),
               ),
               const SizedBox(width: 8),
-              if (donation != null && donation.assignedVolunteerId != null)
+              if (donation?.isExpired == true)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorRed.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Expired\nकालबाह्य',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.errorRed,
+                    ),
+                  ),
+                )
+              else if (donation != null && donation.assignedVolunteerId != null)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(

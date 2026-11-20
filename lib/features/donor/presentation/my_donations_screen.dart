@@ -242,7 +242,7 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
                       FBStatusChip(
                         status: (d.isDelivered || d.deliveredAt != null)
                             ? 'delivered_to_ngo'
-                            : d.status.name,
+                            : (d.isExpired ? 'expired' : d.status.name),
                       ),
                       const SizedBox(width: 8),
                       Flexible(
