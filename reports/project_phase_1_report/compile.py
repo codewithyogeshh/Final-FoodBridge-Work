@@ -28,7 +28,7 @@ if __name__ == "__main__":
                 dirs[:] = [d for d in dirs if not d.startswith(".")]
                 for file in files:
                     p = Path(root) / file
-                    if p.suffix.lower() in ignored_exts or p.name == "compile.py":
+                    if p.suffix.lower() in ignored_exts or p.name in ("compile.py", "build_full_report.py"):
                         continue
                     arcname = p.relative_to(current_dir)
                     zipf.write(p, arcname)

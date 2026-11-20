@@ -29,7 +29,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds, shadows}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds, shadows, calc}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{tocloft}
@@ -55,6 +55,15 @@
 \titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{\MakeUppercase}
 \titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
 \titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Running Header and Footer (Matching reference report style)
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\footnotesize \textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine}}
+\fancyfoot[L]{\footnotesize Karmaveer Bhaurao Patil College of Engineering, Satara}
+\fancyfoot[R]{\footnotesize Page \thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
 
 % Custom Checkmark for Gantt Chart
 \newcommand{\cmark}{\textbf{\checkmark}}
@@ -210,13 +219,14 @@ FoodBridge uses multiple security measures to protect donation integrity and ver
 \end{center}
 
 \noindent
-\begin{tabular}{p{0.08\textwidth} p{0.72\textwidth} r}
-    2 & Software Requirements \dotfill & 11 \\[0.4cm]
-    3 & Project Scheduling (Gantt Chart) \dotfill & 16 \\[0.4cm]
-    4 & Weekly Milestones \dotfill & 16 \\[0.4cm]
-    5 & Cost Estimation \dotfill & 17 \\[0.4cm]
-    6 & Work Distribution \dotfill & 17 \\[0.4cm]
-    7 & Risk Analysis \dotfill & 18 \\
+\begin{tabular}{p{0.14\textwidth} p{0.68\textwidth} r}
+    Table 4.1 & Hardware Requirements \dotfill & 7 \\[0.4cm]
+    Table 4.2 & Software Requirements \dotfill & 7 \\[0.4cm]
+    Table 5.1 & Database Tables and Relationships \dotfill & 14 \\[0.4cm]
+    Table 6.1 & Technology Stack \dotfill & 15 \\[0.4cm]
+    Table 6.2 & Plan of Action \dotfill & 18 \\[0.4cm]
+    Table 6.3 & Approximate Cost Estimation \dotfill & 18 \\[0.4cm]
+    Table 6.4 & Team Structure and Work Distribution \dotfill & 19 \\
 \end{tabular}
 
 % ==============================================================================
@@ -230,10 +240,19 @@ FoodBridge uses multiple security measures to protect donation integrity and ver
 \end{center}
 
 \noindent
-\begin{tabular}{p{0.08\textwidth} p{0.72\textwidth} r}
-    1 & FOODBRIDGE SYSTEM ARCHITECTURE \dotfill & 8 \\[0.4cm]
-    2 & ARCHITECTURE DIAGRAM \dotfill & 13 \\[0.4cm]
-    3 & SEQUENCE DIAGRAM \dotfill & 14 \\
+\begin{tabular}{p{0.14\textwidth} p{0.68\textwidth} r}
+    Figure 3.1 & System Architecture of FoodBridge \dotfill & 5 \\[0.4cm]
+    Figure 5.1 & DFD Level 0 (Context Diagram) \dotfill & 8 \\[0.4cm]
+    Figure 5.2 & DFD Level 1 \dotfill & 9 \\[0.4cm]
+    Figure 5.3 & Use Case Diagram \dotfill & 10 \\[0.4cm]
+    Figure 5.4 & Activity Diagram for Food Redistribution Lifecycle \dotfill & 11 \\[0.4cm]
+    Figure 5.5 & Class Diagram \dotfill & 12 \\[0.4cm]
+    Figure 5.6 & Sequence Diagram for Listing, Claim and Dual-OTP Handover \dotfill & 13 \\[0.4cm]
+    Figure 5.7 & Collaboration Diagram \dotfill & 13 \\[0.4cm]
+    Figure 5.8 & Entity Relationship Diagram \dotfill & 14 \\[0.4cm]
+    Figure 6.1 & Admin Console – Real-Time Redistribution Overview \dotfill & 16 \\[0.4cm]
+    Figure 6.2 & Volunteer Dispatch \& Verification Screen \dotfill & 16 \\[0.4cm]
+    Figure 6.3 & Live Donation Details \& API / Transaction Log \dotfill & 17 \\
 \end{tabular}
 
 % ==============================================================================
@@ -254,48 +273,39 @@ FoodBridge uses multiple security measures to protect donation integrity and ver
     \textbf{1} & \textbf{Introduction} & \textbf{1} \\
     1.1 & Overview & 1 \\
     1.2 & Literature Review & 2 \\
-    1.3 & Existing System & 4 \\[0.15cm]
-    \textbf{2} & \textbf{Objectives} & \textbf{5} \\
-    2.1 & Problem Statement & 5 \\
-    2.2 & Objectives & 5 \\
-    2.2.1 & Project Objectives & 5 \\
-    2.2.2 & Academic Objectives & 6 \\[0.15cm]
-    \textbf{3} & \textbf{Project Overview} & \textbf{7} \\
-    3.1 & Scope & 7 \\
-    3.2 & Architecture & 7 \\
-    3.3 & Project Modules & 9 \\
-    3.4 & Novelty of the Proposed System & 9 \\[0.15cm]
-    \textbf{4} & \textbf{Requirement Analysis} & \textbf{11} \\
-    4.1 & Hardware Requirements & 11 \\
-    4.2 & Software Requirements & 11 \\
-    4.3 & Operating System Requirements & 12 \\[0.15cm]
-    \textbf{5} & \textbf{Application Design} & \textbf{13} \\
-    5.1 & Architecture Diagram & 13 \\
-    5.2 & Sequence Diagram & 14 \\[0.15cm]
+    1.3 & Existing System & 3 \\[0.15cm]
+    \textbf{2} & \textbf{Objectives} & \textbf{4} \\
+    2.1 & Problem Statement & 4 \\
+    2.2 & Objectives & 4 \\
+    2.2.1 & Project Objectives & 4 \\
+    2.2.2 & Academic Objectives & 4 \\[0.15cm]
+    \textbf{3} & \textbf{Project Overview} & \textbf{5} \\
+    3.1 & Scope & 5 \\
+    3.2 & Architecture & 5 \\
+    3.3 & Project Modules & 6 \\[0.15cm]
+    \textbf{4} & \textbf{Requirement Analysis} & \textbf{7} \\
+    4.1 & Hardware Requirements & 7 \\
+    4.2 & Software Requirements & 7 \\[0.15cm]
+    \textbf{5} & \textbf{Application Design} & \textbf{8} \\
+    5.1 & Data Flow Diagram & 8 \\
+    5.2 & Use Case Diagram & 10 \\
+    5.3 & Activity Diagram & 11 \\
+    5.4 & Class Diagram & 12 \\
+    5.5 & Sequence Diagram & 13 \\
+    5.6 & Collaboration Diagram & 13 \\
+    5.7 & Database Diagrams & 14 \\
+    5.7.1 & ER Diagram & 14 \\
+    5.7.2 & Table Relationships & 14 \\[0.15cm]
     \textbf{6} & \textbf{Implementation} & \textbf{15} \\
     6.1 & Technology & 15 \\
-    6.2 & Steps to be Taken Towards Project Completion & 15 \\
-    6.3 & Project Scheduling & 16 \\
-    6.3.1 & Plan of Action & 16 \\
-    6.4 & Cost Estimation & 17 \\
-    6.5 & Team Structure & 17 \\
-    6.6 & Risk Analysis & 18 \\[0.15cm]
-    \textbf{7} & \textbf{Advantages \& Limitations} & \textbf{19} \\
-    7.1 & Advantages & 19 \\
-    \hline
-\end{tabularx}
-\begin{flushright}
-    \textit{Continued on next page}
-\end{flushright}
-
-\newpage
-\thispagestyle{empty}
-\noindent
-\begin{tabularx}{\textwidth}{p{0.12\textwidth} X r}
-    \hline
-    \textbf{Sr. No.} & \textbf{Name of the Chapter} & \textbf{Page No.} \\
-    \hline
-    7.2 & Limitations & 19 \\[0.15cm]
+    6.2 & Steps to be Taken Towards Project Completion & 17 \\
+    6.3 & Project Scheduling & 18 \\
+    6.3.1 & Plan of Action & 18 \\
+    6.4 & Cost Estimation & 18 \\
+    6.5 & Team Structure & 19 \\[0.15cm]
+    \textbf{7} & \textbf{Advantages \& Limitations} & \textbf{20} \\
+    7.1 & Advantages & 20 \\
+    7.2 & Limitations & 20 \\[0.15cm]
     \textbf{8} & \textbf{Applications} & \textbf{21} \\[0.15cm]
     \textbf{9} & \textbf{Future Scope} & \textbf{22} \\[0.15cm]
     \textbf{10} & \textbf{Conclusion} & \textbf{23} \\[0.15cm]
@@ -313,9 +323,9 @@ FoodBridge uses multiple security measures to protect donation integrity and ver
 \section{INTRODUCTION}
 
 \subsection{Overview}
-Large-scale commercial establishments such as banquet halls, college hostels, catering companies and restaurants generate substantial volumes of edible surplus food on a daily basis. In the traditional food relief process, surplus food items are handled through multiple manual, unverified telephone calls and word-of-mouth communication. This creates critical delays that increase the chances of prepared food spoiling, while exposing donations to unauthorized diversion, lack of hygiene accountability and loss of donor trust.
+Large-scale commercial catering organizations, college hostels, banquet halls, and restaurants discard substantial volumes of hygienically prepared surplus meals every day. In the traditional food relief process, surplus meals pass through unorganized manual communication and telephone chains. This makes the recovery process difficult to monitor, increases coordination delays, and leads to food spoilage before it reaches hungry individuals in charitable shelters.
 
-\textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine} is a centralized mobile and web-based system designed to provide secure, rapid and transparent redistribution of perishable meals and winter wear. It manages the complete lifecycle of a donation, starting from surplus food listing and proximity-based broadcast to verified shelter claim, courier dispatch, physical handover verification and administrative audit logging.
+\textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine} is a centralized cross-platform mobile and web-based system designed to provide secure, rapid and transparent redistribution of perishable meals and winter wear. It manages the complete lifecycle of a donation, starting from surplus food listing and proximity-based broadcast to verified shelter claim, courier dispatch, physical handover verification and administrative audit logging.
 
 The system uses Role-Based Access Control (RBAC) to ensure that users access only the functions assigned to their roles: Donors, Verified Shelters (NGOs), Delivery Volunteers, and System Administrators. To safeguard beneficiaries, non-governmental organizations must undergo strict accreditation verification (such as NGO Darpan ID and 80G tax exemption certificates) before claiming permissions are granted.
 
@@ -405,48 +415,76 @@ FoodBridge is planned to handle the different stages of surplus food and clothin
 \end{itemize}
 
 \subsection{Architecture}
-The FoodBridge architecture is divided into different layers, as shown in the block diagram. Each layer handles a specific part of the system, from user access and application functions to secure storage and monitoring.
-
-\begin{itemize}
-    \item \textbf{Users:} The system is accessed by four main user types: Donors, Verified Shelters (NGOs), Delivery Volunteers, and System Administrators.
-    \item \textbf{Frontend Portals:} Separate portals and dashboard views are provided for each stakeholder role, with access restricted to the functions required for their respective duties.
-    \item \textbf{Backend / Core Services:} This layer handles the main system operations, including authentication, real-time state broadcasting, donation lifecycle management, task allocation, double-blind OTP generation, and accreditation enforcement.
-    \item \textbf{Secure Storage:} This layer stores donation listings, user profiles, encrypted credentials, verification documents, and immutable audit logs.
-    \item \textbf{Security \& Monitoring (Cross-Cutting):} Security features are used across the system to control access and monitor activities. These include RBAC, 2FA, Row Level Security, OTP validation and audit monitoring.
-\end{itemize}
+The FoodBridge architecture is structured into layered modules ensuring clean separation of concerns, high throughput, and fault tolerance across distributed mobile clients.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=1.1cm, auto,
-    block/.style={rectangle, draw=black, fill=white, text width=2.4cm, text centered, rounded corners=2pt, minimum height=0.9cm, font=\footnotesize\bfseries},
-    wideblock/.style={rectangle, draw=black, fill=white, text width=11.5cm, text centered, rounded corners=2pt, minimum height=0.8cm, font=\small\bfseries},
-    line/.style={draw, -latex', thick}]
+    layerbox/.style={rectangle, draw=black!70, fill=blue!3, text width=13.8cm, rounded corners=3pt, inner sep=6pt},
+    compbox/.style={rectangle, draw=black!60, fill=white, text width=2.85cm, text centered, rounded corners=2pt, minimum height=0.75cm, font=\scriptsize\bfseries},
+    arrowline/.style={draw=black!80, -latex', thick}]
 
-    % Users
-    \node [wideblock] (users) {Users: Donors $\bullet$ Shelters (NGOs) $\bullet$ Volunteers $\bullet$ System Admin};
-    
-    % Portals
-    \node [wideblock, below of=users, yshift=-0.25cm] (portals) {Frontend Portals: Donor Console $\bullet$ Shelter Hub $\bullet$ Courier App $\bullet$ Admin Console (Flutter)};
-    
-    % Core Services
-    \node [wideblock, below of=portals, yshift=-0.25cm] (services) {Backend / Core Services: Real-Time Sync $\bullet$ Task Dispatch $\bullet$ Dual-OTP $\bullet$ NGO Verifier};
-    
-    % Storage
-    \node [wideblock, below of=services, yshift=-0.25cm] (storage) {Secure Storage: Supabase PostgreSQL $\bullet$ Offline Storage $\bullet$ Media Cache $\bullet$ Audit Logs};
-    
-    % Security
-    \node [wideblock, below of=storage, yshift=-0.25cm] (sec) {Security \& Monitoring (Cross-Cutting): RBAC $\bullet$ RLS $\bullet$ Dual-OTP Gate $\bullet$ Darpan Review};
+    % Layer 1: Presentation
+    \node [layerbox] (l1) {
+        {\footnotesize \textbf{1. Presentation Layer (Flutter 3.x Cross-Platform Client)}}\\[0.15cm]
+        \begin{tikzpicture}
+            \node [compbox] (c1) {Donor Portal\\(Surplus Listing)};
+            \node [compbox, right=0.35cm of c1] (c2) {Shelter Hub\\(Claim Management)};
+            \node [compbox, right=0.35cm of c2] (c3) {Courier App\\(Dispatch \& Dual-OTP)};
+            \node [compbox, right=0.35cm of c3] (c4) {Admin Console\\(Real-Time Monitor)};
+        \end{tikzpicture}
+    };
 
-    \path [line] (users) -- (portals);
-    \path [line] (portals) -- (services);
-    \path [line] (services) -- (storage);
-    \path [line] (storage) -- (sec);
+    % Layer 2: API & Gateway
+    \node [layerbox, below of=l1, yshift=-0.75cm] (l2) {
+        {\footnotesize \textbf{2. API Gateway \& Real-Time State Layer (Supabase BaaS)}}\\[0.15cm]
+        \begin{tikzpicture}
+            \node [compbox] (g1) {WebSocket Mesh\\(Sub-100ms Sync)};
+            \node [compbox, right=0.35cm of g1] (g2) {JWT / RBAC\\Security Gate};
+            \node [compbox, right=0.35cm of g2] (g3) {Proximity Geohash\\Routing Service};
+            \node [compbox, right=0.35cm of g3] (g4) {Dual-OTP Token\\Generator Engine};
+        \end{tikzpicture}
+    };
+
+    % Layer 3: Business Logic
+    \node [layerbox, below of=l2, yshift=-0.75cm] (l3) {
+        {\footnotesize \textbf{3. Core Business Logic \& Service Engines}}\\[0.15cm]
+        \begin{tikzpicture}
+            \node [compbox] (b1) {Donation Lifecycle\\State Controller};
+            \node [compbox, right=0.35cm of b1] (b2) {NGO Darpan \& 80G\\Accreditation Check};
+            \node [compbox, right=0.35cm of b2] (b3) {Courier Dispatcher\\(Throttle $\le$ 2 Tasks)};
+            \node [compbox, right=0.35cm of b3] (b4) {Immutable Audit\\Trail Archival};
+        \end{tikzpicture}
+    };
+
+    % Layer 4: Storage
+    \node [layerbox, below of=l3, yshift=-0.75cm] (l4) {
+        {\footnotesize \textbf{4. Persistence \& Data Storage Layer}}\\[0.15cm]
+        \begin{tikzpicture}
+            \node [compbox, text width=3.9cm] (s1) {Supabase PostgreSQL\\(Row Level Security)};
+            \node [compbox, right=0.45cm of s1, text width=3.9cm] (s2) {Encrypted SharedPreferences\\(Offline Resilient Cache)};
+            \node [compbox, right=0.45cm of s2, text width=3.9cm] (s3) {Cloud Media Storage\\(Donation \& Certificate Docs)};
+        \end{tikzpicture}
+    };
+
+    % Layer 5: External Services
+    \node [layerbox, below of=l4, yshift=-0.75cm] (l5) {
+        {\footnotesize \textbf{5. External Integration Services}}\\[0.15cm]
+        \begin{tikzpicture}
+            \node [compbox, text width=3.9cm] (e1) {Govt. NGO Darpan\\Verification Registry};
+            \node [compbox, right=0.45cm of e1, text width=3.9cm] (e2) {SMS Gateway Service\\(Twilio / Fast2SMS)};
+            \node [compbox, right=0.45cm of e2, text width=3.9cm] (e3) {OpenStreetMap / GPS\\Geocoding APIs};
+        \end{tikzpicture}
+    };
+
+    \draw [arrowline] (l1) -- (l2);
+    \draw [arrowline] (l2) -- (l3);
+    \draw [arrowline] (l3) -- (l4);
+    \draw [arrowline] (l4) -- (l5);
 \end{tikzpicture}
-\caption{FOODBRIDGE SYSTEM ARCHITECTURE}
+\caption{System Architecture of FoodBridge}
 \label{fig:sys_arch}
 \end{figure}
-
-The \textbf{donation lifecycle} followed by the system is: (1) Donation Listing, (2) Proximity Broadcast, (3) Shelter Claim Reservation, (4) Courier Task Dispatch, (5) Volunteer Task Acceptance, (6) Donor Pickup Verification via Pickup OTP, (7) Status Transition to In-Transit, (8) Real-Time Route Navigation, (9) Shelter Arrival, (10) Shelter Delivery Verification via Delivery OTP, (11) Distribution Record Logging, and (12) Audit Trail Archival.
 
 \subsection{Project Modules}
 \begin{enumerate}
@@ -456,21 +494,6 @@ The \textbf{donation lifecycle} followed by the system is: (1) Donation Listing,
     \item \textbf{Volunteer Courier Module:} Equips couriers to view available pickup dispatches, claim tasks within a concurrent limit of two assignments, enter the donor's pickup OTP to initiate transit, and complete handover at the shelter.
 \end{enumerate}
 
-\subsection{Novelty of the Proposed System}
-FoodBridge brings different security, logistical and management features together in one platform for handling surplus food redistribution. Rather than depending on manual phone calls or unverified chat boards, the system covers every stage from kitchen surplus to beneficiary distribution:
-
-\begin{enumerate}
-    \item \textbf{Optimistic Multi-Device Synchronization:} UI state updates instantly on user action while synchronizing across Supabase WebSockets in under 100 milliseconds.
-    \item \textbf{Double-Blind Dual-OTP Protocol:} The pickup OTP is known only to the donor, and the delivery OTP is known only to the shelter, mathematically eliminating falsified delivery claims.
-    \item \textbf{Mandatory Government Accreditation Gate:} Shelters cannot claim any food relief until their NGO Darpan and 80G tax exemption certificates have been physically inspected and approved by an administrator.
-    \item \textbf{Dynamic Volunteer Profile Resolution:} Admin consoles resolve volunteer identities dynamically in real time from live user registries, preventing stale name display following profile edits.
-    \item \textbf{Courier Task Hoarding Protection:} Volunteers are strictly limited to two active dispatches at any time to prevent courier overcommitment and vehicle overload.
-    \item \textbf{Dual Surplus Support (Food \& Wearable Clothing):} Accommodates both prepared hot meals and clean winter wear within a single unified relief pipeline.
-    \item \textbf{Emergency Task Re-Pooling:} If a volunteer encounters vehicle breakdown, the task is released immediately back into the unassigned dispatch pool without canceling the donation.
-    \item \textbf{Offline Resilience:} Client devices cache active dispatches locally using encrypted preferences, continuing operations even during cellular dropouts.
-    \item \textbf{Centralized Monitoring and Immutable Audit Trail:} Every donation status change, user suspension, and approval action is permanently logged for regulatory compliance.
-\end{enumerate}
-
 % ==============================================================================
 % CHAPTER 4: REQUIREMENT ANALYSIS
 % ==============================================================================
@@ -478,60 +501,56 @@ FoodBridge brings different security, logistical and management features togethe
 \section{REQUIREMENT ANALYSIS}
 
 \subsection{Hardware Requirements}
-\textbf{Minimum Requirements:}
-\begin{itemize}
-    \item \textbf{Processor:} Intel Core i3 / equivalent.
-    \item \textbf{RAM:} 8 GB.
-    \item \textbf{Storage:} 256 GB SSD.
-    \item \textbf{Mobile Test Device:} Android 8.0+ with 2 GB RAM.
-    \item \textbf{Network:} Stable Internet connection.
-\end{itemize}
+The hardware specifications required for the development, training, hosting, and client-side testing of the FoodBridge system are detailed in Table 4.1.
 
-\noindent
-\textbf{Recommended Requirements:}
-\begin{itemize}
-    \item \textbf{Processor:} Intel Core i5 / AMD Ryzen 5 or higher.
-    \item \textbf{RAM:} 16 GB.
-    \item \textbf{Storage:} 512 GB SSD.
-    \item \textbf{Mobile Test Device:} Android 12+ (e.g. Xiaomi HyperOS / Samsung One UI) with 8 GB RAM.
-    \item \textbf{Network:} High-speed and reliable 4G/5G Internet connection.
-\end{itemize}
-
-\subsection{Software Requirements}
 \begin{table}[H]
 \centering
-\caption{Software Requirements}
-\label{tab:software_req}
-\begin{tabularx}{\textwidth}{|l|X|}
+\caption{Hardware Requirements}
+\label{tab:hardware_req}
+\begin{tabularx}{\textwidth}{|l|X|X|}
     \hline
-    \textbf{Software / Technology} & \textbf{Requirement} \\
+    \textbf{Component} & \textbf{Minimum Requirement} & \textbf{Purpose} \\
     \hline
-    Frontend & Flutter SDK 3.24+, Dart 3.5+ \\
+    Development PC & Intel Core i5 / AMD Ryzen 5, 8 GB RAM, 256 GB SSD & Application coding, Flutter builds, database scripting \\
     \hline
-    State Management & Provider \& ChangeNotifier Architecture \\
+    Mobile Test Device & Android 8.0+ (Oreo) with 3 GB RAM, GPS receiver, Camera & Testing mobile responsive UI, geolocation, and camera OTP capture \\
     \hline
-    Backend / Database & Supabase PostgreSQL with Realtime Engine \\
+    Cloud Server & 2 vCPU, 4 GB RAM, 40 GB NVMe Storage & Supabase BaaS hosting, WebSocket event loop, PostgreSQL runtime \\
     \hline
-    Authentication & JWT, RBAC, 2FA, Supabase Auth \\
-    \hline
-    Security & AES-256 Local Encryption, SHA-256 Hashing, Dual-OTP \\
-    \hline
-    Local Storage & SharedPreferences with JSON Serialization \\
-    \hline
-    Development IDE & Visual Studio Code / Android Studio \\
-    \hline
-    Version Control & Git and GitHub \\
-    \hline
-    Browser & Google Chrome / Microsoft Edge \\
+    Internet Connection & Broadband / 4G LTE ($\ge$ 10 Mbps) & Real-time WebSocket broadcasting, cloud synchronization, map tiles \\
     \hline
 \end{tabularx}
 \end{table}
 
-\subsection{Operating System Requirements}
-\begin{itemize}
-    \item \textbf{Development:} Windows 10/11, Linux (Ubuntu), or macOS.
-    \item \textbf{Client Runtime Target:} Android 8.0 (API Level 26) through Android 14 (API Level 34) and Web.
-\end{itemize}
+\subsection{Software Requirements}
+The software frameworks, programming languages, databases, and development utilities utilized across FoodBridge are listed in Table 4.2.
+
+\begin{table}[H]
+\centering
+\caption{Software Requirements}
+\label{tab:software_req}
+\begin{tabularx}{\textwidth}{|l|l|X|}
+    \hline
+    \textbf{Layer / Tool} & \textbf{Technology} & \textbf{Purpose} \\
+    \hline
+    Mobile Framework & Flutter SDK 3.24+ (Dart 3.5+) & Cross-platform reactive UI for Android, iOS and Web \\
+    \hline
+    State Management & Provider \& ChangeNotifier & Reactive optimistic updates and clean architectural separation \\
+    \hline
+    Backend / Database & Supabase (PostgreSQL 15+) & Cloud relational database, real-time WebSockets, Auth engine \\
+    \hline
+    Security Engine & Row Level Security (RLS), RBAC & Multi-tenant data isolation and cryptographic dual-OTP verification \\
+    \hline
+    Local Persistence & SharedPreferences & Encrypted local offline cache and session recovery \\
+    \hline
+    Development IDE & VS Code / Android Studio & Source code editing, live debugging, Flutter widget inspector \\
+    \hline
+    Version Control & Git \& GitHub & Source code version management and automated CI/CD \\
+    \hline
+    Target Platform & Android 8.0 to Android 14+ & Mobile deployment on physical handheld devices \\
+    \hline
+\end{tabularx}
+\end{table}
 
 % ==============================================================================
 % CHAPTER 5: APPLICATION DESIGN
@@ -539,92 +558,412 @@ FoodBridge brings different security, logistical and management features togethe
 \newpage
 \section{APPLICATION DESIGN}
 
-\subsection{Architecture Diagram}
-The architecture diagram illustrates the overall structure of the FoodBridge system, showing how different modules and components are connected. It explains the flow of information between users, core services, and secure storage, providing a clear understanding of how the system operates.
+\subsection{Data Flow Diagram}
+The Level-0 Data Flow Diagram (Context Diagram) shows the FoodBridge system as a single central entity interacting with four external stakeholders: Donors, Charitable Shelters (NGOs), Volunteer Couriers, and System Administrators.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=1.3cm, auto,
-    layer/.style={rectangle, draw=black, fill=white, text width=11.5cm, rounded corners=3pt, inner sep=6pt},
-    header/.style={font=\bfseries\small},
-    content/.style={font=\footnotesize}]
+\begin{tikzpicture}[node distance=2.2cm, auto,
+    proc/.style={circle, draw=black, fill=blue!5, text width=3.2cm, text centered, font=\small\bfseries, minimum height=3.2cm},
+    entity/.style={rectangle, draw=black, fill=gray!10, text width=2.4cm, text centered, rounded corners=2pt, minimum height=1.1cm, font=\footnotesize\bfseries},
+    flow/.style={draw, -latex', thick}]
 
-    % Presentation Layer
-    \node [layer] (pres) {
-        \textbf{Presentation Layer (Flutter 3.x)}\\
-        \begin{tabular}{p{2.6cm} p{2.6cm} p{2.6cm} p{2.6cm}}
-            $\bullet$ Donor Portal & $\bullet$ Shelter Hub & $\bullet$ Courier App & $\bullet$ Admin Console \\
-        \end{tabular}
-    };
+    % Center Process
+    \node [proc] (sys) {0.0\\FOODBRIDGE\\Relief Logistics\\Engine};
 
-    % Domain / State Layer
-    \node [layer, below of=pres, yshift=-0.4cm] (state) {
-        \textbf{Domain \& State Management Layer}\\
-        \begin{tabular}{p{2.6cm} p{2.6cm} p{2.6cm} p{2.6cm}}
-            $\bullet$ AuthProvider & $\bullet$ DonationProvider & $\bullet$ AdminProvider & $\bullet$ NotificationProv. \\
-        \end{tabular}
-    };
+    % Surrounding Entities
+    \node [entity, above left=1.2cm and 1.8cm of sys] (donor) {Donor\\(Commercial / Hostel)};
+    \node [entity, above right=1.2cm and 1.8cm of sys] (shelter) {Shelter\\(Verified NGO)};
+    \node [entity, below left=1.2cm and 1.8cm of sys] (vol) {Volunteer\\Courier};
+    \node [entity, below right=1.2cm and 1.8cm of sys] (admin) {System\\Administrator};
 
-    % Data Access Layer
-    \node [layer, below of=state, yshift=-0.4cm] (data) {
-        \textbf{Data Access Layer (Repository Pattern)}\\
-        \begin{tabular}{p{3.6cm} p{3.6cm} p{3.6cm}}
-            $\bullet$ AuthService & $\bullet$ DonationRepository & $\bullet$ MediaService \\
-        \end{tabular}
-    };
+    % Flows with Donor
+    \draw [flow] (donor) to [bend left=15] node[above, sloped, font=\tiny] {1. Listing details (quantity, type, expiry)} (sys);
+    \draw [flow] (sys) to [bend left=15] node[below, sloped, font=\tiny] {2. Listing confirmation \& Secret Pickup OTP} (donor);
 
-    % Cloud Backend Layer
-    \node [layer, below of=data, yshift=-0.4cm] (backend) {
-        \textbf{Cloud Persistence \& Security Layer (Supabase)}\\
-        \begin{tabular}{p{3.6cm} p{3.6cm} p{3.6cm}}
-            $\bullet$ PostgreSQL Schema & $\bullet$ WebSocket Realtime & $\bullet$ Row Level Security \\
-        \end{tabular}
-    };
+    % Flows with Shelter
+    \draw [flow] (shelter) to [bend left=15] node[above, sloped, font=\tiny] {3. Darpan ID \& Headcount Claim Request} (sys);
+    \draw [flow] (sys) to [bend left=15] node[below, sloped, font=\tiny] {4. Approved Claim Notice \& Delivery OTP} (shelter);
 
-    \draw[-latex', thick] (pres) -- (state);
-    \draw[-latex', thick] (state) -- (data);
-    \draw[-latex', thick] (data) -- (backend);
+    % Flows with Volunteer
+    \draw [flow] (vol) to [bend left=15] node[above, sloped, font=\tiny] {5. Task Acceptance, GPS \& Entered OTPs} (sys);
+    \draw [flow] (sys) to [bend left=15] node[below, sloped, font=\tiny] {6. Dispatch Assignment \& Turn-by-Turn Route} (vol);
+
+    % Flows with Admin
+    \draw [flow] (admin) to [bend left=15] node[above, sloped, font=\tiny] {7. Darpan Approval \& Account Governance} (sys);
+    \draw [flow] (sys) to [bend left=15] node[below, sloped, font=\tiny] {8. Real-time KPIs \& Immutable Audit Logs} (admin);
 \end{tikzpicture}
-\caption{ARCHITECTURE DIAGRAM}
-\label{fig:layered_arch}
+\caption{DFD Level 0 (Context Diagram)}
+\label{fig:dfd_0}
+\end{figure}
+
+The Level-1 Data Flow Diagram decomposes the system into six core operational processes and four dedicated data stores: Users and Accreditation Records (D1), Surplus Donations (D2), Distribution Records (D3), and Immutable Audit Trail Logs (D4).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.82, every node/.style={transform shape},
+    proc/.style={rectangle, draw=black, fill=blue!5, text width=2.4cm, text centered, rounded corners=6pt, minimum height=1.0cm, font=\scriptsize\bfseries},
+    dstore/.style={rectangle, draw=black, fill=orange!5, text width=2.5cm, text centered, minimum height=0.7cm, font=\scriptsize},
+    entity/.style={rectangle, draw=black, fill=gray!15, text width=1.8cm, text centered, minimum height=0.9cm, font=\scriptsize\bfseries},
+    flow/.style={draw, -latex', thick}]
+
+    % Entities
+    \node [entity] (e_donor) at (0, 7) {Donor};
+    \node [entity] (e_shelter) at (14, 7) {Shelter (NGO)};
+    \node [entity] (e_vol) at (0, 0) {Volunteer};
+    \node [entity] (e_admin) at (14, 0) {Administrator};
+
+    % Processes
+    \node [proc] (p1) at (3.5, 5.5) {1.0 Authentication\\\& RBAC Verify};
+    \node [proc] (p2) at (3.5, 3.5) {2.0 Surplus Food\\Listing Engine};
+    \node [proc] (p3) at (10.5, 5.5) {3.0 Proximity Broadcast\\\& Claim Reserve};
+    \node [proc] (p4) at (3.5, 1.5) {4.0 Volunteer Task\\Dispatcher};
+    \node [proc] (p5) at (10.5, 3.5) {5.0 Dual-OTP Gate\\\& Handover Check};
+    \node [proc] (p6) at (10.5, 1.5) {6.0 Audit Logging\\\& Compliance};
+
+    % Data Stores
+    \node [dstore] (d1) at (7, 6.5) {D1: Users \& Accreditations};
+    \node [dstore] (d2) at (7, 4.5) {D2: Donations \& Listings};
+    \node [dstore] (d3) at (7, 2.5) {D3: Distribution Records};
+    \node [dstore] (d4) at (7, 0.5) {D4: Immutable Audit Logs};
+
+    % Connectors
+    \draw [flow] (e_donor) -- (p1);
+    \draw [flow] (e_donor) -- (p2);
+    \draw [flow] (p2) -- (d2);
+    \draw [flow] (d2) -- (p3);
+    \draw [flow] (e_shelter) -- (p3);
+    \draw [flow] (p3) -- (d3);
+    \draw [flow] (d3) -- (p4);
+    \draw [flow] (p4) -- (e_vol);
+    \draw [flow] (e_vol) -- (p5);
+    \draw [flow] (p5) -- (d3);
+    \draw [flow] (p5) -- (p6);
+    \draw [flow] (p6) -- (d4);
+    \draw [flow] (e_admin) -- (p6);
+    \draw [flow] (e_admin) -- (d1);
+    \draw [flow] (d1) -- (p1);
+\end{tikzpicture}
+\caption{DFD Level 1}
+\label{fig:dfd_1}
+\end{figure}
+
+\subsection{Use Case Diagram}
+The Use Case Diagram defines the interactions between the four system actors and the core functional use cases provided by FoodBridge.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.82, every node/.style={transform shape},
+    actor/.style={rectangle, draw=black, fill=gray!20, text width=2.0cm, text centered, rounded corners=3pt, minimum height=1.1cm, font=\scriptsize\bfseries},
+    usecase/.style={ellipse, draw=black, fill=blue!5, text width=2.9cm, text centered, minimum height=0.8cm, font=\scriptsize},
+    subcase/.style={ellipse, draw=black!70, fill=green!5, text width=2.6cm, text centered, minimum height=0.75cm, font=\tiny},
+    link/.style={draw, thick}]
+
+    % System Box
+    \draw [draw=black!70, dashed, rounded corners=4pt] (2.8, -0.6) rectangle (11.8, 10.4);
+    \node [font=\bfseries\small] at (7.3, 10.0) {FoodBridge System Boundary};
+
+    % Actors
+    \node [actor] (a_donor) at (0.8, 8.5) {Donor\\(Hostel / Hotel)};
+    \node [actor] (a_shelter) at (0.8, 3.5) {Shelter\\(Verified NGO)};
+    \node [actor] (a_vol) at (13.8, 3.5) {Volunteer\\Courier};
+    \node [actor] (a_admin) at (13.8, 8.5) {System\\Administrator};
+
+    % Use cases
+    \node [usecase] (uc_login) at (7.3, 9.2) {Login \& 2FA Authentication};
+    \node [usecase] (uc_list) at (5.4, 7.8) {Declare Surplus Food};
+    \node [subcase] (uc_charter) at (9.2, 7.8) {Sign Safety Charter\\$\ll$include$\gg$};
+    \node [usecase] (uc_darpan) at (5.4, 6.3) {Submit Darpan / 80G Docs};
+    \node [usecase] (uc_claim) at (5.4, 4.8) {Reserve Claim by Headcount};
+    \node [usecase] (uc_accept) at (9.2, 4.8) {Accept Courier Dispatch};
+    \node [usecase] (uc_pickup) at (9.2, 3.3) {Validate Pickup OTP};
+    \node [usecase] (uc_deliv) at (9.2, 1.8) {Validate Delivery OTP};
+    \node [usecase] (uc_admin_app) at (9.2, 6.3) {Approve NGO Darpan};
+    \node [usecase] (uc_audit) at (7.3, 0.4) {Inspect Immutable Audit Logs};
+
+    % Actor associations
+    \draw [link] (a_donor) -- (uc_login);
+    \draw [link] (a_donor) -- (uc_list);
+    \draw [draw=black, dashed, -latex'] (uc_list) -- (uc_charter);
+    \draw [link] (a_shelter) -- (uc_login);
+    \draw [link] (a_shelter) -- (uc_darpan);
+    \draw [link] (a_shelter) -- (uc_claim);
+    \draw [link] (a_vol) -- (uc_login);
+    \draw [link] (a_vol) -- (uc_accept);
+    \draw [link] (a_vol) -- (uc_pickup);
+    \draw [link] (a_vol) -- (uc_deliv);
+    \draw [link] (a_admin) -- (uc_login);
+    \draw [link] (a_admin) -- (uc_admin_app);
+    \draw [link] (a_admin) -- (uc_audit);
+\end{tikzpicture}
+\caption{Use Case Diagram}
+\label{fig:use_case}
+\end{figure}
+
+\subsection{Activity Diagram}
+The Activity Diagram details the end-to-end control flow of the food redistribution lifecycle, capturing the safety charter declaration, Darpan check branch, task acceptance, and dual-OTP verification steps.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.82, every node/.style={transform shape},
+    startstop/.style={circle, draw=black, fill=black, minimum size=0.45cm},
+    endstop/.style={circle, draw=black, double, fill=black, minimum size=0.55cm},
+    activity/.style={rectangle, draw=black, fill=blue!5, text width=6.2cm, text centered, rounded corners=3pt, minimum height=0.7cm, font=\scriptsize},
+    decision/.style={diamond, draw=black, fill=yellow!10, aspect=2.2, text width=2.4cm, text centered, font=\tiny\bfseries},
+    flow/.style={draw, -latex', thick}]
+
+    \node [startstop] (start) at (0, 0) {};
+    \node [activity, below=0.45cm of start] (a1) {Donor declares surplus meals and signs Food Safety Charter};
+    \node [activity, below=0.45cm of a1] (a2) {System issues secret Pickup OTP and broadcasts listing via WebSockets};
+    \node [activity, below=0.45cm of a2] (a3) {Shelter requests claim reservation based on resident headcount};
+    \node [decision, below=0.45cm of a3] (d1) {Darpan ID\\Verified?};
+    \node [activity, right=1.2cm of d1, text width=3.8cm] (err_darpan) {Block claim; prompt accreditation document upload};
+    \node [activity, below=0.6cm of d1] (a4) {System locks claim and issues secret Delivery OTP to Shelter};
+    \node [activity, below=0.45cm of a4] (a5) {Available Courier accepts dispatch (Concurrency limit $\le$ 2 validated)};
+    \node [activity, below=0.45cm of a5] (a6) {Courier arrives at Donor; inputs physical Pickup OTP};
+    \node [decision, below=0.45cm of a6] (d2) {Pickup OTP\\Valid?};
+    \node [activity, below=0.6cm of d2] (a7) {Donation status transitions to IN\_TRANSIT; GPS navigation begins};
+    \node [activity, below=0.45cm of a7] (a8) {Courier reaches Shelter; inputs physical Delivery OTP};
+    \node [decision, below=0.45cm of a8] (d3) {Delivery OTP\\Valid?};
+    \node [activity, below=0.6cm of d3] (a9) {Mark status COMPLETED; write record to Immutable Audit Trail};
+    \node [endstop, below=0.45cm of a9] (finish) {};
+
+    \draw [flow] (start) -- (a1);
+    \draw [flow] (a1) -- (a2);
+    \draw [flow] (a2) -- (a3);
+    \draw [flow] (a3) -- (d1);
+    \draw [flow] (d1) -- node[right, font=\tiny] {Yes} (a4);
+    \draw [flow] (d1) -- node[above, font=\tiny] {No} (err_darpan);
+    \draw [flow] (err_darpan) |- (a3);
+    \draw [flow] (a4) -- (a5);
+    \draw [flow] (a5) -- (a6);
+    \draw [flow] (a6) -- (d2);
+    \draw [flow] (d2) -- node[right, font=\tiny] {Yes} (a7);
+    \draw [flow] (d2.west) -- ++(-0.6,0) |- node[near start, left, font=\tiny] {No: Re-try} (a6.west);
+    \draw [flow] (a7) -- (a8);
+    \draw [flow] (a8) -- (d3);
+    \draw [flow] (d3) -- node[right, font=\tiny] {Yes} (a9);
+    \draw [flow] (d3.west) -- ++(-0.6,0) |- node[near start, left, font=\tiny] {No: Re-try} (a8.west);
+    \draw [flow] (a9) -- (finish);
+\end{tikzpicture}
+\caption{Activity Diagram for Food Redistribution Lifecycle}
+\label{fig:activity_diag}
+\end{figure}
+
+\subsection{Class Diagram}
+The Class Diagram models the core entity classes, value objects, and business service providers that form the structural foundation of the FoodBridge codebase.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.76, every node/.style={transform shape},
+    classbox/.style={rectangle, draw=black, fill=white, text width=5.6cm, inner sep=4pt, font=\scriptsize},
+    rel/.style={draw, thick, -open triangle 60},
+    assoc/.style={draw, thick, -latex'}]
+
+    % Class: AppUser
+    \node [classbox] (user) at (0, 7.5) {
+        \textbf{AppUser}\\[0.05cm]
+        \hline
+        - id: String (UUID)\\
+        - fullName: String\\
+        - email: String\\
+        - role: UserRole\\
+        - phone: String\\
+        - darpanId: String\\
+        - isVerified: bool\\[0.05cm]
+        \hline
+        + login(): Future$\langle$bool$\rangle$\\
+        + updateProfile(): Future$\langle$void$\rangle$\\
+        + verify2FA(code): bool
+    };
+
+    % Class: Donation
+    \node [classbox] (donation) at (8.5, 7.5) {
+        \textbf{Donation}\\[0.05cm]
+        \hline
+        - id: String (UUID)\\
+        - donorId: String\\
+        - title: String\\
+        - foodType: FoodType\\
+        - quantityKg: double\\
+        - expiryTime: DateTime\\
+        - pickupOTP: String\\
+        - status: DonationStatus\\[0.05cm]
+        \hline
+        + createListing(): Future$\langle$void$\rangle$\\
+        + cancelListing(): Future$\langle$void$\rangle$\\
+        + markInTransit(): void
+    };
+
+    % Class: DistributionRecord
+    \node [classbox] (dist) at (8.5, 1.8) {
+        \textbf{DistributionRecord}\\[0.05cm]
+        \hline
+        - id: String (UUID)\\
+        - donationId: String\\
+        - shelterId: String\\
+        - volunteerId: String\\
+        - beneficiaryCount: int\\
+        - deliveryOTP: String\\
+        - pickupTime: DateTime\\
+        - deliveryTime: DateTime\\[0.05cm]
+        \hline
+        + reserveClaim(): bool\\
+        + verifyPickup(otp): bool\\
+        + verifyDelivery(otp): bool
+    };
+
+    % Class: AuditLogEntry
+    \node [classbox] (audit) at (0, 1.8) {
+        \textbf{AuditLogEntry}\\[0.05cm]
+        \hline
+        - logId: String (UUID)\\
+        - actorId: String\\
+        - action: String\\
+        - targetResource: String\\
+        - timestamp: DateTime\\
+        - ipAddress: String\\[0.05cm]
+        \hline
+        + appendImmutableLog(): void\\
+        + verifyIntegrityHash(): bool
+    };
+
+    \draw [assoc] (user) -- node[above, font=\tiny] {1 \quad creates \quad 0..*} (donation);
+    \draw [assoc] (donation) -- node[right, font=\tiny] {1 \quad fulfilled\_by \quad 1} (dist);
+    \draw [assoc] (user) -- node[above, font=\tiny, sloped] {1 \quad claims/delivers \quad 0..*} (dist);
+    \draw [assoc] (user) -- node[left, font=\tiny] {1 \quad generates \quad 0..*} (audit);
+\end{tikzpicture}
+\caption{Class Diagram}
+\label{fig:class_diagram}
 \end{figure}
 
 \subsection{Sequence Diagram}
-This sequence diagram demonstrates how different operations are carried out in a specific order within the FoodBridge system. It highlights the step-by-step communication between users and system components, showing how requests are handled and responses are exchanged during the surplus redistribution lifecycle.
+The Sequence Diagram illustrates the chronological message exchange between five lifelines during a complete surplus food redistribution transaction.
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=0.88, every node/.style={transform shape}]
+\begin{tikzpicture}[scale=0.82, every node/.style={transform shape}]
     % Lifelines
-    \node (d) at (0,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Donor};
-    \node (s) at (3.5,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {FoodBridge};
-    \node (sh) at (7.0,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Shelter};
-    \node (v) at (10.5,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Volunteer};
-    \node (a) at (14.0,0) [draw, fill=white, minimum width=1.8cm, minimum height=0.7cm, font=\bfseries\footnotesize] {Admin};
+    \node (d) at (0,0) [draw, fill=white, minimum width=1.7cm, minimum height=0.65cm, font=\bfseries\footnotesize] {Donor};
+    \node (s) at (3.5,0) [draw, fill=white, minimum width=1.7cm, minimum height=0.65cm, font=\bfseries\footnotesize] {FoodBridge};
+    \node (sh) at (7.0,0) [draw, fill=white, minimum width=1.7cm, minimum height=0.65cm, font=\bfseries\footnotesize] {Shelter};
+    \node (v) at (10.5,0) [draw, fill=white, minimum width=1.7cm, minimum height=0.65cm, font=\bfseries\footnotesize] {Volunteer};
+    \node (a) at (14.0,0) [draw, fill=white, minimum width=1.7cm, minimum height=0.65cm, font=\bfseries\footnotesize] {Audit Log};
 
-    \draw [dashed] (d) -- (0,-9);
-    \draw [dashed] (s) -- (3.5,-9);
-    \draw [dashed] (sh) -- (7.0,-9);
-    \draw [dashed] (v) -- (10.5,-9);
-    \draw [dashed] (a) -- (14.0,-9);
+    \draw [dashed] (d) -- (0,-9.2);
+    \draw [dashed] (s) -- (3.5,-9.2);
+    \draw [dashed] (sh) -- (7.0,-9.2);
+    \draw [dashed] (v) -- (10.5,-9.2);
+    \draw [dashed] (a) -- (14.0,-9.2);
 
     % Sequence Messages
-    \draw [-latex', thick] (d) ++(0,-1.0) -- node[above, font=\scriptsize] {1. List Surplus Meals} (3.5,-1.0);
-    \draw [-latex', thick] (3.5,-1.5) -- node[above, font=\scriptsize] {2. Return Pickup OTP} (0,-1.5);
-    \draw [-latex', thick] (3.5,-2.2) -- node[above, font=\scriptsize] {3. Broadcast Available Listing} (7.0,-2.2);
-    \draw [-latex', thick] (sh) ++(0,-3.0) -- node[above, font=\scriptsize] {4. Reserve Claim (Darpan Check)} (3.5,-3.0);
-    \draw [-latex', thick] (3.5,-3.5) -- node[above, font=\scriptsize] {5. Return Delivery OTP} (7.0,-3.5);
-    \draw [-latex', thick] (3.5,-4.3) -- node[above, font=\scriptsize] {6. Dispatch Courier Notification} (10.5,-4.3);
-    \draw [-latex', thick] (v) ++(0,-5.0) -- node[above, font=\scriptsize] {7. Accept Dispatch Task} (3.5,-5.0);
-    \draw [-latex', thick] (v) ++(0,-5.8) -- node[above, font=\scriptsize] {8. Submit Pickup OTP} (3.5,-5.8);
-    \draw [-latex', thick] (3.5,-6.3) -- node[above, font=\scriptsize] {9. Update Status: In-Transit} (10.5,-6.3);
-    \draw [-latex', thick] (v) ++(0,-7.1) -- node[above, font=\scriptsize] {10. Submit Delivery OTP} (3.5,-7.1);
-    \draw [-latex', thick] (3.5,-7.8) -- node[above, font=\scriptsize] {11. Mark Completed \& Closed} (7.0,-7.8);
-    \draw [-latex', thick] (3.5,-8.4) -- node[above, font=\scriptsize] {12. Log to Immutable Audit Trail} (14.0,-8.4);
+    \draw [-latex', thick] (d) ++(0,-0.8) -- node[above, font=\scriptsize] {1. List Surplus Meals \& Sign Charter} (3.5,-0.8);
+    \draw [-latex', thick] (3.5,-1.4) -- node[above, font=\scriptsize] {2. Return Secret Pickup OTP} (0,-1.4);
+    \draw [-latex', thick] (3.5,-2.1) -- node[above, font=\scriptsize] {3. WebSocket Broadcast: Available Food} (7.0,-2.1);
+    \draw [-latex', thick] (sh) ++(0,-2.8) -- node[above, font=\scriptsize] {4. Reserve Claim by Headcount} (3.5,-2.8);
+    \draw [-latex', thick] (3.5,-3.4) -- node[above, font=\scriptsize] {5. Verify Darpan \& Return Delivery OTP} (7.0,-3.4);
+    \draw [-latex', thick] (3.5,-4.2) -- node[above, font=\scriptsize] {6. Dispatch Courier Notification} (10.5,-4.2);
+    \draw [-latex', thick] (v) ++(0,-4.9) -- node[above, font=\scriptsize] {7. Accept Courier Assignment ($\le$ 2 tasks)} (3.5,-4.9);
+    \draw [-latex', thick] (v) ++(0,-5.7) -- node[above, font=\scriptsize] {8. Submit Donor's Pickup OTP} (3.5,-5.7);
+    \draw [-latex', thick] (3.5,-6.3) -- node[above, font=\scriptsize] {9. Validate OTP; Update: IN\_TRANSIT} (10.5,-6.3);
+    \draw [-latex', thick] (v) ++(0,-7.1) -- node[above, font=\scriptsize] {10. Submit Shelter's Delivery OTP} (3.5,-7.1);
+    \draw [-latex', thick] (3.5,-7.8) -- node[above, font=\scriptsize] {11. Validate OTP; Set COMPLETED} (7.0,-7.8);
+    \draw [-latex', thick] (3.5,-8.5) -- node[above, font=\scriptsize] {12. Commit Immutable Handover Trail} (14.0,-8.5);
 \end{tikzpicture}
-\caption{SEQUENCE DIAGRAM}
+\caption{Sequence Diagram for Listing, Claim and Dual-OTP Handover}
 \label{fig:seq_diagram}
 \end{figure}
+
+\subsection{Collaboration Diagram}
+The Collaboration Diagram displays the structural relationships and numbered message sequences connecting the collaborating runtime objects.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.82, every node/.style={transform shape},
+    obj/.style={rectangle, draw=black, fill=blue!5, text width=2.6cm, text centered, rounded corners=3pt, minimum height=1.0cm, font=\scriptsize\bfseries},
+    conn/.style={draw=black!70, thick}]
+
+    % Objects
+    \node [obj] (donor) at (0, 4) {1: Donor Client\\(Mobile)};
+    \node [obj] (server) at (6, 4) {2: FoodBridge Engine\\(Cloud Orchestrator)};
+    \node [obj] (shelter) at (12, 4) {3: Shelter Client\\(Mobile)};
+    \node [obj] (vol) at (3, 0.5) {4: Volunteer Client\\(Mobile)};
+    \node [obj] (audit) at (9, 0.5) {5: Immutable Audit\\Engine};
+
+    % Connections and message annotations
+    \draw [conn] (donor) -- node[above, font=\tiny] {1: DeclareSurplus()} node[below, font=\tiny] {2: ReturnPickupOTP()} (server);
+    \draw [conn] (server) -- node[above, font=\tiny] {3: BroadcastListing()} node[below, font=\tiny] {4: ReserveClaim() / 5: IssueDeliveryOTP()} (shelter);
+    \draw [conn] (server) -- node[left, font=\tiny] {6: DispatchTask()} node[right, font=\tiny] {7: Accept() / 8: SubmitPickupOTP()} (vol);
+    \draw [conn] (server) -- node[left, font=\tiny] {9: CommitDistribution()} node[right, font=\tiny] {10: AppendAuditRecord()} (audit);
+    \draw [conn, dashed] (vol) -- node[above, font=\tiny] {Handover Verification} (shelter);
+\end{tikzpicture}
+\caption{Collaboration Diagram}
+\label{fig:collab_diagram}
+\end{figure}
+
+\subsection{Database Diagrams}
+\subsubsection{Entity Relationship (ER) Diagram}
+The database schema comprises four primary entities and one audit log entity. One registered donor lists multiple surplus donations. Each donation corresponds to a single completed distribution record. Accredited shelters reserve claims, while couriers execute deliveries.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.80, every node/.style={transform shape},
+    entity/.style={rectangle, draw=black, fill=blue!10, text width=2.4cm, text centered, minimum height=1.1cm, font=\footnotesize\bfseries},
+    relation/.style={diamond, draw=black, fill=yellow!15, aspect=1.8, text width=1.7cm, text centered, font=\scriptsize\bfseries},
+    attr/.style={ellipse, draw=black!70, fill=white, text width=1.8cm, text centered, font=\tiny},
+    link/.style={draw, thick}]
+
+    % Entities
+    \node [entity] (e_user) at (1.5, 6) {USERS};
+    \node [entity] (e_donation) at (9.5, 6) {DONATIONS};
+    \node [entity] (e_dist) at (9.5, 0.5) {DISTRIBUTION\\RECORDS};
+    \node [entity] (e_audit) at (1.5, 0.5) {AUDIT\\LOGS};
+
+    % Relationships
+    \node [relation] (r_creates) at (5.5, 6) {CREATES};
+    \node [relation] (r_fulfills) at (9.5, 3.2) {FULFILLS};
+    \node [relation] (r_logs) at (1.5, 3.2) {LOGS};
+    \node [relation] (r_delivers) at (5.5, 0.5) {DELIVERS};
+
+    % Connections
+    \draw [link] (e_user) -- node[above, font=\tiny] {1} (r_creates);
+    \draw [link] (r_creates) -- node[above, font=\tiny] {N} (e_donation);
+    \draw [link] (e_donation) -- node[right, font=\tiny] {1} (r_fulfills);
+    \draw [link] (r_fulfills) -- node[right, font=\tiny] {1} (e_dist);
+    \draw [link] (e_user) -- node[left, font=\tiny] {1} (r_logs);
+    \draw [link] (r_logs) -- node[left, font=\tiny] {N} (e_audit);
+    \draw [link] (e_user) |- node[near start, above, font=\tiny] {1} (r_delivers);
+    \draw [link] (r_delivers) -- node[above, font=\tiny] {N} (e_dist);
+\end{tikzpicture}
+\caption{Entity Relationship Diagram}
+\label{fig:er_diagram}
+\end{figure}
+
+\subsubsection{Table Relationships}
+The detailed relational design, primary keys, foreign key references, and constraints are documented in Table 5.1.
+
+\begin{table}[H]
+\centering
+\caption{Database Tables and Relationships}
+\label{tab:db_tables}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{|l|p{7.5cm}|p{5.5cm}|}
+    \hline
+    \textbf{Table} & \textbf{Key Fields} & \textbf{Relationship / Description} \\
+    \hline
+    \textbf{users} & id (PK, UUID), email (unique), full\_name, role, phone, darpan\_id, is\_verified, created\_at & Master registry. One user $\rightarrow$ many donations, claims, or courier deliveries. \\
+    \hline
+    \textbf{donations} & id (PK, UUID), donor\_id (FK $\rightarrow$ users.id), title, food\_type, quantity\_kg, expiry\_time, pickup\_otp, status, created\_at & Many donations $\rightarrow$ one donor. Fulfilled by exactly one distribution record. \\
+    \hline
+    \textbf{distribution\_records} & id (PK, UUID), donation\_id (FK $\rightarrow$ donations.id), shelter\_id (FK $\rightarrow$ users.id), volunteer\_id (FK $\rightarrow$ users.id), beneficiary\_count, delivery\_otp, status, completed\_at & Connects claimed donation, receiving charitable shelter, and delivering courier. \\
+    \hline
+    \textbf{audit\_logs} & id (PK, UUID), actor\_id (FK $\rightarrow$ users.id), action, resource, details, ip\_address, timestamp & Immutable system audit trail. Every privileged action is linked to an authenticated actor. \\
+    \hline
+    \textbf{otp\_codes} & id (PK, UUID), user\_id (FK $\rightarrow$ users.id), code, purpose, expires\_at, is\_consumed & Ephemeral token records validating 2FA login and emergency resets. \\
+    \hline
+\end{tabular}
+}
+\end{table}
 
 % ==============================================================================
 % CHAPTER 6: IMPLEMENTATION
@@ -633,173 +972,147 @@ This sequence diagram demonstrates how different operations are carried out in a
 \section{IMPLEMENTATION}
 
 \subsection{Technology}
-\begin{itemize}
-    \item \textbf{Frontend:} Flutter SDK (Dart) and Material Design 3.
-    \item \textbf{Backend:} Supabase BaaS (PostgreSQL).
-    \item \textbf{Database:} PostgreSQL with Row Level Security (RLS) policies.
-    \item \textbf{Authentication and access control:} JWT, RBAC and 2FA.
-    \item \textbf{Security:} AES-256 encryption, SHA-256 hashing and Dual-OTP verification.
-    \item \textbf{Tools:} Visual Studio Code, Android Studio, Git and GitHub; Google Chrome / Android Device for testing.
-\end{itemize}
+The complete technology stack utilized for the development and testing of FoodBridge is summarized in Table 6.1.
+
+\begin{table}[H]
+\centering
+\caption{Technology Stack}
+\label{tab:tech_stack}
+\begin{tabularx}{\textwidth}{|l|l|X|}
+    \hline
+    \textbf{Layer} & \textbf{Technology} & \textbf{Reason for Choice} \\
+    \hline
+    Mobile Client & Flutter 3.24+ (Dart 3.5+) & Unified single-codebase development for Android, iOS and Web with 120 FPS native performance. \\
+    \hline
+    State Management & Provider \& ChangeNotifier & Predictable state mutations, local optimistic rendering, and testability. \\
+    \hline
+    Backend / BaaS & Supabase (PostgreSQL 15+) & Real-time WebSockets, integrated Auth engine, and relational SQL integrity. \\
+    \hline
+    Security Engine & Row Level Security (RLS) & Fine-grained row-level authorization enforced directly at database engine level. \\
+    \hline
+    Verification Gate & Cryptographic Dual-OTP & Double-blind pickup and delivery token validation preventing falsified deliveries. \\
+    \hline
+    Offline Storage & SharedPreferences (AES-256) & Resilient local caching preserving active tasks during cellular network dropouts. \\
+    \hline
+\end{tabularx}
+\end{table}
+
+\noindent
+\textbf{Implementation completed so far:}
+The core architectural layers and stakeholder modules have been implemented and validated end-to-end. These include: (1) Role-Based Access Control and 2FA authentication; (2) The Donor surplus listing interface with dietary classification and Food Safety Charter sign-off; (3) The Shelter (NGO) portal with Darpan accreditation upload and capacity reservation; (4) The Volunteer Courier dispatch console with 2-task throttling and dual-OTP entry; (5) The Admin monitoring dashboard featuring real-time KPI metrics, user moderation, and audit log inspection; and (6) The real-time synchronization engine delivering sub-100ms state broadcasts across distributed clients.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/admin_console.png}
+\caption{Admin Console – Real-Time Redistribution Overview (FoodBridge System Overview)}
+\label{fig:screen_admin}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/volunteer_dashboard.png}
+\caption{Volunteer Dispatch \& Verification Screen}
+\label{fig:screen_volunteer}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/donation_detail.png}
+\caption{Live Donation Details \& API / Transaction Log}
+\label{fig:screen_donation}
+\end{figure}
 
 \subsection{Steps to be Taken Towards Project Completion}
+The sequential roadmap planned to advance FoodBridge from Phase-I design into production-grade urban deployment comprises the following milestones:
+
 \begin{enumerate}
-    \item Finalize the problem statement and project objectives.
-    \item Complete the literature survey and requirement collection.
-    \item Finalize the system architecture, technologies and database design.
-    \item Complete the UI design and start the Admin module.
-    \item Implement the Admin module and authentication.
-    \item Implement the Donor module and food safety declaration.
-    \item Implement the Shelter (NGO) module and Darpan accreditation check.
-    \item Implement volunteer task dispatch and dual-OTP verification.
-    \item Integrate AES-256, SHA-256, RBAC, JWT and real-time WebSockets.
-    \item Implement multi-device dynamic profile synchronization and offline caching.
-    \item System integration, testing on physical mobile hardware and bug fixing.
-    \item Final documentation, project demonstration and presentation.
+    \item Finalize the problem statement, stakeholder scope, and academic objectives.
+    \item Complete comprehensive literature review and regulatory requirement gathering (FSSAI guidelines).
+    \item Finalize system architecture, UML models, and Supabase relational schema design.
+    \item Implement Role-Based Access Control (RBAC) and JWT authentication with 2FA OTP verification.
+    \item Implement Donor Module with dietary tagging (Veg/Non-Veg) and mandatory Food Safety Charter.
+    \item Implement Shelter (NGO) Module with Darpan ID and 80G tax accreditation approval workflow.
+    \item Build Volunteer Courier dispatch system enforcing concurrent 2-task throttling.
+    \item Enforce double-blind cryptographic Dual-OTP handover protocol (Pickup OTP and Delivery OTP).
+    \item Deploy real-time WebSocket state distribution ensuring sub-100ms multi-device synchronization.
+    \item Implement encrypted local offline caching (SharedPreferences) with optimistic reconciliation.
+    \item Conduct extensive unit testing (145+ automated test suites) and physical Android hardware testing.
+    \item Final technical documentation, university viva demonstration, and Phase-II deployment launch.
 \end{enumerate}
 
 \subsection{Project Scheduling}
-\begin{table}[H]
-\centering
-\caption{Project Scheduling (Gantt Chart)}
-\label{tab:gantt_chart}
-\resizebox{\textwidth}{!}{
-\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|c|c|}
-    \hline
-    \textbf{Activities} & \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} & \textbf{W5} & \textbf{W6} & \textbf{W7} & \textbf{W8} & \textbf{W9} & \textbf{W10} & \textbf{W11} & \textbf{W12} \\
-    \hline
-    Problem Identification \& Study & \cmark & \cmark & & & & & & & & & & \\
-    \hline
-    Literature Review & \cmark & \cmark & \cmark & & & & & & & & & \\
-    \hline
-    Requirement Analysis & & \cmark & \cmark & & & & & & & & & \\
-    \hline
-    System Architecture \& UI Design & & & \cmark & \cmark & & & & & & & & \\
-    \hline
-    Admin Module \& Auth & & & & \cmark & \cmark & & & & & & & \\
-    \hline
-    Donor Listing Module & & & & & \cmark & \cmark & & & & & & \\
-    \hline
-    Shelter (NGO) Module & & & & & & \cmark & \cmark & \cmark & & & & \\
-    \hline
-    Volunteer Dispatch \& Dual OTP & & & & & & & \cmark & \cmark & & & & \\
-    \hline
-    Security \& Realtime Mesh & & & & & & & & \cmark & \cmark & & & \\
-    \hline
-    Multi-Device Sync Testing & & & & & & & & & \cmark & \cmark & & \\
-    \hline
-    Testing \& Bug Fixing & & & & & & & & & & \cmark & \cmark & \\
-    \hline
-    Documentation \& Final Presentation & & & & & & & & & & & \cmark & \cmark \\
-    \hline
-\end{tabular}
-}
-\end{table}
-
 \subsubsection{Plan of Action}
+The timeline and progress status for Phase-I and Phase-II development activities are outlined in Table 6.2.
+
 \begin{table}[H]
 \centering
-\caption{Weekly Milestones}
-\label{tab:weekly_milestones}
-\begin{tabularx}{\textwidth}{|l|X|}
+\caption{Plan of Action}
+\label{tab:plan_of_action}
+\begin{tabularx}{\textwidth}{|c|X|c|c|}
     \hline
-    \textbf{Week} & \textbf{Milestone} \\
+    \textbf{Sr. No.} & \textbf{Activity} & \textbf{Duration} & \textbf{Status} \\
     \hline
-    Week 1 & Finalize problem statement and project objectives. \\
+    1 & Topic selection, problem definition and literature survey & Jul – Aug 2026 & Completed \\
     \hline
-    Week 2 & Complete literature survey and requirement collection. \\
+    2 & Requirement analysis and system design (UML, database) & Aug – Sep 2026 & Completed \\
     \hline
-    Week 3 & Finalize system architecture, technologies and database design. \\
+    3 & Backend API, Supabase authentication and schema creation & Sep 2026 & Completed \\
     \hline
-    Week 4 & Complete UI design and start Admin module. \\
+    4 & Real-time WebSocket sync, Dual-OTP engine and Darpan verifier & Sep – Oct 2026 & Completed \\
     \hline
-    Week 5 & Implement Admin module and authentication. \\
+    5 & Flutter cross-platform mobile client and stakeholder screens & Sep – Oct 2026 & Completed \\
     \hline
-    Week 6 & Implement Donor module and dietary safety charter. \\
+    6 & Project Review-II (Hardware deployment \& live testing) & Oct – Nov 2026 & In Progress \\
     \hline
-    Week 7 & Implement Shelter (NGO) claim and headcount reservation. \\
+    7 & Municipal pilot deployment and multi-shelter field trial & Dec 2026 – Feb 2027 & Planned \\
     \hline
-    Week 8 & Implement volunteer task dispatch and dual-OTP verification. \\
-    \hline
-    Week 9 & Integrate AES-256, SHA-256, RBAC, JWT and real-time WebSockets. \\
-    \hline
-    Week 10 & Implement multi-device dynamic profile synchronization and offline caching. \\
-    \hline
-    Week 11 & System integration, testing on physical mobile hardware and bug fixing. \\
-    \hline
-    Week 12 & Final documentation, project demonstration and presentation. \\
+    8 & Final documentation, project report and University viva & Mar – Apr 2027 & Planned \\
     \hline
 \end{tabularx}
 \end{table}
 
 \subsection{Cost Estimation}
-The software tools planned for development (Flutter SDK, Dart, Supabase Community Tier, Visual Studio Code, Android Studio, Git and GitHub) are free and open source. The remaining costs depend on domain hosting and report preparation:
+The software development stack is built upon open-source frameworks (Flutter, Dart, Git) and free-tier cloud infrastructure (Supabase Community Tier). The estimated budget is summarized in Table 6.3.
 
 \begin{table}[H]
 \centering
-\caption{Cost Estimation}
-\label{tab:cost_estimation}
-\begin{tabularx}{\textwidth}{|c|X|l|}
+\caption{Approximate Cost Estimation}
+\label{tab:cost_est}
+\begin{tabularx}{\textwidth}{|l|X|r|}
     \hline
-    \textbf{Sr. No} & \textbf{Item} & \textbf{Estimated Cost} \\
+    \textbf{Item} & \textbf{Details} & \textbf{Approx. Cost (\rupee)} \\
     \hline
-    1 & Development tools (VS Code, Android Studio, Flutter, Git, GitHub) & Free / open source \\
+    Domain Name \& SSL & Production web endpoint with Let's Encrypt SSL (1 year) & 800 – 1,000 \\
     \hline
-    2 & Database / hosting (Supabase PostgreSQL / Cloud) & Free / open source \\
+    SMS Gateway for OTP & Transactional SMS service for live phone OTP handovers & 500 – 1,000 \\
     \hline
-    3 & Domain / server for demonstration (Phase II) & \rupee~1,500 / year \\
+    Field Testing \& Logistics & Local transport for hostel/banquet food pickup validation & 1,000 – 1,500 \\
     \hline
-    4 & Documentation, project report binding and printing & \rupee~1,200 \\
+    Report Binding \& Printing & University project documentation, hardbound copies & 1,200 – 1,500 \\
     \hline
-    \multicolumn{2}{|l|}{\textbf{Total}} & \textbf{\rupee~2,700} \\
+    \multicolumn{2}{|l|}{\textbf{Total (Approximate)}} & \textbf{3,500 – 5,000} \\
     \hline
 \end{tabularx}
 \end{table}
 
 \subsection{Team Structure}
-The project team has four members, and the work is distributed as follows:
+The project team comprises four final-year B.Tech students from the Department of Computer Science and Engineering, Karmaveer Bhaurao Patil College of Engineering, Satara. The division of technical responsibilities is defined in Table 6.4.
 
 \begin{table}[H]
 \centering
-\caption{Work Distribution}
-\label{tab:work_distribution}
-\begin{tabularx}{\textwidth}{|p{0.36\textwidth}|X|}
+\caption{Team Structure and Work Distribution}
+\label{tab:team_dist}
+\begin{tabularx}{\textwidth}{|p{0.38\textwidth}|X|}
     \hline
-    \textbf{Team Member} & \textbf{Primary Responsibility} \\
+    \textbf{Member} & \textbf{Responsibility} \\
     \hline
-    \textbf{Yogesh Gurunath Chavan} \newline \footnotesize (PRN: 24062701242502) & Admin Module -- Admin dashboard, user/role management, real-time sync engine, dynamic profile resolution, and hardware deployment. \\
+    \textbf{1) Yogesh Gurunath Chavan} \newline \footnotesize (PRN: 24062701242502) & Admin Module -- Admin console, user and role management, real-time WebSocket sync engine, dynamic profile resolution, and hardware deployment. \\
     \hline
-    \textbf{Samruddhi Pramod Sawant} \newline \footnotesize (PRN: 23062701242039) & Donor Module -- Surplus food declaration, dietary classification (Veg/Non-Veg), food safety charter, and image upload. \\
+    \textbf{2) Samruddhi Pramod Sawant} \newline \footnotesize (PRN: 23062701242039) & Donor Module -- Surplus food and wearable clothes declaration, dietary classification (Veg/Non-Veg), Food Safety Charter, and image upload. \\
     \hline
-    \textbf{Omkar Nilesh Shinde} \newline \footnotesize (PRN: 23062701242121) & Shelter (NGO) Module -- NGO Darpan accreditation verification, capacity-based claim allocation, and headcount tracking. \\
+    \textbf{3) Omkar Nilesh Shinde} \newline \footnotesize (PRN: 23062701242121) & Shelter (NGO) Module -- NGO Darpan accreditation verification, 80G tax certificate audit, capacity-based claim allocation, and headcount tracking. \\
     \hline
-    \textbf{Shivraj Rajendra Yadav} \newline \footnotesize (PRN: 23062701242102) & Volunteer Courier Module -- Courier task dispatch, dual-OTP handover protocol, courier concurrency throttling, and integration testing. \\
-    \hline
-\end{tabularx}
-\end{table}
-
-\subsection{Risk Analysis}
-\begin{table}[H]
-\centering
-\caption{Risk Analysis}
-\label{tab:risk_analysis}
-\begin{tabularx}{\textwidth}{|l|c|X|}
-    \hline
-    \textbf{Risk} & \textbf{Impact} & \textbf{Mitigation Strategy} \\
-    \hline
-    Unauthorized access & High & RBAC, JWT and 2FA. \\
-    \hline
-    Fraudulent NGO claims & High & Mandatory NGO Darpan ID / 80G tax certificate audit before unlocking claims. \\
-    \hline
-    Delivery falsification & High & Dual-OTP gate: Pickup OTP with Donor, Delivery OTP with Shelter. \\
-    \hline
-    Network/Server failure & High & Secure offline caching with SharedPreferences and automatic reconciliation. \\
-    \hline
-    Courier task hoarding & High & Strict concurrent dispatch limit enforced at maximum 2 tasks per volunteer. \\
-    \hline
-    Stale volunteer names & Medium & Real-time dynamic name resolution from live managed user registry. \\
-    \hline
-    Food spoiling during transit & High & Automated pickup window expiration and dynamic task re-pooling. \\
+    \textbf{4) Shivraj Rajendra Yadav} \newline \footnotesize (PRN: 23062701242102) & Volunteer Courier Module -- Courier task dispatch, double-blind Dual-OTP handover protocol, courier concurrency throttling, and integration testing. \\
     \hline
 \end{tabularx}
 \end{table}
@@ -812,20 +1125,20 @@ The project team has four members, and the work is distributed as follows:
 
 \subsection{Advantages}
 \begin{enumerate}
-    \item \textbf{Enhanced Security:} Provides multiple layers of security including authentication, RBAC, 2FA, encryption, and cryptographic dual-OTP verification to protect donation handovers.
-    \item \textbf{Reduced Risk of Food Spoilage:} Minimizes manual coordination delays and removes intermediate warehousing, reducing the time required to distribute perishable food.
-    \item \textbf{Efficient Relief Management:} Provides centralized and organized management of donations based on food type, quantity, preparation time and dietary requirements.
-    \item \textbf{Automatic Volunteer Routing:} Dispatches available couriers based on proximity and enforces a 2-task concurrent limit, improving delivery efficiency.
-    \item \textbf{Secure Handover and Verification:} Allows donors and shelters to verify handovers securely using independent One-Time Passwords before tasks are finalized.
-    \item \textbf{Direct and Controlled Distribution:} Delivers surplus food directly from donors to accredited examination shelters without unnecessary third-party handling.
-    \item \textbf{Better Traceability and Monitoring:} Maintains records of important activities such as upload, claim, pickup and delivery, helping authorities monitor the complete relief lifecycle.
+    \item \textbf{Enhanced Multi-Layer Security:} Combines Role-Based Access Control (RBAC), 2FA, Supabase Row Level Security, and cryptographic Dual-OTP verification to protect the redistribution chain.
+    \item \textbf{Near-Zero Latency Coordination:} Replaces slow, manual phone communication with instantaneous sub-100ms WebSocket broadcasts, preventing perishable food spoilage.
+    \item \textbf{Guaranteed Proof of Delivery:} The double-blind PIN protocol (Pickup OTP with Donor, Delivery OTP with Shelter) prevents unauthorized diversion and falsified deliveries.
+    \item \textbf{Government Accreditation Integrity:} Ensures that only verified charitable foundations with valid NGO Darpan and 80G registrations can claim surplus food relief.
+    \item \textbf{Fair Volunteer Task Distribution:} Restricts volunteers to a maximum of two active tasks concurrently, preventing courier hoarding and delivery delays.
+    \item \textbf{Immutable Institutional Accountability:} Permanently archives every donation, reservation, and status mutation in an append-only audit trail for compliance inspection.
+    \item \textbf{Cost-Effective and Open-Source:} Built entirely upon modern open-source technologies (Flutter, Dart, Supabase), minimizing financial barriers for charitable deployment.
 \end{enumerate}
 
 \subsection{Limitations}
 \begin{enumerate}
-    \item \textbf{Internet Dependency:} Since FoodBridge utilizes real-time cloud synchronization, a stable and secure internet connection is required for initial listing broadcasts, claim reservations and server synchronization. Network failure may temporarily affect immediate status updates.
-    \item \textbf{Implementation and Maintenance Complexity:} FoodBridge combines several mechanisms such as authentication, RBAC, 2FA, optimistic WebSocket synchronization, NGO Darpan verification, and audit logging. Integrating and maintaining all these components requires careful development, continuous testing, proper configuration and regular security updates.
-    \item \textbf{Physical Volunteer Availability:} Large-scale redistribution involving multiple food donors, large surplus quantities, and numerous charitable shelters requires higher courier availability and suitable transport equipment to maintain delivery schedules.
+    \item \textbf{Internet Dependency:} Real-time WebSocket broadcasting and remote database updates require active cellular or Wi-Fi data connectivity.
+    \item \textbf{Volunteer Availability in Rural Belts:} In semi-urban or remote rural locations, the speed of redistribution depends on the number of active registered delivery volunteers.
+    \item \textbf{Physical Food Quality Verification:} While donors sign a legal Food Safety Charter, verifying microbiological safety currently relies on donor compliance and sensory inspection at pickup.
 \end{enumerate}
 
 % ==============================================================================
@@ -835,10 +1148,11 @@ The project team has four members, and the work is distributed as follows:
 \section{APPLICATIONS}
 
 \begin{itemize}
-    \item Commercial catering and banquet halls, where surplus prepared meals need to be redistributed quickly and safely.
-    \item University and college hostels that require daily safe collection, allocation and distribution of dining hall meals.
-    \item Non-governmental organizations and charitable foundations that manage food relief for night shelters and orphanages through a single platform.
-    \item Humanitarian and disaster relief operations conducted across multiple city zones, where food and clothing must be distributed in a traceable manner.
+    \item \textbf{University and College Campus Dining:} Automated redistribution of surplus meals from university mess halls and student hostels to nearby night shelters.
+    \item \textbf{Commercial Hospitality \& Catering:} Transparent salvage of surplus banquet, wedding, and convention food within hours of event conclusion.
+    \item \textbf{Charitable Shelter Logistics:} Streamlined intake management for orphanages, elderly care homes, and community kitchens based on real-time resident headcount.
+    \item \textbf{Disaster Relief \& Emergency Aid:} Rapid deployment during flood or drought emergencies to route packaged rations and drinking water to displaced citizens.
+    \item \textbf{Seasonal Warm Wear Redistribution:} Salvage and distribution of clean winter wear, blankets, and school uniforms alongside food relief pipelines.
 \end{itemize}
 
 % ==============================================================================
@@ -848,9 +1162,11 @@ The project team has four members, and the work is distributed as follows:
 \section{FUTURE SCOPE}
 
 \begin{enumerate}
-    \item \textbf{AI-Driven Food Surplus Prediction:} Machine learning algorithms can be added to forecast surplus food volumes based on historical day-of-week dining patterns, helping shelters plan intake in advance.
-    \item \textbf{IoT Smart Temperature and Weight Monitoring:} IoT sensor boxes can be introduced to monitor food temperature in transit, verifying that cold or hot food stays within safety regulations.
-    \item \textbf{Dedicated Automated Route Optimization:} Intelligent multi-stop route optimization can be integrated to calculate the fastest courier travel routes across multiple pickup points.
+    \item \textbf{AI-Driven Surplus Volume Forecasting:} Implementing predictive machine learning models to forecast hostel and restaurant surplus quantities based on day-of-week and seasonal consumption patterns.
+    \item \textbf{IoT Smart Temperature Boxes:} Integrating temperature-sensor-equipped delivery boxes transmitting telemetry over Bluetooth/LoRaWAN to verify hot/cold chain compliance during transit.
+    \item \textbf{Automated Multi-Stop Route Optimization:} Integrating genetic algorithms or Clarke-Wright heuristic routing to dynamically compute optimal multi-stop courier routes.
+    \item \textbf{Automated Darpan Web Scraping:} Establishing direct API verification pipelines with the NITI Aayog NGO Darpan portal for instant accreditation approval.
+    \item \textbf{Multilingual Voice Interface:} Providing voice prompts in regional Indian languages (Marathi, Hindi) to assist non-literate volunteers and shelter coordinators.
 \end{enumerate}
 
 % ==============================================================================
@@ -859,11 +1175,11 @@ The project team has four members, and the work is distributed as follows:
 \newpage
 \section{CONCLUSION}
 
-\textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine} brings the different stages of surplus food recovery under one mobile and web-based system. It covers donation listing, shelter claim reservation, volunteer dispatch, transit tracking, dual-OTP handover and distribution confirmation. Keeping these activities in one place makes it easier to manage access and keep track of how food donations are handled.
+\textbf{FOODBRIDGE : Real-Time Surplus Food Redistribution and Logistics Engine} establishes an automated, auditable, and secure bridge between surplus food generators and charitable shelters. By replacing slow, uncoordinated telephone chains with reactive Flutter mobile clients, real-time Supabase WebSocket synchronization, and a double-blind cryptographic Dual-OTP handover gate, FoodBridge addresses the root causes of urban food waste and delivery falsification.
 
-The system includes RBAC, JWT authentication and 2FA to control user access. NGO Darpan and 80G tax certificate verification checks ensure that relief reaches only accredited charitable organizations. Real-time WebSocket broadcasting provides instantaneous status updates across mobile nodes, while a cryptographic Dual-OTP protocol and an immutable audit trail protect delivery integrity. These features address the major risks involved in handling surplus food redistribution.
+The system enforces strict administrative governance through mandatory NGO Darpan accreditation checks, courier concurrency throttling, and an immutable audit trail. The architectural design, UML models, database schemas, and functional screens developed during Phase-I demonstrate the feasibility, security, and scalability of the platform.
 
-Phase I focused on planning the system, defining its modules and preparing its design. The next phase will involve expanding physical deployments, connecting broader volunteer networks and testing system performance in actual urban environments.
+Phase-II will focus on executing physical municipal field trials, conducting multi-shelter capacity tests, and deploying intelligent routing heuristics to maximize meal salvage and eradicate urban hunger across Maharashtra.
 
 % ==============================================================================
 % REFERENCES
