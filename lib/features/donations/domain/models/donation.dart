@@ -275,6 +275,10 @@ class Donation {
     return LatLng(latitude + 0.003, longitude + 0.002);
   }
   bool get isAvailable =>
+      !isDelivered &&
+      !isDistributed &&
+      !isCompleted &&
+      !isExpired &&
       (status == DonationStatus.available || status == DonationStatus.listed) &&
       (claimedByNgoName == null || claimedByNgoName!.trim().isEmpty) &&
       (claimedByNgoId == null || claimedByNgoId!.trim().isEmpty);
@@ -283,6 +287,7 @@ class Donation {
       !isDelivered &&
       !isDistributed &&
       !isCompleted &&
+      !isExpired &&
       (status == DonationStatus.accepted ||
           status == DonationStatus.claimed ||
           (claimedByNgoName != null && claimedByNgoName!.trim().isNotEmpty) ||
@@ -291,10 +296,11 @@ class Donation {
       !isDelivered &&
       !isDistributed &&
       !isCompleted &&
+      !isExpired &&
       (status == DonationStatus.assignedForPickup ||
           status == DonationStatus.assigned ||
           (assignedVolunteerId != null && assignedVolunteerId!.trim().isNotEmpty));
-  bool get isInTransit => !isDelivered && !isDistributed && !isCompleted && status == DonationStatus.pickedUp;
+  bool get isInTransit => !isDelivered && !isDistributed && !isCompleted && !isExpired && status == DonationStatus.pickedUp;
   bool get isDelivered =>
       status == DonationStatus.deliveredToNgo ||
       status == DonationStatus.delivered ||
@@ -304,7 +310,13 @@ class Donation {
   bool get isDistributed => status == DonationStatus.distributed;
   bool get isCompleted => status == DonationStatus.completed;
   bool get isCancelled => status == DonationStatus.cancelled;
-  bool get isExpired => status == DonationStatus.expired;
+  bool get isExpired =>
+      status == DonationStatus.expired ||
+      (!isDelivered &&
+          !isDistributed &&
+          !isCompleted &&
+          !isCancelled &&
+          pickupDeadline.isBefore(DateTime.now()));
   bool get isRejected => status == DonationStatus.rejected;
 
   // Safe time remaining
@@ -420,24 +432,29 @@ class Donation {
     final claimedNgo = json['claimed_by_ngo_name']?.toString();
     final claimedId = json['claimed_by_ngo_id']?.toString();
     final volId = json['assigned_volunteer_id']?.toString();
+    final volName = json['assigned_volunteer_name']?.toString();
+    final rawDeliveredAt = json['delivered_at'];
 
     DonationStatus parsedStatus = DonationStatus.fromString(rawStatus);
 
-    // If shelter/NGO claimed details are present, ensure status reflects accepted/claimed
-    if ((claimedNgo != null && claimedNgo.trim().isNotEmpty) ||
-        (claimedId != null && claimedId.trim().isNotEmpty)) {
-      if (parsedStatus == DonationStatus.available ||
-          parsedStatus == DonationStatus.draft) {
-        parsedStatus = DonationStatus.accepted;
+    if (rawDeliveredAt != null && rawDeliveredAt.toString().trim().isNotEmpty) {
+      parsedStatus = DonationStatus.deliveredToNgo;
+    } else {
+      if ((claimedNgo != null && claimedNgo.trim().isNotEmpty) ||
+          (claimedId != null && claimedId.trim().isNotEmpty)) {
+        if (parsedStatus == DonationStatus.available ||
+            parsedStatus == DonationStatus.draft) {
+          parsedStatus = DonationStatus.accepted;
+        }
       }
-    }
 
-    // If volunteer is assigned, ensure status reflects volunteer assignment
-    if (volId != null && volId.trim().isNotEmpty) {
-      if (parsedStatus == DonationStatus.available ||
-          parsedStatus == DonationStatus.draft ||
-          parsedStatus == DonationStatus.accepted) {
-        parsedStatus = DonationStatus.assignedForPickup;
+      if ((volId != null && volId.trim().isNotEmpty) ||
+          (volName != null && volName.trim().isNotEmpty)) {
+        if (parsedStatus == DonationStatus.available ||
+            parsedStatus == DonationStatus.draft ||
+            parsedStatus == DonationStatus.accepted) {
+          parsedStatus = DonationStatus.assignedForPickup;
+        }
       }
     }
 

@@ -1189,10 +1189,32 @@ class AuthService {
   Future<void> updateUser(AppUser user) async {
     _currentUser = user;
     final trimmedEmail = user.email.toLowerCase().trim();
+    final targetUuid = resolveUuid(user.id, user.email);
+
     _mockUsers[trimmedEmail] = user;
+    _mockUsers[user.id] = user;
+    _mockUsers[targetUuid] = user;
+
+    if (user.role == UserRole.volunteer) {
+      _mockUsers['volunteer@foodbridge.org'] = user;
+      _mockUsers['usr-vol-303'] = user;
+      _mockUsers['c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33'] = user;
+    } else if (user.role == UserRole.ngo) {
+      _mockUsers['ngo@foodbridge.org'] = user;
+      _mockUsers['usr-ngo-202'] = user;
+      _mockUsers['b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22'] = user;
+    } else if (user.role == UserRole.donor) {
+      _mockUsers['donor@foodbridge.org'] = user;
+      _mockUsers['usr-donor-101'] = user;
+      _mockUsers['a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'] = user;
+    } else if (user.role == UserRole.admin) {
+      _mockUsers['admin@foodbridge.org'] = user;
+      _mockUsers['usr-adm-404'] = user;
+      _mockUsers['d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44'] = user;
+    }
+
     await _sessionStorage.saveUserSession(user);
 
-    // 1. Persist updated user profile & terms locally in SharedPreferences
     if (!_isTestEnv) {
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -1210,9 +1232,6 @@ class AuthService {
 
     if (_isSupabaseLive) {
       try {
-        final targetUuid = resolveUuid(user.id, user.email);
-
-        // Sync to Supabase auth user metadata so session restoration on other devices gets it
         try {
           await supa.Supabase.instance.client.auth.updateUser(
             supa.UserAttributes(
@@ -1230,19 +1249,6 @@ class AuthService {
           );
         } catch (_) {}
 
-        // Sync standard profile columns to public.profiles
-        final profileData = <String, dynamic>{
-          'id': targetUuid,
-          'email': user.email,
-          'full_name': user.fullName,
-          'role': user.role.name,
-          'updated_at': DateTime.now().toIso8601String(),
-        };
-        if (user.phone != null) profileData['phone'] = user.phone;
-        if (user.avatarUrl != null) profileData['avatar_url'] = user.avatarUrl;
-
-        await supa.Supabase.instance.client.from('profiles').upsert(profileData);
-
         try {
           await supa.Supabase.instance.client
               .from('profiles')
@@ -1250,10 +1256,26 @@ class AuthService {
                 'full_name': user.fullName,
                 if (user.phone != null) 'phone': user.phone,
                 if (user.avatarUrl != null) 'avatar_url': user.avatarUrl,
+                if (user.address != null) 'address': user.address,
+                if (user.serviceArea != null) 'service_area': user.serviceArea,
+                if (user.organizationName != null) 'organization_name': user.organizationName,
+                if (user.transportType != null) 'transport_type': user.transportType,
                 'updated_at': DateTime.now().toIso8601String(),
               })
               .eq('email', trimmedEmail);
-        } catch (_) {}
+        } catch (_) {
+          try {
+            await supa.Supabase.instance.client
+                .from('profiles')
+                .update({
+                  'full_name': user.fullName,
+                  if (user.phone != null) 'phone': user.phone,
+                  if (user.avatarUrl != null) 'avatar_url': user.avatarUrl,
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .eq('id', targetUuid);
+          } catch (_) {}
+        }
 
         if (user.role == UserRole.volunteer) {
           try {

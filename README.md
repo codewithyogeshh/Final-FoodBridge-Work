@@ -168,10 +168,10 @@ The login screen includes dedicated **1-Tap Quick Profile Chips** for effortless
 * **Project Guide:** Prof. Uma Bhokare
 
 * **Team Members:**
-  1. **Yogesh Gurunath Chavan** (Lead Full-Stack & Flutter Engineer)
-  2. **Samruddhi Pramod Sawant** (Quality Assurance & Research)
-  3. **Omkar Nilesh Shinde** (Backend Integration & System Design)
-  4. **Shivraj Rajendra Yadav** (UI/UX Engineering & Data Architecture)
+  1. **Yogesh Gurunath Chavan** (PRN: `24062701242502`) — Lead Full-Stack & Flutter Engineer
+  2. **Samruddhi Pramod Sawant** (PRN: `23062701242039`) — Quality Assurance & Research
+  3. **Omkar Nilesh Shinde** (PRN: `23062701242121`) — Backend Integration & System Design
+  4. **Shivraj Rajendra Yadav** (PRN: `23062701242102`) — UI/UX Engineering & Data Architecture
 
 ---
 

@@ -550,6 +550,16 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
     DonationProvider donationProvider,
     AppUser? currentUser,
   ) {
+    if (donation.isExpired) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ही नोंद कालबाह्य झाली आहे (Expired), ती स्वीकारता येणार नाही.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
     final ngoId = currentUser?.id ?? 'usr-ngo-202';
     final ngoName = currentUser?.organizationName ?? 'Asha Children Foundation';
     final isVerified = currentUser == null ||
@@ -755,13 +765,44 @@ class _DonationFeedCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: AppColors.charcoal,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppColors.charcoal,
+                                ),
+                              ),
+                            ),
+                            if (donation.isExpired) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorRed,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.timer_off_outlined, color: Colors.white, size: 12),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Expired',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -830,32 +871,43 @@ class _DonationFeedCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: donation.isAvailable
-                      ? AppColors.primaryGreen.withOpacity(0.08)
-                      : AppColors.orange.withOpacity(0.08),
+                  color: donation.isExpired
+                      ? AppColors.errorRed.withOpacity(0.08)
+                      : (donation.isAvailable
+                          ? AppColors.primaryGreen.withOpacity(0.08)
+                          : AppColors.orange.withOpacity(0.08)),
                   borderRadius: BorderRadius.circular(8),
+                  border: donation.isExpired ? Border.all(color: AppColors.errorRed.withOpacity(0.25)) : null,
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      donation.isAvailable ? Icons.check_circle_outline : Icons.verified,
+                      donation.isExpired
+                          ? Icons.timer_off_outlined
+                          : (donation.isAvailable ? Icons.check_circle_outline : Icons.verified),
                       size: 14,
-                      color: donation.isAvailable ? AppColors.primaryGreen : AppColors.orange,
+                      color: donation.isExpired
+                          ? AppColors.errorRed
+                          : (donation.isAvailable ? AppColors.primaryGreen : AppColors.orange),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        donation.isDelivered || donation.deliveredAt != null
-                            ? 'वितरण पूर्ण (Delivered safely to shelter) ✓'
-                            : (donation.isAvailable
-                                ? 'उपलब्ध (अजून कोणाचेही क्लेम नाही • Ready to Claim)'
-                                : 'Shelter: ${donation.claimedByNgoName ?? "Shelter"} ने स्वीकारले ✓ • Volunteer: ${donationProvider.resolveVolunteerName(donation.assignedVolunteerId, donation.assignedVolunteerName)}'),
+                        donation.isExpired
+                            ? 'कालबाह्य झाले (Expired) • ही नोंद कोणालाही स्वीकारता येणार नाही'
+                            : (donation.isDelivered || donation.deliveredAt != null
+                                ? 'वितरण पूर्ण (Delivered safely to shelter) ✓'
+                                : (donation.isAvailable
+                                    ? 'उपलब्ध (अजून कोणाचेही क्लेम नाही • Ready to Claim)'
+                                    : 'Shelter: ${donation.claimedByNgoName ?? "Shelter"} ने स्वीकारले ✓ • Volunteer: ${donationProvider.resolveVolunteerName(donation.assignedVolunteerId, donation.assignedVolunteerName)}')),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: (donation.isDelivered || donation.deliveredAt != null || donation.isAvailable)
-                              ? AppColors.deepGreen
-                              : AppColors.orange,
+                          color: donation.isExpired
+                              ? AppColors.errorRed
+                              : ((donation.isDelivered || donation.deliveredAt != null || donation.isAvailable)
+                                  ? AppColors.deepGreen
+                                  : AppColors.orange),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -865,7 +917,33 @@ class _DonationFeedCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              if (donation.isAvailable)
+              if (donation.isExpired)
+                Container(
+                  width: double.infinity,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.errorRed.withOpacity(0.3)),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.block, size: 16, color: AppColors.errorRed),
+                      SizedBox(width: 6),
+                      Text(
+                        'कालबाह्य झाले (Expired - Closed)',
+                        style: TextStyle(
+                          color: AppColors.errorRed,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (donation.isAvailable)
                 FBButton(label: context.tr.claimDonation, height: 44, onPressed: onClaim)
               else
                 FBButton(label: 'View Claim Details', height: 44, onPressed: onTap),

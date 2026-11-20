@@ -127,8 +127,8 @@ class FBStatusChip extends StatelessWidget {
         );
       case 'expired':
         return _StatusConfig(
-          label: 'Expired',
-          textColor: AppColors.statusExpiredText,
+          label: 'Expired / कालबाह्य',
+          textColor: AppColors.errorRed,
           backgroundColor: AppColors.statusExpiredBg,
           icon: Icons.timer_off_outlined,
         );
@@ -140,12 +140,18 @@ class FBStatusChip extends StatelessWidget {
           icon: Icons.report_problem_outlined,
         );
       case 'draft':
-      default:
         return _StatusConfig(
           label: 'Draft',
           textColor: AppColors.statusDraftText,
           backgroundColor: AppColors.statusDraftBg,
           icon: Icons.edit_note_outlined,
+        );
+      default:
+        return _StatusConfig(
+          label: status.isNotEmpty ? status : 'Pending',
+          textColor: AppColors.charcoal,
+          backgroundColor: AppColors.statusDraftBg,
+          icon: Icons.info_outline,
         );
     }
   }
