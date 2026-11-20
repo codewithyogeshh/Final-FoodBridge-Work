@@ -239,7 +239,11 @@ class _MyDonationsScreenState extends State<MyDonationsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      FBStatusChip(status: d.status.name),
+                      FBStatusChip(
+                        status: (d.isDelivered || d.deliveredAt != null)
+                            ? 'delivered_to_ngo'
+                            : d.status.name,
+                      ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(

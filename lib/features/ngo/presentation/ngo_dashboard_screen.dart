@@ -366,14 +366,32 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                         fontSize: 14,
                       ),
                     ),
-                    subtitle: Text(
-                      d.assignedVolunteerName != null
-                          ? 'Volunteer: ${d.assignedVolunteerName} (${d.status.displayName})'
-                          : tr.awaitingVolunteerPickup,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedGrey,
-                      ),
+                    subtitle: Builder(
+                      builder: (context) {
+                        final volName = donationProvider.resolveVolunteerName(
+                          d.assignedVolunteerId,
+                          d.assignedVolunteerName,
+                        );
+                        if (d.isDelivered || d.deliveredAt != null) {
+                          return Text(
+                            'वितरण पूर्ण ✓ • Volunteer: $volName',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primaryGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        }
+                        return Text(
+                          (d.assignedVolunteerName != null || d.assignedVolunteerId != null)
+                              ? 'Volunteer: $volName (${d.status.displayName})'
+                              : tr.awaitingVolunteerPickup,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.mutedGrey,
+                          ),
+                        );
+                      },
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -705,6 +723,7 @@ class _DonationFeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final donationProvider = context.watch<DonationProvider>();
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -826,13 +845,17 @@ class _DonationFeedCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        donation.isAvailable
-                            ? 'उपलब्ध (अजून कोणाचेही क्लेम नाही • Ready to Claim)'
-                            : 'Shelter: ${donation.claimedByNgoName ?? "Shelter"} ने स्वीकारले ✓ • Volunteer: ${donation.assignedVolunteerName ?? "पिकअप प्रतीक्षा"}',
+                        donation.isDelivered || donation.deliveredAt != null
+                            ? 'वितरण पूर्ण (Delivered safely to shelter) ✓'
+                            : (donation.isAvailable
+                                ? 'उपलब्ध (अजून कोणाचेही क्लेम नाही • Ready to Claim)'
+                                : 'Shelter: ${donation.claimedByNgoName ?? "Shelter"} ने स्वीकारले ✓ • Volunteer: ${donationProvider.resolveVolunteerName(donation.assignedVolunteerId, donation.assignedVolunteerName)}'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: donation.isAvailable ? AppColors.deepGreen : AppColors.orange,
+                          color: (donation.isDelivered || donation.deliveredAt != null || donation.isAvailable)
+                              ? AppColors.deepGreen
+                              : AppColors.orange,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

@@ -41,7 +41,17 @@ void main() async {
       message: body,
       type: NotificationType.newDonation,
       relatedDonationId: donationId,
-      actionRoute: donationId != null ? '/donations/detail/$donationId' : null,
+      actionRoute: donationId != null ? '/donation-detail/$donationId' : null,
+    );
+  };
+
+  DonationProvider.onNotificationDispatch = (title, body, type, donationId) {
+    notificationProvider.dispatchRealtimeEvent(
+      title: title,
+      message: body,
+      type: type,
+      relatedDonationId: donationId,
+      actionRoute: donationId != null ? '/donation-detail/$donationId' : null,
     );
   };
 

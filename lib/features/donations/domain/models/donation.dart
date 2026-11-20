@@ -84,6 +84,7 @@ enum DonationStatus {
       case 'claimed':
         return DonationStatus.accepted;
       case 'assigned_for_pickup':
+      case 'assignedforpickup':
       case 'assigned':
         return DonationStatus.assignedForPickup;
       case 'pickedup':
@@ -92,8 +93,10 @@ enum DonationStatus {
       case 'in_transit':
         return DonationStatus.pickedUp;
       case 'delivered_to_ngo':
+      case 'deliveredtongo':
       case 'delivered':
         return DonationStatus.deliveredToNgo;
+      case 'distribution_recorded':
       case 'distributed':
         return DonationStatus.distributed;
       case 'completed':
@@ -277,18 +280,27 @@ class Donation {
       (claimedByNgoId == null || claimedByNgoId!.trim().isEmpty);
   bool get isRequested => status == DonationStatus.requested;
   bool get isClaimed =>
-      status == DonationStatus.accepted ||
-      status == DonationStatus.claimed ||
-      (claimedByNgoName != null && claimedByNgoName!.trim().isNotEmpty) ||
-      (claimedByNgoId != null && claimedByNgoId!.trim().isNotEmpty);
+      !isDelivered &&
+      !isDistributed &&
+      !isCompleted &&
+      (status == DonationStatus.accepted ||
+          status == DonationStatus.claimed ||
+          (claimedByNgoName != null && claimedByNgoName!.trim().isNotEmpty) ||
+          (claimedByNgoId != null && claimedByNgoId!.trim().isNotEmpty));
   bool get isAssigned =>
-      status == DonationStatus.assignedForPickup ||
-      status == DonationStatus.assigned ||
-      (assignedVolunteerId != null && assignedVolunteerId!.trim().isNotEmpty);
-  bool get isInTransit => status == DonationStatus.pickedUp;
+      !isDelivered &&
+      !isDistributed &&
+      !isCompleted &&
+      (status == DonationStatus.assignedForPickup ||
+          status == DonationStatus.assigned ||
+          (assignedVolunteerId != null && assignedVolunteerId!.trim().isNotEmpty));
+  bool get isInTransit => !isDelivered && !isDistributed && !isCompleted && status == DonationStatus.pickedUp;
   bool get isDelivered =>
       status == DonationStatus.deliveredToNgo ||
-      status == DonationStatus.delivered;
+      status == DonationStatus.delivered ||
+      status == DonationStatus.distributed ||
+      status == DonationStatus.completed ||
+      deliveredAt != null;
   bool get isDistributed => status == DonationStatus.distributed;
   bool get isCompleted => status == DonationStatus.completed;
   bool get isCancelled => status == DonationStatus.cancelled;

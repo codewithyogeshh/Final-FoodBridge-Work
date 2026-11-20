@@ -436,6 +436,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             d.status == DonationStatus.listed;
       }
       if (_donationFilter == 'intransit') {
+        if (d.isDelivered || d.deliveredAt != null) return false;
         return d.status == DonationStatus.accepted ||
             d.status == DonationStatus.claimed ||
             d.status == DonationStatus.assigned ||
@@ -443,7 +444,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             d.status == DonationStatus.pickedUp;
       }
       if (_donationFilter == 'delivered') {
-        return d.status == DonationStatus.delivered ||
+        return d.isDelivered ||
+            d.deliveredAt != null ||
+            d.status == DonationStatus.delivered ||
             d.status == DonationStatus.deliveredToNgo ||
             d.status == DonationStatus.distributed ||
             d.status == DonationStatus.completed;
@@ -739,7 +742,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     Color badgeTextColor;
     String statusLabel = d.status.displayName;
 
-    if (d.status == DonationStatus.available ||
+    if (d.isDelivered ||
+        d.deliveredAt != null ||
+        d.status == DonationStatus.delivered ||
+        d.status == DonationStatus.deliveredToNgo ||
+        d.status == DonationStatus.distributed ||
+        d.status == DonationStatus.completed) {
+      badgeColor = const Color(0xFF27AE60).withOpacity(0.12);
+      badgeTextColor = const Color(0xFF27AE60);
+      statusLabel = 'Delivered & Distributed / वितरण पूर्ण ✓';
+    } else if (d.status == DonationStatus.available ||
         d.status == DonationStatus.listed) {
       badgeColor = AppColors.primaryGreen.withOpacity(0.12);
       badgeTextColor = AppColors.primaryGreen;
@@ -757,13 +769,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       statusLabel = d.status == DonationStatus.pickedUp
           ? 'In Transit / वाटेत'
           : 'Volunteer Assigned / नेमले';
-    } else if (d.status == DonationStatus.delivered ||
-        d.status == DonationStatus.deliveredToNgo ||
-        d.status == DonationStatus.distributed ||
-        d.status == DonationStatus.completed) {
-      badgeColor = const Color(0xFF27AE60).withOpacity(0.12);
-      badgeTextColor = const Color(0xFF27AE60);
-      statusLabel = 'Delivered & Distributed / वाटप झाले ✓';
     } else {
       badgeColor = AppColors.mutedGrey.withOpacity(0.12);
       badgeTextColor = AppColors.mutedGrey;

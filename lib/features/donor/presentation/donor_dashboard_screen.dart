@@ -400,7 +400,11 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
                                   ],
                                 ),
                               ),
-                              FBStatusChip(status: donation.status.name),
+                              FBStatusChip(
+                                status: (donation.isDelivered || donation.deliveredAt != null)
+                                    ? 'delivered_to_ngo'
+                                    : donation.status.name,
+                              ),
                             ],
                           ),
                           const SizedBox(height: 12),

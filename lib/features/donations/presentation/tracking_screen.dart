@@ -57,8 +57,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ),
         );
 
-    final volunteerName = (donation.assignedVolunteerName != null && donation.assignedVolunteerName!.isNotEmpty)
-        ? donation.assignedVolunteerName!
+    final resolvedVolName = donationProvider.resolveVolunteerName(
+      donation.assignedVolunteerId,
+      donation.assignedVolunteerName,
+    );
+    final volunteerName = resolvedVolName.isNotEmpty
+        ? resolvedVolName
         : (currentUser?.isVolunteer == true ? (currentUser?.fullName ?? 'Volunteer') : 'Volunteer');
     final volunteerPhone = donation.assignedVolunteerPhone ?? '+91 97654 99887';
     final donorName = donation.donorName;
@@ -68,7 +72,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
     String statusTitle;
     String statusSubtitle;
-    if (donation.status == DonationStatus.delivered ||
+    if (donation.isDelivered ||
+        donation.deliveredAt != null ||
+        donation.status == DonationStatus.delivered ||
         donation.status == DonationStatus.deliveredToNgo ||
         donation.status == DonationStatus.completed) {
       statusTitle = 'Donation Delivered! 🎉 (वितरण पूर्ण)';

@@ -10,6 +10,8 @@ import '../../../core/services/location_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../authentication/data/auth_service.dart';
+import '../../authentication/domain/models/app_user.dart';
+import '../../notifications/domain/models/app_notification.dart';
 import '../domain/models/donation.dart';
 import '../domain/models/distribution_record.dart';
 
@@ -27,6 +29,30 @@ class DonationProvider extends ChangeNotifier {
 
   /// Global hook for in-app notification dispatch across multi-device sync
   static void Function(String title, String body, String? donationId)? onDonationReceived;
+  static void Function(String title, String body, NotificationType type, String? donationId)? onNotificationDispatch;
+
+  String resolveVolunteerName(String? volId, String? currentName) {
+    try {
+      final authUsers = AuthService().allUsers;
+      final volUser = authUsers.where((u) {
+        if (volId != null && (u.id == volId || AuthService.resolveUuid(u.id) == volId)) return true;
+        if (u.role == UserRole.volunteer) return true;
+        return false;
+      }).firstOrNull;
+
+      if (volUser != null && volUser.fullName.trim().isNotEmpty && volUser.fullName.trim() != 'Rohit Kulkarni') {
+        return volUser.fullName.trim();
+      }
+
+      if (currentName != null && currentName.trim().isNotEmpty && currentName.trim() != 'Rohit Kulkarni') {
+        return currentName.trim();
+      }
+
+      return volUser?.fullName.trim() ?? currentName ?? 'Volunteer';
+    } catch (_) {
+      return currentName ?? 'Volunteer';
+    }
+  }
 
   DonationProvider() {
     _initialize();
@@ -81,16 +107,22 @@ class DonationProvider extends ChangeNotifier {
         return DonationStatus.accepted;
       case 'assigned':
       case 'assigned_for_pickup':
+      case 'assignedforpickup':
         return DonationStatus.assignedForPickup;
       case 'picked_up':
       case 'pickedup':
       case 'in_transit':
+      case 'intransit':
         return DonationStatus.pickedUp;
       case 'delivered':
       case 'delivered_to_ngo':
-      case 'distributed':
-      case 'completed':
+      case 'deliveredtongo':
         return DonationStatus.deliveredToNgo;
+      case 'distributed':
+      case 'distribution_recorded':
+        return DonationStatus.distributed;
+      case 'completed':
+        return DonationStatus.completed;
       case 'cancelled':
       case 'rejected':
         return DonationStatus.cancelled;
@@ -201,8 +233,9 @@ class DonationProvider extends ChangeNotifier {
             newVolPhone = phonesById[d.assignedVolunteerId];
           }
         } else if (d.assignedVolunteerId == 'usr-vol-303' ||
+            d.assignedVolunteerId == 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33' ||
             d.assignedVolunteerName == 'Rohit Kulkarni' ||
-            (volName != null && (d.assignedVolunteerName == null || d.assignedVolunteerName!.isEmpty || d.assignedVolunteerName == 'Rohit Kulkarni'))) {
+            (volName != null && volName.isNotEmpty && (d.assignedVolunteerName == null || d.assignedVolunteerName!.isEmpty || d.assignedVolunteerName == 'Rohit Kulkarni'))) {
           if (volName != null && volName.isNotEmpty) {
             newVolName = volName;
             if (volPhone.isNotEmpty) newVolPhone = volPhone;
@@ -233,6 +266,9 @@ class DonationProvider extends ChangeNotifier {
 
       if (changed) {
         await _persistLocalDonations();
+        for (final d in _donations) {
+          _broadcastDonationEvent('update', d);
+        }
         notifyListeners();
       }
     } catch (_) {}
@@ -406,21 +442,32 @@ class DonationProvider extends ChangeNotifier {
         ? incoming.assignedVolunteerName
         : current.assignedVolunteerName;
 
-    // Ensure status does not downgrade below accepted if claimed by shelter
-    if ((resolvedClaimedNgoName != null && resolvedClaimedNgoName.isNotEmpty) ||
-        (resolvedClaimedNgoId != null && resolvedClaimedNgoId.isNotEmpty)) {
-      if (effectiveStatus == DonationStatus.available ||
-          effectiveStatus == DonationStatus.draft) {
-        effectiveStatus = DonationStatus.accepted;
+    if (current.deliveredAt != null ||
+        incoming.deliveredAt != null ||
+        current.isDelivered ||
+        incoming.isDelivered ||
+        current.status == DonationStatus.deliveredToNgo ||
+        incoming.status == DonationStatus.deliveredToNgo ||
+        current.status == DonationStatus.completed ||
+        incoming.status == DonationStatus.completed) {
+      effectiveStatus = (current.status == DonationStatus.completed || incoming.status == DonationStatus.completed)
+          ? DonationStatus.completed
+          : DonationStatus.deliveredToNgo;
+    } else {
+      if ((resolvedClaimedNgoName != null && resolvedClaimedNgoName.isNotEmpty) ||
+          (resolvedClaimedNgoId != null && resolvedClaimedNgoId.isNotEmpty)) {
+        if (effectiveStatus == DonationStatus.available ||
+            effectiveStatus == DonationStatus.draft) {
+          effectiveStatus = DonationStatus.accepted;
+        }
       }
-    }
 
-    // Ensure status does not downgrade below assigned if volunteer is assigned
-    if (resolvedVolunteerId != null && resolvedVolunteerId.isNotEmpty) {
-      if (effectiveStatus == DonationStatus.available ||
-          effectiveStatus == DonationStatus.draft ||
-          effectiveStatus == DonationStatus.accepted) {
-        effectiveStatus = DonationStatus.assignedForPickup;
+      if (resolvedVolunteerId != null && resolvedVolunteerId.isNotEmpty) {
+        if (effectiveStatus == DonationStatus.available ||
+            effectiveStatus == DonationStatus.draft ||
+            effectiveStatus == DonationStatus.accepted) {
+          effectiveStatus = DonationStatus.assignedForPickup;
+        }
       }
     }
 
@@ -497,6 +544,9 @@ class DonationProvider extends ChangeNotifier {
 
       if (changed) {
         await _persistLocalDonations();
+        for (final d in _donations) {
+          _broadcastDonationEvent('update', d);
+        }
         notifyListeners();
       }
     } catch (_) {}
@@ -535,8 +585,10 @@ class DonationProvider extends ChangeNotifier {
         final index = _donations.indexWhere((d) => d.id == donation.id);
         if (index != -1) {
           final previousStatus = _donations[index].status;
+          final wasDelivered = _donations[index].isDelivered || _donations[index].deliveredAt != null;
           _donations[index] = _mergeDonations(_donations[index], donation);
-          if (previousStatus != _donations[index].status) {
+          final nowDelivered = _donations[index].isDelivered || _donations[index].deliveredAt != null;
+          if (previousStatus != _donations[index].status || (!wasDelivered && nowDelivered) || action == 'delivery_confirmed') {
             _dispatchStatusChangeNotification(_donations[index]);
           }
         } else {
@@ -553,6 +605,8 @@ class DonationProvider extends ChangeNotifier {
               '${donation.donorName}: ${donation.quantity} ${donation.unit} ${donation.title}',
               donation.id,
             );
+          } else if (donation.isDelivered || donation.deliveredAt != null || action == 'delivery_confirmed') {
+            _dispatchStatusChangeNotification(donation);
           }
         }
       }
@@ -589,13 +643,28 @@ class DonationProvider extends ChangeNotifier {
           body: '"${donation.title}" पिकअप पूर्ण झाले असून आश्रमाकडे रवाना झाले आहे.',
           payload: donation.id,
         );
-      } else if (donation.status == DonationStatus.deliveredToNgo ||
+      } else if (donation.isDelivered ||
+          donation.status == DonationStatus.deliveredToNgo ||
+          donation.status == DonationStatus.delivered ||
           donation.status == DonationStatus.distributed ||
-          donation.status == DonationStatus.completed) {
-        NotificationService.instance.showNewDonationNotification(
-          title: 'दान यशस्वीरित्या पोहोचले! (Delivered)',
-          body: '"${donation.title}" आश्रमात सुरक्षित वितरित झाले आहे.',
+          donation.status == DonationStatus.completed ||
+          donation.deliveredAt != null) {
+        final deliveryMsg = 'प्रिय ${donation.donorName}, तुमची "${donation.title}" ही donation आश्रमात (${donation.claimedByNgoName ?? "Shelter"}) यशस्वीरित्या सुरक्षितपणे पोहोचली आहे. मनापासून धन्यवाद!';
+        NotificationService.instance.showSystemNotification(
+          title: 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+          body: deliveryMsg,
           payload: donation.id,
+        );
+        onNotificationDispatch?.call(
+          'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+          deliveryMsg,
+          NotificationType.deliveryConfirmed,
+          donation.id,
+        );
+        onDonationReceived?.call(
+          'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+          deliveryMsg,
+          donation.id,
         );
       }
     } catch (e) {
@@ -815,6 +884,8 @@ class DonationProvider extends ChangeNotifier {
   // All active orders across platform (unclaimed, claimed, in transit)
   List<Donation> get allActiveNetworkOrders => _donations
       .where((d) =>
+          !d.isDelivered &&
+          d.deliveredAt == null &&
           d.status != DonationStatus.delivered &&
           d.status != DonationStatus.deliveredToNgo &&
           d.status != DonationStatus.distributed &&
@@ -829,6 +900,8 @@ class DonationProvider extends ChangeNotifier {
       .where(
         (d) =>
             d.assignedVolunteerId == volunteerId &&
+            !d.isDelivered &&
+            d.deliveredAt == null &&
             (d.status == DonationStatus.assigned ||
                 d.status == DonationStatus.assignedForPickup ||
                 d.status == DonationStatus.pickedUp),
@@ -839,10 +912,13 @@ class DonationProvider extends ChangeNotifier {
   List<Donation> getVolunteerCompletedTasks(String volunteerId) => _donations
       .where(
         (d) =>
-            (d.assignedVolunteerId == volunteerId ||
-                (volunteerId == 'usr-vol-301' || d.assignedVolunteerId == 'usr-vol-301') ||
-                volunteerId.isEmpty) &&
-            (d.status == DonationStatus.delivered ||
+            (volunteerId.isEmpty ||
+                d.assignedVolunteerId == volunteerId ||
+                ((volunteerId == 'usr-vol-301' || volunteerId == 'usr-vol-303' || volunteerId == 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33') &&
+                    (d.assignedVolunteerId == 'usr-vol-301' || d.assignedVolunteerId == 'usr-vol-303' || d.assignedVolunteerId == 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33'))) &&
+            (d.isDelivered ||
+                d.deliveredAt != null ||
+                d.status == DonationStatus.delivered ||
                 d.status == DonationStatus.deliveredToNgo ||
                 d.status == DonationStatus.distributed ||
                 d.status == DonationStatus.completed),
@@ -854,7 +930,9 @@ class DonationProvider extends ChangeNotifier {
     return _donations
         .where((d) =>
             d.isFood &&
-            (d.status == DonationStatus.delivered ||
+            (d.isDelivered ||
+                d.deliveredAt != null ||
+                d.status == DonationStatus.delivered ||
                 d.status == DonationStatus.deliveredToNgo ||
                 d.status == DonationStatus.distributed ||
                 d.status == DonationStatus.completed))
@@ -865,7 +943,9 @@ class DonationProvider extends ChangeNotifier {
     return _donations
         .where((d) =>
             d.isClothing &&
-            (d.status == DonationStatus.delivered ||
+            (d.isDelivered ||
+                d.deliveredAt != null ||
+                d.status == DonationStatus.delivered ||
                 d.status == DonationStatus.deliveredToNgo ||
                 d.status == DonationStatus.distributed ||
                 d.status == DonationStatus.completed))
@@ -873,17 +953,19 @@ class DonationProvider extends ChangeNotifier {
   }
 
   int get activeListingsCount => _donations
-      .where((d) => d.isAvailable && !d.isClaimed)
+      .where((d) => d.isAvailable && !d.isClaimed && !d.isDelivered && d.deliveredAt == null)
       .length;
 
   // Live cross-role counts for all dashboards
   int get totalAvailableCount => _donations
-      .where((d) => d.isAvailable && !d.isClaimed)
+      .where((d) => d.isAvailable && !d.isClaimed && !d.isDelivered && d.deliveredAt == null)
       .length;
 
   int get totalClaimedCount => _donations
       .where((d) =>
           d.isClaimed &&
+          !d.isDelivered &&
+          d.deliveredAt == null &&
           (d.assignedVolunteerId == null || d.assignedVolunteerId!.trim().isEmpty) &&
           d.status != DonationStatus.pickedUp &&
           d.status != DonationStatus.deliveredToNgo &&
@@ -893,13 +975,17 @@ class DonationProvider extends ChangeNotifier {
 
   int get totalInTransitCount => _donations
       .where((d) =>
-          d.status == DonationStatus.assigned ||
-          d.status == DonationStatus.assignedForPickup ||
-          d.status == DonationStatus.pickedUp)
+          !d.isDelivered &&
+          d.deliveredAt == null &&
+          (d.status == DonationStatus.assigned ||
+              d.status == DonationStatus.assignedForPickup ||
+              d.status == DonationStatus.pickedUp))
       .length;
 
   int get totalDeliveredCount => _donations
       .where((d) =>
+          d.isDelivered ||
+          d.deliveredAt != null ||
           d.status == DonationStatus.delivered ||
           d.status == DonationStatus.deliveredToNgo ||
           d.status == DonationStatus.distributed ||
@@ -1391,11 +1477,42 @@ class DonationProvider extends ChangeNotifier {
       return false;
     }
 
+    final deliveredTime = DateTime.now();
     _donations[index] = current.copyWith(
-      status: DonationStatus.delivered,
-      deliveredAt: DateTime.now(),
+      status: DonationStatus.deliveredToNgo,
+      deliveredAt: deliveredTime,
     );
     _broadcastDonationEvent('update', _donations[index]);
+
+    try {
+      _realtimeChannel?.sendBroadcastMessage(
+        event: 'donation_sync',
+        payload: {
+          'action': 'delivery_confirmed',
+          'donation': _donations[index].toJson(),
+          'donor_id': current.donorId,
+          'timestamp': deliveredTime.toIso8601String(),
+        },
+      );
+    } catch (_) {}
+
+    final deliveryMsg = 'प्रिय ${current.donorName}, तुमची "${current.title}" ही donation आश्रमात (${current.claimedByNgoName ?? "Shelter"}) यशस्वीरित्या सुरक्षितपणे पोहोचली आहे. मनापासून धन्यवाद!';
+    NotificationService.instance.showSystemNotification(
+      title: 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+      body: deliveryMsg,
+      payload: current.id,
+    );
+    onNotificationDispatch?.call(
+      'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+      deliveryMsg,
+      NotificationType.deliveryConfirmed,
+      current.id,
+    );
+    onDonationReceived?.call(
+      'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+      deliveryMsg,
+      current.id,
+    );
 
     if (_isSupabaseLive) {
       try {
@@ -1403,11 +1520,23 @@ class DonationProvider extends ChangeNotifier {
             .from('donations')
             .update({
               'status': 'delivered',
-              'delivered_at': DateTime.now().toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
+              'delivered_at': deliveredTime.toIso8601String(),
+              'updated_at': deliveredTime.toIso8601String(),
             })
             .eq('id', donationId);
       } catch (_) {}
+
+      if (current.donorId.isNotEmpty) {
+        try {
+          final donorUuid = AuthService.resolveUuid(current.donorId);
+          await Supabase.instance.client.from('notifications').insert({
+            'recipient_user_id': donorUuid,
+            'title': 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+            'message': deliveryMsg,
+            'route_payload': '/donation-detail/${current.id}',
+          });
+        } catch (_) {}
+      }
     }
 
     await _persistLocalDonations();

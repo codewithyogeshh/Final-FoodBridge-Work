@@ -88,15 +88,23 @@ class NgoClaimsScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              FBStatusChip(status: d.status.name),
+                              FBStatusChip(
+                                status: (d.isDelivered || d.deliveredAt != null)
+                                    ? 'delivered_to_ngo'
+                                    : d.status.name,
+                              ),
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
-                                  'Must collect by ${DateFormat('hh:mm a').format(d.pickupDeadline)}',
-                                  style: const TextStyle(
+                                  (d.isDelivered || d.deliveredAt != null)
+                                      ? 'वितरण पूर्ण (${d.deliveredAt != null ? DateFormat('hh:mm a').format(d.deliveredAt!) : "Delivered"})'
+                                      : 'Must collect by ${DateFormat('hh:mm a').format(d.pickupDeadline)}',
+                                  style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.orange,
+                                    color: (d.isDelivered || d.deliveredAt != null)
+                                        ? AppColors.primaryGreen
+                                        : AppColors.orange,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
@@ -104,42 +112,52 @@ class NgoClaimsScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          if (d.assignedVolunteerName != null) ...[
-                            const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.warmCream,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
+                          if (d.assignedVolunteerName != null || d.assignedVolunteerId != null) ...[
+                            Builder(builder: (context) {
+                              final volName = donationProvider.resolveVolunteerName(
+                                d.assignedVolunteerId,
+                                d.assignedVolunteerName,
+                              );
+                              return Column(
                                 children: [
-                                  const Icon(Icons.two_wheeler, size: 16, color: AppColors.primaryGreen),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      'Courier: ${d.assignedVolunteerName} (${d.assignedVolunteerPhone ?? "In Transit"})',
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.warmCream,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.two_wheeler, size: 16, color: AppColors.primaryGreen),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            'Courier: $volName (${d.assignedVolunteerPhone ?? "In Transit"})',
+                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.map_outlined, size: 16),
+                                      label: const Text('कूरियर थेट ट्रॅकिंग पहा (Live Courier Track)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppColors.primaryGreen,
+                                        side: const BorderSide(color: AppColors.primaryGreen),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                      ),
+                                      onPressed: () => context.push('/tracking/${d.id}'),
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                icon: const Icon(Icons.map_outlined, size: 16),
-                                label: const Text('कूरियर थेट ट्रॅकिंग पहा (Live Courier Track)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.primaryGreen,
-                                  side: const BorderSide(color: AppColors.primaryGreen),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                ),
-                                onPressed: () => context.push('/tracking/${d.id}'),
-                              ),
-                            ),
+                              );
+                            }),
                           ],
                         ],
                       ),

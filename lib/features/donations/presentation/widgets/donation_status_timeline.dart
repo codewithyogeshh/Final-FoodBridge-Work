@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/donation.dart';
+import '../donation_provider.dart';
 
 class DonationStatusTimeline extends StatelessWidget {
   final Donation donation;
@@ -12,6 +14,14 @@ class DonationStatusTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('d MMM • hh:mm a');
+    String resolvedVolName = donation.assignedVolunteerName ?? '';
+    try {
+      final dp = context.watch<DonationProvider>();
+      resolvedVolName = dp.resolveVolunteerName(
+        donation.assignedVolunteerId,
+        donation.assignedVolunteerName,
+      );
+    } catch (_) {}
 
     final isClaimed =
         donation.status == DonationStatus.accepted ||
@@ -76,13 +86,11 @@ class DonationStatusTimeline extends StatelessWidget {
       ),
       _TimelineStep(
         title:
-            donation.assignedVolunteerName != null &&
-                donation.assignedVolunteerName!.isNotEmpty
-            ? 'Courier: ${donation.assignedVolunteerName}'
+            resolvedVolName.isNotEmpty
+            ? 'Courier: $resolvedVolName'
             : 'Volunteer Dispatch',
         subtitle:
-            donation.assignedVolunteerName != null &&
-                donation.assignedVolunteerName!.isNotEmpty
+            resolvedVolName.isNotEmpty
             ? 'Volunteer accepted transport mission'
             : 'Awaiting rider acceptance',
         timestamp: donation.assignedAt != null

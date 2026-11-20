@@ -1164,6 +1164,27 @@ class AuthService {
     }
   }
 
+  static const Map<String, String> _demoUserUuids = {
+    'donor@foodbridge.org': 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    'ngo@foodbridge.org': 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
+    'volunteer@foodbridge.org': 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
+    'admin@foodbridge.org': 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44',
+    'usr-donor-101': 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+    'usr-ngo-202': 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
+    'usr-vol-303': 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
+    'usr-adm-001': 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44',
+  };
+
+  static String resolveUuid(String userId, [String? email]) {
+    if (RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(userId)) {
+      return userId;
+    }
+    if (_demoUserUuids.containsKey(userId)) return _demoUserUuids[userId]!;
+    final cleanEmail = (email ?? '').toLowerCase().trim();
+    if (_demoUserUuids.containsKey(cleanEmail)) return _demoUserUuids[cleanEmail]!;
+    return 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33';
+  }
+
   /// Update user in session and memory
   Future<void> updateUser(AppUser user) async {
     _currentUser = user;
@@ -1189,26 +1210,32 @@ class AuthService {
 
     if (_isSupabaseLive) {
       try {
+        final targetUuid = resolveUuid(user.id, user.email);
+
         // Sync to Supabase auth user metadata so session restoration on other devices gets it
-        await supa.Supabase.instance.client.auth.updateUser(
-          supa.UserAttributes(
-            data: {
-              'full_name': user.fullName,
-              if (user.phone != null) 'phone': user.phone,
-              if (user.avatarUrl != null) 'avatar_url': user.avatarUrl,
-              if (user.address != null) 'address': user.address,
-              if (user.serviceArea != null) 'service_area': user.serviceArea,
-              if (user.organizationName != null) 'organization_name': user.organizationName,
-              if (user.transportType != null) 'transport_type': user.transportType,
-              'has_accepted_terms': user.hasAcceptedTerms,
-            },
-          ),
-        );
+        try {
+          await supa.Supabase.instance.client.auth.updateUser(
+            supa.UserAttributes(
+              data: {
+                'full_name': user.fullName,
+                if (user.phone != null) 'phone': user.phone,
+                if (user.avatarUrl != null) 'avatar_url': user.avatarUrl,
+                if (user.address != null) 'address': user.address,
+                if (user.serviceArea != null) 'service_area': user.serviceArea,
+                if (user.organizationName != null) 'organization_name': user.organizationName,
+                if (user.transportType != null) 'transport_type': user.transportType,
+                'has_accepted_terms': user.hasAcceptedTerms,
+              },
+            ),
+          );
+        } catch (_) {}
 
         // Sync standard profile columns to public.profiles
         final profileData = <String, dynamic>{
-          'id': user.id,
+          'id': targetUuid,
+          'email': user.email,
           'full_name': user.fullName,
+          'role': user.role.name,
           'updated_at': DateTime.now().toIso8601String(),
         };
         if (user.phone != null) profileData['phone'] = user.phone;
@@ -1216,10 +1243,56 @@ class AuthService {
 
         await supa.Supabase.instance.client.from('profiles').upsert(profileData);
 
+        try {
+          await supa.Supabase.instance.client
+              .from('profiles')
+              .update({
+                'full_name': user.fullName,
+                if (user.phone != null) 'phone': user.phone,
+                if (user.avatarUrl != null) 'avatar_url': user.avatarUrl,
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('email', trimmedEmail);
+        } catch (_) {}
+
+        if (user.role == UserRole.volunteer) {
+          try {
+            await supa.Supabase.instance.client
+                .from('donations')
+                .update({
+                  'assigned_volunteer_name': user.fullName,
+                  if (user.phone != null) 'assigned_volunteer_phone': user.phone,
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .or('assigned_volunteer_id.eq.${user.id},assigned_volunteer_id.eq.$targetUuid,assigned_volunteer_name.eq.Rohit Kulkarni');
+          } catch (_) {}
+        } else if (user.role == UserRole.ngo) {
+          try {
+            await supa.Supabase.instance.client
+                .from('donations')
+                .update({
+                  'claimed_by_ngo_name': user.organizationName ?? user.fullName,
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .or('claimed_by_ngo_id.eq.${user.id},claimed_by_ngo_id.eq.$targetUuid');
+          } catch (_) {}
+        } else if (user.role == UserRole.donor) {
+          try {
+            await supa.Supabase.instance.client
+                .from('donations')
+                .update({
+                  'donor_name': user.fullName,
+                  if (user.phone != null) 'donor_phone': user.phone,
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .or('donor_id.eq.${user.id},donor_id.eq.$targetUuid');
+          } catch (_) {}
+        }
+
         // Sync role-specific profile details to respective tables
         if (user.role == UserRole.donor && (user.organizationName != null || user.address != null)) {
           await supa.Supabase.instance.client.from('donor_profiles').upsert({
-            'user_id': user.id,
+            'user_id': targetUuid,
             if (user.organizationName != null) 'organization_name': user.organizationName,
             if (user.address != null) 'pickup_address': user.address,
             'city': 'Satara',
@@ -1230,12 +1303,12 @@ class AuthService {
               ? 'two_wheeler'
               : (transLower.contains('bicycle') ? 'bicycle' : 'car');
           await supa.Supabase.instance.client.from('volunteer_profiles').upsert({
-            'user_id': user.id,
+            'user_id': targetUuid,
             'vehicle_type': vehicleType,
           });
         } else if (user.role == UserRole.ngo && (user.organizationName != null || user.address != null)) {
           await supa.Supabase.instance.client.from('ngos').upsert({
-            'user_id': user.id,
+            'user_id': targetUuid,
             if (user.organizationName != null) 'legal_name': user.organizationName,
             if (user.address != null) 'shelter_address': user.address,
             'city': 'Satara',
@@ -1282,6 +1355,7 @@ class AuthService {
       } catch (e) {
         AppLogger.warning('Could not fetch profiles from Supabase: $e');
       }
+      await _loadLocalRegisteredUsers();
     }
     return _mockUsers.values.toList();
   }

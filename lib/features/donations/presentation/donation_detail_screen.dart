@@ -395,12 +395,15 @@ class DonationDetailScreen extends StatelessWidget {
                         phone: '+91 98220 54321',
                       ),
                     ],
-                    if (donation.assignedVolunteerName != null) ...[
+                    if (donation.assignedVolunteerName != null || donation.assignedVolunteerId != null) ...[
                       const SizedBox(height: 12),
                       _participantTile(
                         icon: Icons.two_wheeler_rounded,
                         role: 'Assigned Volunteer',
-                        name: donation.assignedVolunteerName!,
+                        name: donationProvider.resolveVolunteerName(
+                          donation.assignedVolunteerId,
+                          donation.assignedVolunteerName,
+                        ),
                         phone: donation.assignedVolunteerPhone,
                       ),
                     ],

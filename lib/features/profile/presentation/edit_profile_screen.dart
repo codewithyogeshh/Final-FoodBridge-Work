@@ -187,11 +187,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (success) {
       try {
+        await context.read<DonationProvider>().syncWithUserProfiles();
+      } catch (_) {}
+      if (!mounted) return;
+      try {
         context.read<AdminProvider>().syncUsersWithAuth();
       } catch (_) {}
-      try {
-        context.read<DonationProvider>().syncWithUserProfiles();
-      } catch (_) {}
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('प्रोफाइल यशस्वीरित्या अपडेट झाली! (Profile Updated Successfully)'),

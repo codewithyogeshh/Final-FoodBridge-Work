@@ -76,6 +76,8 @@ class FBStatusChip extends StatelessWidget {
           icon: Icons.verified_outlined,
         );
       case 'assigned_for_pickup':
+      case 'assignedforpickup':
+      case 'assigned':
         return _StatusConfig(
           label: 'Volunteer Assigned',
           textColor: AppColors.statusAssignedText,
@@ -83,6 +85,9 @@ class FBStatusChip extends StatelessWidget {
           icon: Icons.two_wheeler,
         );
       case 'picked_up':
+      case 'pickedup':
+      case 'intransit':
+      case 'in_transit':
         return _StatusConfig(
           label: 'In Transit',
           textColor: AppColors.statusInTransitText,
@@ -90,22 +95,25 @@ class FBStatusChip extends StatelessWidget {
           icon: Icons.local_shipping_outlined,
         );
       case 'delivered_to_ngo':
+      case 'deliveredtongo':
+      case 'delivered':
         return _StatusConfig(
-          label: 'Delivered to NGO',
+          label: 'Delivered / वितरण पूर्ण ✓',
           textColor: AppColors.statusDeliveredText,
           backgroundColor: AppColors.statusDeliveredBg,
-          icon: Icons.location_city_outlined,
+          icon: Icons.check_circle,
         );
       case 'distributed':
+      case 'distribution_recorded':
         return _StatusConfig(
-          label: 'Distribution Recorded',
+          label: 'Distributed / वाटप झाले',
           textColor: AppColors.statusCompletedText,
           backgroundColor: AppColors.statusCompletedBg,
           icon: Icons.favorite_border,
         );
       case 'completed':
         return _StatusConfig(
-          label: 'Completed',
+          label: 'Completed / पूर्ण',
           textColor: AppColors.statusCompletedText,
           backgroundColor: AppColors.statusCompletedBg,
           icon: Icons.done_all,
