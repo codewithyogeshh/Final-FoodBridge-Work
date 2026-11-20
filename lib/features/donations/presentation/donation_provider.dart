@@ -292,10 +292,18 @@ class DonationProvider extends ChangeNotifier {
       notifyListeners();
 
       final client = Supabase.instance.client;
-      final response = await client
-          .from('donations')
-          .select('*, profiles(full_name, phone)')
-          .order('created_at', ascending: false);
+      dynamic response;
+      try {
+        response = await client
+            .from('donations')
+            .select('*, profiles(full_name, phone)')
+            .order('created_at', ascending: false);
+      } catch (_) {
+        response = await client
+            .from('donations')
+            .select('*')
+            .order('created_at', ascending: false);
+      }
 
       final List<dynamic> data = response as List<dynamic>;
       for (final raw in data) {
@@ -304,6 +312,13 @@ class DonationProvider extends ChangeNotifier {
           if (item['profiles'] != null && item['profiles'] is Map) {
             item['donor_name'] = item['profiles']['full_name'];
             item['donor_phone'] = item['profiles']['phone'];
+          } else if (item['donor_name'] == null || item['donor_name'].toString().isEmpty || item['donor_name'] == 'FoodBridge Donor') {
+            final authUsers = AuthService().allUsers;
+            final matched = authUsers.where((u) => u.id == item['donor_id'] || AuthService.resolveUuid(u.id) == item['donor_id']).firstOrNull;
+            if (matched != null && matched.fullName.isNotEmpty) {
+              item['donor_name'] = matched.fullName;
+              if (matched.phone != null && matched.phone!.isNotEmpty) item['donor_phone'] = matched.phone;
+            }
           }
           final dbStatus = item['status']?.toString();
           item['status'] = _statusFromDb(dbStatus).name;
@@ -505,11 +520,20 @@ class DonationProvider extends ChangeNotifier {
     if (!_isSupabaseLive || _isLoading) return;
     try {
       final client = Supabase.instance.client;
-      final response = await client
-          .from('donations')
-          .select('*, profiles(full_name, phone)')
-          .order('created_at', ascending: false)
-          .limit(40);
+      dynamic response;
+      try {
+        response = await client
+            .from('donations')
+            .select('*, profiles(full_name, phone)')
+            .order('created_at', ascending: false)
+            .limit(40);
+      } catch (_) {
+        response = await client
+            .from('donations')
+            .select('*')
+            .order('created_at', ascending: false)
+            .limit(40);
+      }
 
       final List<dynamic> data = response as List<dynamic>;
       bool changed = false;
@@ -520,6 +544,13 @@ class DonationProvider extends ChangeNotifier {
           if (item['profiles'] != null && item['profiles'] is Map) {
             item['donor_name'] = item['profiles']['full_name'];
             item['donor_phone'] = item['profiles']['phone'];
+          } else if (item['donor_name'] == null || item['donor_name'].toString().isEmpty || item['donor_name'] == 'FoodBridge Donor') {
+            final authUsers = AuthService().allUsers;
+            final matched = authUsers.where((u) => u.id == item['donor_id'] || AuthService.resolveUuid(u.id) == item['donor_id']).firstOrNull;
+            if (matched != null && matched.fullName.isNotEmpty) {
+              item['donor_name'] = matched.fullName;
+              if (matched.phone != null && matched.phone!.isNotEmpty) item['donor_phone'] = matched.phone;
+            }
           }
           final dbStatus = item['status']?.toString();
           item['status'] = _statusFromDb(dbStatus).name;
