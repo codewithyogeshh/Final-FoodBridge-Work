@@ -136,10 +136,11 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
               top: 20,
               bottom: MediaQuery.of(bCtx).viewInsets.bottom + 24,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                 Center(
                   child: Container(
                     width: 40,
@@ -280,9 +281,10 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
             ],
           ),
         ),
-      );
-    },
-  );
+      ),
+    );
+  },
+);
 }
 
   void _onMarkAsCompleted(Donation? task, DonationProvider provider) async {

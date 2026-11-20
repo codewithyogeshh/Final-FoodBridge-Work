@@ -81,9 +81,10 @@ void main() {
       expect(volActive.any((d) => d.id == 'real-food-satara-001'), isTrue);
 
       // 6. Volunteer verifies Donor OTP at pickup location
+      final targetItem = provider.getDonationById('real-food-satara-001')!;
       final pickupSuccess = await provider.confirmPickupWithOtp(
         donationId: 'real-food-satara-001',
-        enteredOtp: '4829',
+        enteredOtp: targetItem.pickupOtp,
       );
       expect(pickupSuccess, isTrue);
 
@@ -93,7 +94,7 @@ void main() {
       // 7. Volunteer verifies NGO Handover OTP at shelter
       final deliverySuccess = await provider.confirmDeliveryWithOtp(
         donationId: 'real-food-satara-001',
-        enteredOtp: '9152',
+        enteredOtp: inTransit!.deliveryOtp,
       );
       expect(deliverySuccess, isTrue);
 

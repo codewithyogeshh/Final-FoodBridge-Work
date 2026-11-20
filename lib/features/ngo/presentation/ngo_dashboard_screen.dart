@@ -365,6 +365,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     subtitle: Builder(
                       builder: (context) {
@@ -380,6 +382,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                               color: AppColors.primaryGreen,
                               fontWeight: FontWeight.w600,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           );
                         }
                         return Text(
@@ -390,6 +394,8 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                             fontSize: 12,
                             color: AppColors.mutedGrey,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         );
                       },
                     ),
@@ -399,10 +405,17 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                         if (d.assignedVolunteerName != null || d.status == DonationStatus.pickedUp)
                           Padding(
                             padding: const EdgeInsets.only(right: 6),
-                            child: IconButton(
-                              icon: const Icon(Icons.two_wheeler, color: AppColors.primaryGreen, size: 22),
-                              tooltip: 'थेट ट्रॅकिंग (Live Tracking)',
-                              onPressed: () => context.push('/tracking/${d.id}'),
+                            child: InkWell(
+                              onTap: () => context.push('/tracking/${d.id}'),
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGreen.withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.two_wheeler, color: AppColors.primaryGreen, size: 18),
+                              ),
                             ),
                           ),
                         InkWell(
@@ -421,7 +434,7 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
                                 const Icon(Icons.qr_code_2, size: 14, color: AppColors.primaryGreen),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'OTP: ${d.deliveryOtp.isNotEmpty ? d.deliveryOtp : "9354"}',
+                                  'OTP: ${d.deliveryOtp}',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -832,14 +845,19 @@ class _DonationFeedCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      quantityText,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.deepGreen,
+                    Expanded(
+                      child: Text(
+                        quantityText,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.deepGreen,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Row(
                       children: [
                         Icon(

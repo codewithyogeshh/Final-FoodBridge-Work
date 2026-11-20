@@ -250,15 +250,26 @@ class DonationProvider extends ChangeNotifier {
           newNgoName = namesById[d.claimedByNgoId];
         }
 
+        final cleanPickupOtp = (d.pickupOtp.isNotEmpty && d.pickupOtp != '4829')
+            ? d.pickupOtp
+            : Donation.generateDeterministicOtp(d.id, isDelivery: false);
+        final cleanDeliveryOtp = (d.deliveryOtp.isNotEmpty && d.deliveryOtp != '9152')
+            ? d.deliveryOtp
+            : Donation.generateDeterministicOtp(d.id, isDelivery: true);
+
         if (newVolName != d.assignedVolunteerName ||
             newVolPhone != d.assignedVolunteerPhone ||
             newDonorName != d.donorName ||
-            newNgoName != d.claimedByNgoName) {
+            newNgoName != d.claimedByNgoName ||
+            d.pickupOtp != cleanPickupOtp ||
+            d.deliveryOtp != cleanDeliveryOtp) {
           _donations[i] = d.copyWith(
             assignedVolunteerName: newVolName,
             assignedVolunteerPhone: newVolPhone,
             donorName: newDonorName,
             claimedByNgoName: newNgoName,
+            pickupOtp: cleanPickupOtp,
+            deliveryOtp: cleanDeliveryOtp,
           );
           changed = true;
         }
@@ -510,9 +521,16 @@ class DonationProvider extends ChangeNotifier {
       assignedAt: incoming.assignedAt ?? current.assignedAt,
       pickedUpAt: incoming.pickedUpAt ?? current.pickedUpAt,
       deliveredAt: incoming.deliveredAt ?? current.deliveredAt,
-      pickupOtp: incoming.pickupOtp.isNotEmpty ? incoming.pickupOtp : current.pickupOtp,
-      deliveryOtp:
-          incoming.deliveryOtp.isNotEmpty ? incoming.deliveryOtp : current.deliveryOtp,
+      pickupOtp: (incoming.pickupOtp.isNotEmpty && incoming.pickupOtp != '4829')
+          ? incoming.pickupOtp
+          : ((current.pickupOtp.isNotEmpty && current.pickupOtp != '4829')
+              ? current.pickupOtp
+              : Donation.generateDeterministicOtp(current.id, isDelivery: false)),
+      deliveryOtp: (incoming.deliveryOtp.isNotEmpty && incoming.deliveryOtp != '9152')
+          ? incoming.deliveryOtp
+          : ((current.deliveryOtp.isNotEmpty && current.deliveryOtp != '9152')
+              ? current.deliveryOtp
+              : Donation.generateDeterministicOtp(current.id, isDelivery: true)),
     );
   }
 
@@ -1465,7 +1483,6 @@ class DonationProvider extends ChangeNotifier {
 
     final current = _donations[index];
     final cleanOtp = enteredOtp.trim();
-    final isTestMode = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
     if (current.pickupOtp != cleanOtp && cleanOtp != '0000') {
       _errorMessage =
@@ -1506,7 +1523,6 @@ class DonationProvider extends ChangeNotifier {
 
     final current = _donations[index];
     final cleanOtp = enteredOtp.trim();
-    final isTestMode = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
     if (current.deliveryOtp != cleanOtp && cleanOtp != '0000') {
       _errorMessage =

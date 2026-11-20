@@ -183,6 +183,20 @@ class Donation {
   final String? imageUrl;
   final String pickupOtp;
   final String deliveryOtp;
+
+  static String generateDeterministicOtp(String id, {bool isDelivery = false}) {
+    final cleanId = id.trim();
+    if (cleanId.isEmpty) return isDelivery ? '9152' : '4829';
+    final salt = isDelivery ? '_deliv_fb_salt_4920' : '_pickup_fb_salt_8103';
+    final combined = cleanId + salt;
+    int hash = 5381;
+    for (int i = 0; i < combined.length; i++) {
+      hash = (((hash << 5) + hash) + combined.codeUnitAt(i)) & 0x7FFFFFFF;
+    }
+    final num = 1000 + (hash % 9000);
+    return num.toString().padLeft(4, '0');
+  }
+
   final String dropoffAddress;
   final double? dropoffLatitude;
   final double? dropoffLongitude;
@@ -205,7 +219,7 @@ class Donation {
   final String? conditionGrade; // 'brand_new', 'like_new', 'good'
   final bool isWashedAndClean;
 
-  const Donation({
+  Donation({
     required this.id,
     required this.donorId,
     required this.donorName,
@@ -232,8 +246,8 @@ class Donation {
     this.pickedUpAt,
     this.deliveredAt,
     this.imageUrl,
-    this.pickupOtp = '4829',
-    this.deliveryOtp = '9152',
+    String? pickupOtp,
+    String? deliveryOtp,
     this.dropoffAddress = 'Asha Children Shelter, Sadar Bazar, Satara',
     this.dropoffLatitude = 17.6920,
     this.dropoffLongitude = 74.0020,
@@ -251,7 +265,12 @@ class Donation {
     this.targetSize,
     this.conditionGrade,
     this.isWashedAndClean = true,
-  });
+  })  : pickupOtp = (pickupOtp != null && pickupOtp.trim().isNotEmpty && pickupOtp.trim() != '4829')
+            ? pickupOtp.trim()
+            : generateDeterministicOtp(id, isDelivery: false),
+        deliveryOtp = (deliveryOtp != null && deliveryOtp.trim().isNotEmpty && deliveryOtp.trim() != '9152')
+            ? deliveryOtp.trim()
+            : generateDeterministicOtp(id, isDelivery: true);
 
   bool get isFood => type == DonationType.food;
   bool get isClothing => type == DonationType.clothing;
@@ -405,8 +424,8 @@ class Donation {
       pickedUpAt: pickedUpAt ?? this.pickedUpAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       imageUrl: imageUrl ?? this.imageUrl,
-      pickupOtp: pickupOtp ?? this.pickupOtp,
-      deliveryOtp: deliveryOtp ?? this.deliveryOtp,
+      pickupOtp: pickupOtp ?? (id != null && (this.pickupOtp.isEmpty || this.pickupOtp == '4829') ? generateDeterministicOtp(id, isDelivery: false) : this.pickupOtp),
+      deliveryOtp: deliveryOtp ?? (id != null && (this.deliveryOtp.isEmpty || this.deliveryOtp == '9152') ? generateDeterministicOtp(id, isDelivery: true) : this.deliveryOtp),
       dropoffAddress: dropoffAddress ?? this.dropoffAddress,
       dropoffLatitude: dropoffLatitude ?? this.dropoffLatitude,
       dropoffLongitude: dropoffLongitude ?? this.dropoffLongitude,
@@ -508,8 +527,8 @@ class Donation {
           ? DateTime.tryParse(json['delivered_at'].toString())
           : null,
       imageUrl: json['image_url']?.toString(),
-      pickupOtp: json['pickup_otp']?.toString() ?? '4829',
-      deliveryOtp: json['delivery_otp']?.toString() ?? '9152',
+      pickupOtp: json['pickup_otp']?.toString(),
+      deliveryOtp: json['delivery_otp']?.toString(),
       dropoffAddress: json['dropoff_address']?.toString() ??
           'Asha Children Shelter, Sadar Bazar, Satara',
       dropoffLatitude: (json['dropoff_latitude'] as num?)?.toDouble() ?? 17.6920,

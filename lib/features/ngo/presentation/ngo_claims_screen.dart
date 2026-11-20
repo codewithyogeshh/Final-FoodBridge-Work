@@ -8,6 +8,7 @@ import '../../../core/widgets/fb_empty_state.dart';
 import '../../../core/widgets/fb_status_chip.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../donations/presentation/donation_provider.dart';
+import 'widgets/ngo_handover_qr_modal.dart';
 
 class NgoClaimsScreen extends StatelessWidget {
   const NgoClaimsScreen({super.key});
@@ -71,11 +72,15 @@ class NgoClaimsScreen extends StatelessWidget {
                                     Text(
                                       d.title,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       'Donor: ${d.donorName} • ${d.city}',
                                       style: const TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
@@ -88,16 +93,51 @@ class NgoClaimsScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              FBStatusChip(
-                                status: (d.isDelivered || d.deliveredAt != null)
-                                    ? 'delivered_to_ngo'
-                                    : (d.isExpired
-                                        ? 'expired'
-                                        : (d.isInTransit
-                                            ? 'in_transit'
-                                            : (d.isAssigned
-                                                ? 'assigned_for_pickup'
-                                                : 'accepted'))),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  FBStatusChip(
+                                    status: (d.isDelivered || d.deliveredAt != null)
+                                        ? 'delivered_to_ngo'
+                                        : (d.isExpired
+                                            ? 'expired'
+                                            : (d.isInTransit
+                                                ? 'in_transit'
+                                                : (d.isAssigned
+                                                    ? 'assigned_for_pickup'
+                                                    : 'accepted'))),
+                                  ),
+                                  if (!d.isDelivered && d.deliveredAt == null && !d.isExpired) ...[
+                                    const SizedBox(width: 8),
+                                    InkWell(
+                                      onTap: () => showNgoHandoverQrModal(context, d),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryGreen.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3)),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.qr_code_2, size: 13, color: AppColors.primaryGreen),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'OTP: ${d.deliveryOtp}',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.primaryGreen,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                               const SizedBox(width: 8),
                               Flexible(
@@ -145,6 +185,8 @@ class NgoClaimsScreen extends StatelessWidget {
                                           child: Text(
                                             'Courier: $volName (${d.assignedVolunteerPhone ?? "In Transit"})',
                                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],

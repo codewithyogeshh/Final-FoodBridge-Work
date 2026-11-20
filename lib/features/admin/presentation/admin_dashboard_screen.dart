@@ -987,14 +987,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                               ? AppColors.orange
                               : AppColors.mutedGrey),
                       const SizedBox(width: 4),
-                      Text(
-                        hasVol ? 'Vol: $displayVolName' : 'Vol: Unassigned',
-                        style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: hasVol
-                                ? AppColors.orange
-                                : AppColors.mutedGrey),
+                      Flexible(
+                        child: Text(
+                          hasVol ? 'Vol: $displayVolName' : 'Vol: Unassigned',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: hasVol
+                                  ? AppColors.orange
+                                  : AppColors.mutedGrey),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   );

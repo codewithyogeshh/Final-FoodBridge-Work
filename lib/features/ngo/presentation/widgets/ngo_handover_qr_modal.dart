@@ -98,7 +98,7 @@ void showNgoHandoverQrModal(BuildContext context, Donation donation) {
                 const SizedBox(width: 8),
                 const Text('4-Digit Code: ', style: TextStyle(fontSize: 13, color: AppColors.mutedGrey)),
                 Text(
-                  donation.deliveryOtp.isNotEmpty ? donation.deliveryOtp : '9354',
+                  donation.deliveryOtp,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
