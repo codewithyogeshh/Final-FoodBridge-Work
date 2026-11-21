@@ -8,9 +8,12 @@
 [![Code Quality](https://img.shields.io/badge/flutter_analyze-0_Issues-success)](https://github.com/codewithyogeshh/Final-FoodBridge-Work)
 [![WCAG](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA-blue)](https://www.w3.org/WAI/standards-guidelines/wcag/)
 [![License](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
+[![Repository](https://img.shields.io/badge/GitHub-Final--FoodBridge--Work-181717?logo=github&logoColor=white)](https://github.com/codewithyogeshh/Final-FoodBridge-Work)
 
 > **"Share More. Waste Less. Bridge the Need."**  
 > **FoodBridge** is an end-to-end, real-time cross-platform ecosystem designed to eliminate hyper-local food waste by instantaneously connecting Surplus Donors (Hotels, Caterers, Households) with Verified Shelters/NGOs, Dedicated Couriers, and Central System Administrators.
+
+**🔗 Live link:** [https://github.com/codewithyogeshh/Final-FoodBridge-Work](https://github.com/codewithyogeshh/Final-FoodBridge-Work)
 
 ---
 
