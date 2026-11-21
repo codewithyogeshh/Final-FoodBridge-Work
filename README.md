@@ -13,7 +13,9 @@
 > **"Share More. Waste Less. Bridge the Need."**  
 > **FoodBridge** is an end-to-end, real-time cross-platform ecosystem designed to eliminate hyper-local food waste by instantaneously connecting Surplus Donors (Hotels, Caterers, Households) with Verified Shelters/NGOs, Dedicated Couriers, and Central System Administrators.
 
-**🔗 Live link:** [https://github.com/codewithyogeshh/Final-FoodBridge-Work](https://github.com/codewithyogeshh/Final-FoodBridge-Work)
+**🔗 Live demo:** [https://foodbridge-live-demo-thmc5n.freebuff.site](https://foodbridge-live-demo-thmc5n.freebuff.site) &nbsp;·&nbsp; **📦 Source:** [github.com/codewithyogeshh/Final-FoodBridge-Work](https://github.com/codewithyogeshh/Final-FoodBridge-Work)
+
+> _The live demo is a browser build of the FoodBridge interface covering all four roles — Donor, Shelter NGO, Volunteer Courier and Super Admin — with simulated data, so you can try the full claim → pickup PIN → delivery PIN custody flow instantly, with no install._
 
 ---
 
